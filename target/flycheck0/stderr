@@ -1,0 +1,70 @@
+   0.047119100s  INFO prepare_target{force=false package_id=ascii_quest_ii v0.1.0 (C:\Users\alfao\Documents\GitHub\ASCII_Quest_II) target="ascii_quest_ii"}: cargo::core::compiler::fingerprint: fingerprint error for ascii_quest_ii v0.1.0 (C:\Users\alfao\Documents\GitHub\ASCII_Quest_II)/Check { test: false }/TargetInner { name: "ascii_quest_ii", doc: true, ..: with_path("C:\\Users\\alfao\\Documents\\GitHub\\ASCII_Quest_II\\src\\main.rs", Edition2021) }
+   0.047171500s  INFO prepare_target{force=false package_id=ascii_quest_ii v0.1.0 (C:\Users\alfao\Documents\GitHub\ASCII_Quest_II) target="ascii_quest_ii"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\alfao\Documents\GitHub\ASCII_Quest_II\target\debug\.fingerprint\ascii_quest_ii-8d340aa0de0378e1\bin-ascii_quest_ii`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+             at /rustc/ed61e7d7e242494fb7057f2657300d9e77bb4fcb/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace::Backtrace::capture
+             at /rustc/ed61e7d7e242494fb7057f2657300d9e77bb4fcb/library\std\src/backtrace.rs:296:9
+   2: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::cli::main
+  14: cargo::main
+  15: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16: std::rt::lang_start::<()>::{closure#0}
+  17: std::rt::lang_start_internal
+             at /rustc/ed61e7d7e242494fb7057f2657300d9e77bb4fcb/library\core\src\ops/function.rs:287:21
+  18: main
+  19: __tmainCRTStartup
+  20: mainCRTStartup
+  21: <unknown>
+  22: <unknown>
+   0.065061600s  INFO prepare_target{force=false package_id=ascii_quest_ii v0.1.0 (C:\Users\alfao\Documents\GitHub\ASCII_Quest_II) target="ascii_quest_ii"}: cargo::core::compiler::fingerprint: fingerprint error for ascii_quest_ii v0.1.0 (C:\Users\alfao\Documents\GitHub\ASCII_Quest_II)/Check { test: true }/TargetInner { name: "ascii_quest_ii", doc: true, ..: with_path("C:\\Users\\alfao\\Documents\\GitHub\\ASCII_Quest_II\\src\\main.rs", Edition2021) }
+   0.065086800s  INFO prepare_target{force=false package_id=ascii_quest_ii v0.1.0 (C:\Users\alfao\Documents\GitHub\ASCII_Quest_II) target="ascii_quest_ii"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\alfao\Documents\GitHub\ASCII_Quest_II\target\debug\.fingerprint\ascii_quest_ii-a3856531a64c34fb\test-bin-ascii_quest_ii`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+             at /rustc/ed61e7d7e242494fb7057f2657300d9e77bb4fcb/library\std\src\..\..\backtrace\src\backtrace/win64.rs:85:14
+   1: std::backtrace::Backtrace::capture
+             at /rustc/ed61e7d7e242494fb7057f2657300d9e77bb4fcb/library\std\src/backtrace.rs:296:9
+   2: <std::io::error::Error as anyhow::context::ext::StdError>::ext_context::<alloc::string::String>
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::cli::main
+  14: cargo::main
+  15: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16: std::rt::lang_start::<()>::{closure#0}
+  17: std::rt::lang_start_internal
+             at /rustc/ed61e7d7e242494fb7057f2657300d9e77bb4fcb/library\core\src\ops/function.rs:287:21
+  18: main
+  19: __tmainCRTStartup
+  20: mainCRTStartup
+  21: <unknown>
+  22: <unknown>
+    Checking ascii_quest_ii v0.1.0 (C:\Users\alfao\Documents\GitHub\ASCII_Quest_II)
+error: could not compile `ascii_quest_ii` (bin "ascii_quest_ii") due to 48 previous errors; 18 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `ascii_quest_ii` (bin "ascii_quest_ii" test) due to 48 previous errors; 21 warnings emitted

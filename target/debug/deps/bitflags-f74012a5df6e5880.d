@@ -1,0 +1,11 @@
+C:\Users\alfao\Documents\GitHub\ASCII_Quest_II\target\debug\deps\bitflags-f74012a5df6e5880.d: C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\lib.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\iter.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\parser.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\traits.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\public.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\internal.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\external.rs
+
+C:\Users\alfao\Documents\GitHub\ASCII_Quest_II\target\debug\deps\libbitflags-f74012a5df6e5880.rmeta: C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\lib.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\iter.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\parser.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\traits.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\public.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\internal.rs C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\external.rs
+
+C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\lib.rs:
+C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\iter.rs:
+C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\parser.rs:
+C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\traits.rs:
+C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\public.rs:
+C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\internal.rs:
+C:\Users\alfao\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bitflags-2.10.0\src\external.rs:
