@@ -1,0 +1,18 @@
+# Database/password config files
+ascii-quest/db.php
+ascii-quest/config.php
+ascii-quest/.env
+db.php
+config.php
+.env
+
+# Logs and temporary files
+*.log
+tmp/
+cache/
+
+# Editor/system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
