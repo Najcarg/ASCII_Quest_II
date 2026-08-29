@@ -19,6 +19,8 @@ const gameLogMessages = document.getElementById("gameLogMessages");
 const playerPosition = document.getElementById("playerPosition");
 const playerGold = document.getElementById("playerGold");
 const playerHp = document.getElementById("playerHp");
+const playerHpBar = document.getElementById("playerHpBar");
+const playerHpFill = document.getElementById("playerHpFill");
 
 let isMoving = false;
 /*
@@ -280,6 +282,15 @@ function applyCharacterUpdates(characterUpdates) {
 
         if (maxHp !== "") {
             playerHp.textContent = currentHp + "/" + maxHp;
+
+            if (window.ASCIIQuestHud) {
+                window.ASCIIQuestHud.updateResourceBar(
+                    playerHpBar,
+                    playerHpFill,
+                    characterUpdates.current_hp,
+                    characterUpdates.max_hp,
+                );
+            }
         } else {
             playerHp.textContent = currentHp;
         }

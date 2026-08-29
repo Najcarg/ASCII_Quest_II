@@ -255,6 +255,25 @@ $playerY = (int) $character["pos_y"];
 */
 $viewportWidth = 21;
 $viewportHeight = 15;
+
+/*
+|--------------------------------------------------------------------------
+| Resource-bar display values
+|--------------------------------------------------------------------------
+| CharacterStats remains authoritative for maximum resources. These ratios
+| only control the visual fill of the exploration HUD bars.
+*/
+$currentHp = (int) $character["current_hp"];
+$maximumLife = (int) $characterStats["resources"]["max_life"];
+$currentMana = (int) $character["current_mana"];
+$maximumMana = (int) $characterStats["resources"]["max_mana"];
+
+$hpPercentage = $maximumLife > 0
+    ? max(0.0, min(100.0, ($currentHp / $maximumLife) * 100.0))
+    : 0.0;
+$manaPercentage = $maximumMana > 0
+    ? max(0.0, min(100.0, ($currentMana / $maximumMana) * 100.0))
+    : 0.0;
 ?>
 
 <!DOCTYPE html>
@@ -269,9 +288,14 @@ $viewportHeight = 15;
 <main class="game-page">
     <section class="game-shell">
         <header class="game-header">
-            <div>
+            <div class="game-branding">
                 <h1>ASCII Quest</h1>
-                <p><?= e($mapName) ?></p>
+                <p>Exploration</p>
+            </div>
+
+            <div class="game-current-area">
+                <span>Current Area</span>
+                <strong><?= e($mapName) ?></strong>
             </div>
 
             <nav class="game-nav">
@@ -281,69 +305,154 @@ $viewportHeight = 15;
         </header>
 
         <section class="game-layout">
-            <aside class="game-sidebar">
-                <div class="mini-card">
-                    <div class="sidebar-glyph">
-                        <?= e($character["glyph"]) ?>
-                    </div>
-
-                    <h2><?= e($character["character_name"]) ?></h2>
-
-                    <p>
-                        <?= e($character["class_name"]) ?>
-                        · Level <?= e($character["level"]) ?>
-                    </p>
+            <aside class="hud-panel hud-left-panel" data-tab-group>
+                <div class="hud-tabs" role="tablist" aria-label="Champion panels">
+                    <button
+                        type="button"
+                        class="hud-tab is-active"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="left-main"
+                        data-tab-target="left-main"
+                    >Main</button>
+                    <button
+                        type="button"
+                        class="hud-tab"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="left-details"
+                        data-tab-target="left-details"
+                    >Details</button>
+                    <button
+                        type="button"
+                        class="hud-tab"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="left-warp"
+                        data-tab-target="left-warp"
+                    >Warp</button>
                 </div>
 
-                <div class="mini-stats">
-                    <div>
-                        <span>HP</span>
-                        <strong id="playerHp">
-                            <?= e($character["current_hp"]) ?>/<?= e(
-    $characterStats["resources"]["max_life"],
-) ?>
-                        </strong>
+                <section
+                    id="left-main"
+                    class="hud-tab-panel"
+                    role="tabpanel"
+                    data-tab-panel
+                >
+                    <div class="champion-summary">
+                        <div class="sidebar-glyph" aria-label="Champion portrait">
+                            <?= e($character["glyph"]) ?>
+                        </div>
+
+                        <h2><?= e($character["character_name"]) ?></h2>
+
+                        <p>
+                            <?= e($character["class_name"]) ?>
+                            · Level <?= e($character["level"]) ?>
+                        </p>
                     </div>
 
-                    <div>
-                        <span>Mana</span>
-                        <strong><?= e($character["current_mana"]) ?>/<?= e(
-    $characterStats["resources"]["max_mana"],
-) ?></strong>
+                    <div class="champion-resources">
+                        <div class="resource-status">
+                            <div class="resource-status-label">
+                                <span>HP</span>
+                                <strong id="playerHp"><?= e($currentHp) ?>/<?= e($maximumLife) ?></strong>
+                            </div>
+                            <div
+                                id="playerHpBar"
+                                class="status-bar status-bar-hp"
+                                role="progressbar"
+                                aria-label="Champion Life"
+                                aria-valuemin="0"
+                                aria-valuenow="<?= e($currentHp) ?>"
+                                aria-valuemax="<?= e($maximumLife) ?>"
+                            >
+                                <span
+                                    id="playerHpFill"
+                                    class="status-bar-fill"
+                                    style="width: <?= e($hpPercentage) ?>%"
+                                ></span>
+                            </div>
+                        </div>
+
+                        <div class="resource-status">
+                            <div class="resource-status-label">
+                                <span>Mana</span>
+                                <strong id="playerMana"><?= e($currentMana) ?>/<?= e($maximumMana) ?></strong>
+                            </div>
+                            <div
+                                id="playerManaBar"
+                                class="status-bar status-bar-mana"
+                                role="progressbar"
+                                aria-label="Champion Mana"
+                                aria-valuemin="0"
+                                aria-valuenow="<?= e($currentMana) ?>"
+                                aria-valuemax="<?= e($maximumMana) ?>"
+                            >
+                                <span
+                                    id="playerManaFill"
+                                    class="status-bar-fill"
+                                    style="width: <?= e($manaPercentage) ?>%"
+                                ></span>
+                            </div>
+                        </div>
+
+                        <div class="resource-status">
+                            <div class="resource-status-label">
+                                <span>XP</span>
+                                <strong id="playerXp"><?= e($character["experience"]) ?> XP</strong>
+                            </div>
+                            <div
+                                id="playerXpBar"
+                                class="status-bar status-bar-xp"
+                                role="progressbar"
+                                aria-label="Champion experience progress"
+                                aria-valuemin="0"
+                                aria-valuenow="0"
+                                aria-valuemax="100"
+                                aria-valuetext="<?= e($character["experience"]) ?> XP; next-level progress is not defined"
+                                data-current-xp="<?= e($character["experience"]) ?>"
+                                data-progress-value="0"
+                            >
+                                <span
+                                    id="playerXpFill"
+                                    class="status-bar-fill"
+                                    style="width: 0%"
+                                ></span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <span>Melee Damage</span>
-                        <strong><?= e($characterStats["combat"]["melee_damage"]) ?></strong>
-                    </div>
-
-                    <div>
-                        <span>Toughness</span>
-                        <strong><?= e($characterStats["combat"]["toughness"]) ?></strong>
-                    </div>
-
-                    <div>
-                        <span>XP</span>
-                        <strong><?= e($character["experience"]) ?></strong>
-                    </div>
-
-                    <div>
+                    <div class="champion-gold">
                         <span>Gold</span>
-                        <strong id="playerGold"><?= e(
-                            $character["gold"],
-                        ) ?></strong>
+                        <strong id="playerGold"><?= e($character["gold"]) ?></strong>
                     </div>
+                </section>
 
-                    <div>
-                        <span>Pos</span>
-                        <strong id="playerPosition">
-                            <?= e($playerX) ?>, <?= e($playerY) ?>
-                        </strong>
-                    </div>
-                </div>
+                <section
+                    id="left-details"
+                    class="hud-tab-panel hud-placeholder"
+                    role="tabpanel"
+                    data-tab-panel
+                    hidden
+                >
+                    <h2>Details</h2>
+                    <p>Detailed Champion statistics will appear here.</p>
+                </section>
+
+                <section
+                    id="left-warp"
+                    class="hud-tab-panel hud-placeholder"
+                    role="tabpanel"
+                    data-tab-panel
+                    hidden
+                >
+                    <h2>Warp</h2>
+                    <p>Discovered warp destinations will appear here.</p>
+                </section>
             </aside>
 
-            <section class="map-area">
+            <section class="map-area hud-center-panel">
                 <div class="map-title">
                     <?= e($mapName) ?>
                 </div>
@@ -352,7 +461,7 @@ $viewportHeight = 15;
                 |--------------------------------------------------------------------------
                 | Game Map Container
                 |--------------------------------------------------------------------------
-                | JavaScript draws the visible map viewport inside this div.
+                | JavaScript draws the existing visible map viewport inside this div.
                 -->
                 <div
                     id="gameMap"
@@ -363,26 +472,187 @@ $viewportHeight = 15;
                     "
                 ></div>
 
-                <!--
-                |--------------------------------------------------------------------------
-                | Message Log
-                |--------------------------------------------------------------------------
-                | JavaScript adds game messages here.
-                -->
-                <div class="game-log">
-                    <div class="game-log-title">Message Log</div>
+                <div class="game-help">
+                    <span>
+                        Position:
+                        <strong id="playerPosition"><?= e($playerX) ?>, <?= e($playerY) ?></strong>
+                    </span>
+                    <span>
+                        Viewport: <?= e($viewportWidth) ?> x <?= e($viewportHeight) ?>
+                    </span>
+                    <span>
+                        Full map: <?= e($mapWidth) ?> x <?= e($mapHeight) ?>
+                    </span>
+                </div>
+            </section>
 
+            <aside class="hud-panel hud-right-panel" data-tab-group>
+                <div class="hud-tabs" role="tablist" aria-label="Item and skill panels">
+                    <button
+                        type="button"
+                        class="hud-tab is-active"
+                        role="tab"
+                        aria-selected="true"
+                        aria-controls="right-items"
+                        data-tab-target="right-items"
+                    >Items</button>
+                    <button
+                        type="button"
+                        class="hud-tab"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="right-skills"
+                        data-tab-target="right-skills"
+                    >Skill Tree</button>
+                    <button
+                        type="button"
+                        class="hud-tab"
+                        role="tab"
+                        aria-selected="false"
+                        aria-controls="right-passives"
+                        data-tab-target="right-passives"
+                    >Passive Tree</button>
+                </div>
+
+                <section
+                    id="right-items"
+                    class="hud-tab-panel"
+                    role="tabpanel"
+                    data-tab-panel
+                >
+                    <section class="hud-item-section">
+                        <h2>Equipment</h2>
+                        <div class="equipment-groups">
+                            <div class="equipment-group">
+                                <?php foreach (["Helm", "Chest", "Gloves", "Belt", "Boots"] as $slot): ?>
+                                    <div class="equipment-slot">
+                                        <span><?= e($slot) ?></span>
+                                        <strong>Empty</strong>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <div class="equipment-group">
+                                <?php foreach (["Weapon", "Off-Hand", "Ring", "Amulet", "Charm"] as $slot): ?>
+                                    <div class="equipment-slot">
+                                        <span><?= e($slot) ?></span>
+                                        <strong>Empty</strong>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="hud-item-section">
+                        <h2>Loadout</h2>
+                        <div class="loadout-grid">
+                            <?php foreach (["Skill Slot 1", "Skill Slot 2", "Skill Slot 3", "Ultimate Slot", "Potion"] as $slot): ?>
+                                <div class="loadout-slot">
+                                    <span><?= e($slot) ?></span>
+                                    <strong>Empty</strong>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+
+                    <section class="hud-item-section">
+                        <h2>Inventory</h2>
+                        <p class="hud-section-note">Visual shell only</p>
+                        <div class="inventory-grid" aria-label="Empty inventory placeholders">
+                            <?php for ($slot = 1; $slot <= 20; $slot++): ?>
+                                <div
+                                    class="inventory-slot"
+                                    aria-label="Empty inventory slot <?= e($slot) ?>"
+                                ></div>
+                            <?php endfor; ?>
+                        </div>
+                    </section>
+                </section>
+
+                <section
+                    id="right-skills"
+                    class="hud-tab-panel hud-placeholder"
+                    role="tabpanel"
+                    data-tab-panel
+                    hidden
+                >
+                    <h2>Skill Tree</h2>
+                    <p>Skill Tree will be implemented in a later milestone.</p>
+                </section>
+
+                <section
+                    id="right-passives"
+                    class="hud-tab-panel hud-placeholder"
+                    role="tabpanel"
+                    data-tab-panel
+                    hidden
+                >
+                    <h2>Passive Tree</h2>
+                    <p>Passive Tree will be implemented in a later milestone.</p>
+                </section>
+            </aside>
+        </section>
+
+        <section class="hud-bottom-panel" data-tab-group>
+            <div class="hud-tabs hud-bottom-tabs" role="tablist" aria-label="Exploration information panels">
+                <button
+                    type="button"
+                    class="hud-tab is-active"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="bottom-information"
+                    data-tab-target="bottom-information"
+                >Information</button>
+                <button
+                    type="button"
+                    class="hud-tab"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="bottom-server"
+                    data-tab-target="bottom-server"
+                >Server Info</button>
+                <button
+                    type="button"
+                    class="hud-tab"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="bottom-chat"
+                    data-tab-target="bottom-chat"
+                >Chat</button>
+            </div>
+
+            <section
+                id="bottom-information"
+                class="hud-tab-panel"
+                role="tabpanel"
+                data-tab-panel
+            >
+                <div class="game-log">
+                    <div class="game-log-title">Exploration Information</div>
                     <div id="gameLogMessages" class="game-log-messages">
-                        <!-- JavaScript adds messages here -->
+                        <!-- JavaScript adds exploration messages here -->
                     </div>
                 </div>
+            </section>
 
-                <div class="game-help">
-                    Viewport: <?= e($viewportWidth) ?> x <?= e(
-     $viewportHeight,
- ) ?>
-                    · Full map: <?= e($mapWidth) ?> x <?= e($mapHeight) ?>
-                </div>
+            <section
+                id="bottom-server"
+                class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
+                role="tabpanel"
+                data-tab-panel
+                hidden
+            >
+                <p>Server information will appear here in a later milestone.</p>
+            </section>
+
+            <section
+                id="bottom-chat"
+                class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
+                role="tabpanel"
+                data-tab-panel
+                hidden
+            >
+                <p>Chat will be implemented in a later milestone.</p>
             </section>
         </section>
     </section>
@@ -429,6 +699,7 @@ window.ASCII_QUEST_STATE = {
 };
 </script>
 
+<script src="js/exploration_hud.js"></script>
 <script src="js/game_controls.js"></script>
 
 </body>

@@ -6,182 +6,403 @@ ACTIVE
 
 ## Task
 
-Implement Champion stat-point allocation.
+Build the exploration HUD foundation.
 
-A Champion can spend stored `stat_points` on exactly one of these permanent
-main stats:
+This task establishes the new in-game exploration layout and tab structure
+without introducing new gameplay systems.
 
-- strength
-- dexterity
-- vitality
-- energy
-- fate
+The HUD will become the main shell for future:
 
-Do not implement XP gain or level-up logic in this task.
+- character stats
+- stat allocation
+- warp
+- equipment
+- inventory
+- skills
+- passive tree
+- exploration information
 
-## Existing Rules
+Do not implement those backend systems in this task unless explicitly listed
+below.
 
-Read `/AGENTS.md` before making changes.
+## Read First
 
-Use the existing character-stat system:
+Read `/AGENTS.md`.
 
-- `ascii-quest/config/character_stats.php`
-- `ascii-quest/lib/CharacterStats.php`
+Inspect the current implementation before making changes, especially:
 
-Do not duplicate derived-stat formulas.
+- `ascii-quest/game.php`
+- `ascii-quest/css/style.css`
+- `ascii-quest/js/game_controls.js`
+- existing map rendering/movement code
+- existing Champion/stat calculation usage
 
-Increasing Vitality or Energy changes maximum resources but must NOT restore
-current HP or current Mana.
+Preserve all existing working exploration behaviour.
 
-Example:
+## Target Layout
 
-Before:
+Build a three-column exploration HUD.
 
-- current_hp = 180
-- max_life = 200
-- vitality = 10
+Approximate structure:
 
-After spending one point on Vitality:
+ASCII Quest header
+---------------------------------------------------------
+Left Panel       | Center Map       | Right Panel
+---------------------------------------------------------
+Main             |                  | Items
+Details          |       Map        | Skill Tree
+Warp             |                  | Passive Tree
+                 |                  |
+Champion         |                  | Equipment
+HP               |                  | Loadout
+Mana             |                  | Inventory
+XP               |                  |
+Gold             |                  |
+---------------------------------------------------------
+Bottom non-combat information area
+---------------------------------------------------------
 
-- vitality = 11
-- max_life = 210
-- current_hp remains 180
+The result should visually move toward the approved ASCII Quest HUD concept,
+but this task is only the structural foundation.
 
-Result:
+## Header
 
-`180 / 210 HP`
+The top area should include:
 
-## Required User Flow
+- ASCII Quest branding
+- current area/map name
+- Change Character
+- Main Menu
 
-From Character Selection, the player must be able to open a stat allocation
-page for one of their own Champions.
+Preserve the existing actions of those buttons.
 
-The page must display:
+## Left Panel Tabs
 
-- Champion name
+Create these tabs:
+
+- Main
+- Details
+- Warp
+
+### Main
+
+Main is selected by default.
+
+Show real Champion data already available in the current game:
+
+- Champion glyph/portrait
+- character name
 - class
 - level
-- Strength
-- Dexterity
-- Vitality
-- Energy
-- Fate
-- available stat points
+- HP
+- Mana
+- XP
+- Gold
 
-Display the Champion's calculated values useful for verifying allocation,
-including at minimum:
+HP, Mana and XP should be displayed as visual horizontal bars.
 
-- current / maximum Life
-- current / maximum Mana
-- Melee Damage
-- Toughness
-- Spell Power
-- Critical Chance
-- Loot Chance
-- Gold Find
+Use existing real data.
 
-Each main stat must have a `+` control.
+Do not invent fake percentages or placeholder numbers.
 
-If no stat points remain, allocation controls must be disabled or unavailable.
+For HP/Mana, use the existing current values and calculated maximum values.
 
-## Server-Side Allocation
+### Details
 
-Create a dedicated server-side allocation action.
+For this task, Details can contain a clearly marked placeholder such as:
 
-Recommended files:
+`Detailed Champion statistics will appear here.`
+
+Do not integrate stat allocation yet.
+
+That will be the next task.
+
+### Warp
+
+For this task, Warp can contain a clearly marked placeholder such as:
+
+`Discovered warp destinations will appear here.`
+
+Do not create warp mechanics or database changes.
+
+## Center Panel
+
+Preserve the existing exploration map and all existing map behaviour.
+
+The center panel should contain:
+
+- current map/area title
+- existing viewport/map
+- existing character glyph
+- existing map tiles
+- existing movement
+- existing map interactions
+- existing message/event behaviour if currently required by exploration
+
+Do not rewrite map logic unnecessarily.
+
+Movement must continue to work exactly as before.
+
+Preserve:
+
+- normal movement
+- walls/collision
+- traps
+- chests
+- stairs
+- map transitions
+- character map overrides
+- current position persistence
+
+## Right Panel Tabs
 
 Create:
 
+- Items
+- Skill Tree
+- Passive Tree
+
+Items is selected by default.
+
+### Items
+
+Create the visual shell only.
+
+Equipment slots:
+
+Left group:
+- Helm
+- Chest
+- Gloves
+- Belt
+- Boots
+
+Right group:
+- Weapon
+- Off-Hand
+- Ring
+- Amulet
+- Charm
+
+There is exactly:
+
+- 1 Ring slot
+- 1 Charm slot
+
+Do not implement equipment backend behaviour yet.
+
+Empty equipment slots should be visibly identifiable.
+
+### Loadout
+
+Below Equipment create five loadout slots:
+
+- Skill Slot 1
+- Skill Slot 2
+- Skill Slot 3
+- Ultimate Slot
+- Potion
+
+These are visual placeholders only.
+
+Do not implement skill mechanics.
+
+Combat is pointer/mouse-first.
+
+Do not introduce Q/W/E/R or number-key combat shortcuts.
+
+### Inventory
+
+Create an empty visual inventory grid.
+
+This task does NOT create:
+
+- inventory database tables
+- item storage
+- drag/drop
+- item tooltips
+- equipment actions
+
+Use clear empty slots.
+
+### Skill Tree
+
+Placeholder only.
+
+Example:
+
+`Skill Tree will be implemented in a later milestone.`
+
+### Passive Tree
+
+Placeholder only.
+
+Example:
+
+`Passive Tree will be implemented in a later milestone.`
+
+## Bottom Panel
+
+Create a non-combat lower information area.
+
+Do not create a combat/fighting log.
+
+Combat will use a dedicated battle scene later.
+
+The bottom panel may contain shell tabs such as:
+
+- Server Info
+- Chat
+- Information
+
+These may be placeholders in this task.
+
+Do not invent server systems, chat backend, player counts or fake online data.
+
+Do not display fake values such as:
+
+- fake uptime
+- fake players online
+- fake world boss timers
+- fake server events
+
+Placeholder labels are acceptable.
+
+## Tabs
+
+Left and right panel tabs must work in the browser without page reload.
+
+Use lightweight vanilla JavaScript.
+
+Do not introduce:
+
+- React
+- Vue
+- Alpine
+- jQuery
+- npm dependencies
+
+Default active state:
+
+Left:
+- Main
+
+Right:
+- Items
+
+Tabs only need to persist for the current page session in this task.
+
+Do not add database persistence for selected tabs.
+
+## Styling
+
+Keep the existing ASCII Quest visual identity:
+
+- dark/black background
+- gold/brown borders
+- parchment/gold typography
+- restrained glow
+- fantasy/dungeon aesthetic
+
+Avoid modern dashboard styling that looks unrelated to the existing game.
+
+The page should use the available browser width more effectively than the
+current narrow exploration layout.
+
+The map should remain the primary visual focus.
+
+Do not sacrifice map usability to make side panels excessively large.
+
+Aim for a practical desktop layout first.
+
+Responsive/mobile redesign is not required in this task.
+
+## Existing Behaviour To Protect
+
+This task must NOT break:
+
+- login
+- sessions
+- Character Selection
+- Change Character
+- Main Menu
+- map loading
+- movement
+- collision
+- traps
+- trap HP damage
+- HP persistence
+- Mana persistence
+- chests
+- gold rewards
+- stairs
+- map transitions
+- map overrides
+- Champion position persistence
+- current CharacterStats calculations
+
+## Stat Allocation
+
+The `feature/stat-allocation` implementation is already the base of this
+branch.
+
+Do not remove:
+
 - `ascii-quest/character_stats.php`
 - `ascii-quest/allocate_stat.php`
+- `ascii-quest/lib/CharacterStatAllocator.php`
 
-Modify:
+Do not redesign or integrate that feature yet.
 
-- `ascii-quest/character_select.php`
+The next HUD task will move stat allocation into the Details tab.
 
-You may adjust file boundaries if the existing code clearly requires it, but
-do not refactor unrelated code.
-
-Allocation must be server-authoritative.
-
-For every allocation request:
-
-1. Require a logged-in user.
-2. Validate the character ID.
-3. Validate that the Champion belongs to the logged-in user.
-4. Accept only:
-   - `strength`
-   - `dexterity`
-   - `vitality`
-   - `energy`
-   - `fate`
-5. Start a MariaDB transaction.
-6. Lock/re-read the Champion row as necessary to prevent double spending.
-7. Verify `stat_points > 0`.
-8. Increment exactly one selected stat by 1.
-9. Decrement `stat_points` by 1.
-10. Commit.
-11. Roll back on failure.
-12. Redirect safely back to the stat page.
-
-Never trust a stat value supplied by the browser.
-
-The browser may identify which stat to increment, but it must never submit the
-new value.
-
-## Security Requirements
-
-A user must not be able to:
-
-- allocate points to another user's Champion
-- allocate an unknown/arbitrary database column
-- spend a point when `stat_points = 0`
-- make `stat_points` negative
-- manipulate current HP/Mana by spending stats
-- bypass the allowed-stat list
-
-Use prepared statements.
-
-Do not expose database errors or credentials in the browser.
+The temporary standalone stat allocation page may remain accessible for now.
 
 ## Database
 
-No schema migration is required.
+No database changes.
 
-The existing `characters` table already contains:
+No migration.
 
-- `stat_points`
-- `strength`
-- `dexterity`
-- `vitality`
-- `energy`
-- `fate`
+Do not modify schema.
 
-Do not alter the database schema.
+## Scope Exclusions
+
+Do NOT implement in this task:
+
+- Details stat allocation
+- warp backend
+- discovered locations
+- item backend
+- inventory backend
+- equipment backend
+- drag/drop
+- item generation
+- active skills
+- passive skills
+- combat
+- battle scene
+- monsters
+- XP/level-up system
+- server-status backend
+- chat backend
+- fake server information
 
 ## Testing
 
-Use test-driven development.
+Use test-driven development where behaviour can be tested meaningfully.
 
-Add automated tests for the allocation behaviour where practical.
-
-At minimum verify:
-
-1. valid Strength allocation spends exactly one point
-2. valid Vitality allocation raises calculated Maximum Life
-3. current HP does not increase when Vitality increases
-4. valid Energy allocation raises calculated Maximum Mana
-5. current Mana does not increase when Energy increases
-6. invalid stat names are rejected
-7. allocation with zero points is rejected
-8. another user's Champion cannot be modified
-9. stat_points cannot become negative
-
-Run:
+Existing automated tests must continue passing:
 
 `php tests/run.php`
 
-Run PHP syntax checks for every changed PHP file.
+Run syntax checking for every changed PHP file:
+
+`php -l <file>`
+
+If JavaScript is changed:
+
+`node --check <file>`
 
 Run:
 
@@ -195,21 +416,28 @@ Do not commit.
 
 Do not push.
 
-## Scope
+## Manual Test Checklist
 
-Do NOT implement:
+Before reporting completion, provide a browser-test checklist covering:
 
-- XP rewards
-- automatic level-up
-- combat
-- equipment
-- inventory
-- passive tree
-- active skills
-- stat respec
-- HUD redesign
-
-This task is only permanent main-stat allocation.
+1. Main tab shown initially
+2. Items tab shown initially
+3. Left tab switching works
+4. Right tab switching works
+5. Champion information is correct
+6. HP bar/value is correct
+7. Mana bar/value is correct
+8. XP bar/value is correct
+9. Gold value is correct
+10. Map renders
+11. Movement works
+12. Trap damage works
+13. Chest interaction works
+14. Gold updates
+15. Stairs/map transitions work
+16. Refresh preserves position/resources as before
+17. Change Character works
+18. Main Menu works
 
 ## Completion Report
 
@@ -218,13 +446,17 @@ Report:
 - files created
 - files modified
 - implementation summary
-- tests added
-- exact test commands run
-- results
+- tests added or changed
+- exact commands executed
+- test results
 - manual browser testing required
+- any known visual compromises
 
 Finish with:
 
 `READY FOR TESTING`
 
-Then stop and wait for user approval.
+Then stop.
+
+Do not commit.
+Do not push.
