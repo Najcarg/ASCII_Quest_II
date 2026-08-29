@@ -561,8 +561,10 @@ a:hover {
     }
 }
 .game-page {
-    min-height: 100vh;
-    padding: 14px;
+    height: 100vh;
+    min-height: 620px;
+    padding: 8px;
+    overflow: hidden;
     background:
         radial-gradient(
             circle at center,
@@ -575,10 +577,15 @@ a:hover {
 }
 
 .game-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) 112px;
+    gap: 8px;
     width: 100%;
     max-width: 1760px;
+    height: calc(100vh - 16px);
+    min-height: 604px;
     margin: 0 auto;
-    padding: 14px;
+    padding: 8px;
     border: 2px solid #7b5a2e;
     background: linear-gradient(
         to bottom,
@@ -594,8 +601,8 @@ a:hover {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    gap: 20px;
-    padding: 12px 16px;
+    gap: 12px;
+    padding: 6px 10px;
     border: 1px solid rgba(169, 122, 59, 0.55);
     background: rgba(0, 0, 0, 0.35);
 }
@@ -603,19 +610,20 @@ a:hover {
 .game-branding h1 {
     margin: 0;
     color: #d9bf7a;
-    font-size: 34px;
+    font-size: 28px;
     letter-spacing: 1px;
 }
 
 .game-branding p {
-    margin: 4px 0 0;
+    margin: 2px 0 0;
     color: #b8a98b;
+    font-size: 12px;
 }
 
 .game-current-area {
     display: grid;
     gap: 3px;
-    min-width: 220px;
+    min-width: 160px;
     text-align: center;
 }
 
@@ -628,22 +636,23 @@ a:hover {
 
 .game-current-area strong {
     color: #f0d58a;
-    font-size: 20px;
+    font-size: 17px;
     font-weight: normal;
 }
 
 .game-nav {
     display: flex;
     justify-self: end;
-    gap: 12px;
+    gap: 7px;
 }
 
 .game-nav a {
-    padding: 10px 14px;
+    padding: 6px 9px;
     border: 1px solid #7b5a2e;
     background: rgba(0, 0, 0, 0.35);
     color: #f1dfb1;
     text-decoration: none;
+    font-size: 13px;
 }
 
 .game-nav a:hover {
@@ -653,12 +662,13 @@ a:hover {
 .game-layout {
     display: grid;
     grid-template-columns:
-        minmax(220px, 250px)
-        minmax(700px, 1fr)
-        minmax(290px, 330px);
-    align-items: start;
-    gap: 12px;
-    margin-top: 12px;
+        clamp(168px, 17vw, 240px)
+        minmax(0, 1fr)
+        clamp(220px, 21vw, 300px);
+    align-items: stretch;
+    min-height: 0;
+    gap: 8px;
+    margin-top: 0;
 }
 
 .hud-panel,
@@ -671,13 +681,15 @@ a:hover {
 
 .hud-panel {
     min-width: 0;
-    padding: 10px;
+    height: 100%;
+    padding: 6px;
+    overflow: hidden;
 }
 
 .hud-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px;
+    gap: 2px;
     border-bottom: 1px solid rgba(169, 122, 59, 0.45);
 }
 
@@ -685,14 +697,14 @@ a:hover {
     width: 100%;
     min-width: 0;
     margin: 0;
-    padding: 9px 6px;
+    padding: 5px 3px;
     border: 1px solid rgba(123, 90, 46, 0.65);
     border-bottom: 0;
     background: linear-gradient(to bottom, #2c2117, #17110c);
     box-shadow: none;
     color: #a99a7d;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 11px;
     line-height: 1.15;
 }
 
@@ -710,7 +722,14 @@ a:hover {
 }
 
 .hud-tab-panel {
-    padding-top: 14px;
+    padding-top: 8px;
+}
+
+.hud-panel > .hud-tab-panel {
+    max-height: calc(100% - 29px);
+    overflow: auto;
+    scrollbar-color: #6d532f #080605;
+    scrollbar-width: thin;
 }
 
 .hud-tab-panel[hidden] {
@@ -718,20 +737,20 @@ a:hover {
 }
 
 .champion-summary {
-    padding-bottom: 14px;
+    padding-bottom: 8px;
     text-align: center;
     border-bottom: 1px solid rgba(169, 122, 59, 0.35);
 }
 
 .sidebar-glyph {
-    width: 96px;
-    height: 96px;
-    margin: 0 auto 12px;
+    width: 66px;
+    height: 66px;
+    margin: 0 auto 6px;
     border: 2px solid #a97a3b;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 62px;
+    font-size: 44px;
     color: #f0d58a;
     background: radial-gradient(
         circle,
@@ -745,30 +764,30 @@ a:hover {
 
 .champion-summary h2 {
     margin: 0;
-    font-size: 25px;
+    font-size: 19px;
     font-weight: normal;
     color: #f1dfb1;
 }
 
 .champion-summary p {
-    margin: 7px 0 0;
+    margin: 3px 0 0;
     color: #d2b97a;
-    font-size: 14px;
+    font-size: 11px;
 }
 
 .champion-resources {
-    margin-top: 16px;
+    margin-top: 8px;
     display: grid;
-    gap: 13px;
+    gap: 7px;
 }
 
 .resource-status-label {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
     color: #b8a98b;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .resource-status-label strong {
@@ -777,7 +796,7 @@ a:hover {
 }
 
 .status-bar {
-    height: 14px;
+    height: 10px;
     overflow: hidden;
     border: 1px solid rgba(169, 122, 59, 0.55);
     background: #080605;
@@ -806,11 +825,12 @@ a:hover {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    margin-top: 18px;
-    padding: 10px;
+    margin-top: 9px;
+    padding: 6px;
     border: 1px solid rgba(169, 122, 59, 0.4);
     background: rgba(0, 0, 0, 0.35);
     color: #b8a98b;
+    font-size: 12px;
 }
 
 .champion-gold strong {
@@ -818,17 +838,17 @@ a:hover {
 }
 
 .hud-placeholder {
-    min-height: 180px;
-    padding: 24px 12px;
+    min-height: 130px;
+    padding: 18px 8px;
     text-align: center;
     color: #a99a7d;
 }
 
 .hud-placeholder h2,
 .hud-item-section h2 {
-    margin: 0 0 12px;
+    margin: 0 0 5px;
     color: #d2b97a;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: normal;
     text-align: left;
 }
@@ -839,73 +859,79 @@ a:hover {
 
 .hud-placeholder p {
     margin: 0;
-    line-height: 1.5;
+    line-height: 1.35;
+    font-size: 12px;
 }
 
 .map-area {
     min-width: 0;
-    padding: 12px;
+    height: 100%;
+    padding: 8px;
     overflow: auto;
 }
 
 .hud-item-section + .hud-item-section {
-    margin-top: 18px;
-    padding-top: 14px;
+    margin-top: 7px;
+    padding-top: 6px;
     border-top: 1px solid rgba(169, 122, 59, 0.3);
 }
 
 .equipment-groups {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: 4px;
 }
 
 .equipment-group,
 .loadout-grid {
     display: grid;
-    gap: 6px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 3px;
 }
 
 .equipment-slot,
 .loadout-slot {
-    min-height: 42px;
-    padding: 7px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: 40px;
+    padding: 2px;
     border: 1px dashed rgba(169, 122, 59, 0.55);
     background: rgba(0, 0, 0, 0.3);
+    text-align: center;
 }
 
 .equipment-slot span,
 .loadout-slot span {
     display: block;
     color: #c9b88e;
-    font-size: 12px;
+    font-size: 9px;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
 }
 
 .equipment-slot strong,
 .loadout-slot strong {
     display: block;
-    margin-top: 3px;
+    margin-top: 2px;
     color: #665b49;
-    font-size: 11px;
+    font-size: 7px;
     font-weight: normal;
     text-transform: uppercase;
 }
 
-.loadout-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .hud-section-note {
-    margin: -7px 0 9px;
+    margin: -3px 0 4px;
     color: #766b58;
-    font-size: 11px;
+    font-size: 8px;
     text-transform: uppercase;
 }
 
 .inventory-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 5px;
+    gap: 3px;
 }
 
 .inventory-slot {
@@ -919,23 +945,23 @@ a:hover {
 }
 
 .map-title {
-    padding: 10px;
-    margin-bottom: 14px;
+    padding: 5px;
+    margin-bottom: 7px;
     text-align: center;
     border: 1px solid rgba(169, 122, 59, 0.55);
     background: rgba(0, 0, 0, 0.5);
     color: #f1dfb1;
-    font-size: 22px;
+    font-size: 17px;
 }
 
 .game-map {
-    --tile-size: 32px;
+    --tile-size: clamp(24px, 2vw, 32px);
 
     display: grid;
     grid-template-columns: repeat(var(--viewport-width), var(--tile-size));
     grid-template-rows: repeat(var(--viewport-height), var(--tile-size));
     justify-content: center;
-    padding: 16px;
+    padding: 8px;
     background: #020202;
     border: 2px solid #7b5a2e;
     box-shadow:
@@ -950,7 +976,7 @@ a:hover {
     align-items: center;
     justify-content: center;
     font-family: Consolas, "Courier New", monospace;
-    font-size: 22px;
+    font-size: clamp(17px, 1.4vw, 22px);
     line-height: 1;
     user-select: none;
 }
@@ -991,7 +1017,7 @@ a:hover {
     text-shadow:
         0 0 8px rgba(255, 210, 130, 0.45),
         0 0 18px rgba(140, 35, 20, 0.65);
-    font-size: 25px;
+    font-size: clamp(19px, 1.6vw, 25px);
 }
 
 .tile-void,
@@ -1004,11 +1030,11 @@ a:hover {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 8px 18px;
-    margin-top: 14px;
+    gap: 4px 10px;
+    margin-top: 7px;
     text-align: center;
     color: #b8a98b;
-    font-size: 15px;
+    font-size: 11px;
 }
 
 .game-help strong {
@@ -1017,12 +1043,14 @@ a:hover {
 }
 
 .hud-bottom-panel {
-    margin-top: 12px;
-    padding: 10px;
+    height: 112px;
+    margin-top: 0;
+    padding: 5px;
+    overflow: hidden;
 }
 
 .hud-bottom-tabs {
-    width: min(100%, 520px);
+    width: min(100%, 420px);
 }
 
 .hud-bottom-panel .hud-tab-panel {
@@ -1030,34 +1058,47 @@ a:hover {
 }
 
 .hud-bottom-panel .game-log {
-    margin-top: 10px;
+    margin-top: 4px;
+}
+
+.hud-bottom-panel .game-log-title {
+    padding: 3px 8px;
+    font-size: 11px;
+}
+
+.hud-bottom-panel .game-log-messages {
+    height: 53px;
+    max-height: 53px;
+    padding: 4px 6px;
+}
+
+.hud-bottom-panel .game-log-entry {
+    margin-bottom: 2px;
+    padding: 2px 6px;
+    font-size: 11px;
 }
 
 .hud-bottom-placeholder {
-    min-height: 90px;
-    padding: 30px 12px;
+    min-height: 0;
+    padding: 24px 8px;
 }
 
-@media (max-width: 1350px) {
-    .game-layout {
-        grid-template-columns:
-            minmax(205px, 225px)
-            minmax(620px, 1fr)
-            minmax(265px, 290px);
+@media (max-width: 720px) {
+    .game-page {
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
     }
 
-    .game-map {
-        --tile-size: 28px;
+    .game-shell {
+        display: block;
+        height: auto;
+        min-height: 0;
     }
 
-    .hud-tab {
-        font-size: 12px;
-    }
-}
-
-@media (max-width: 1050px) {
     .game-layout {
         grid-template-columns: 1fr;
+        margin-top: 8px;
     }
 
     .game-map {
@@ -1075,7 +1116,21 @@ a:hover {
     }
 
     .hud-tab {
-        font-size: 14px;
+        font-size: 12px;
+    }
+
+    .hud-panel,
+    .map-area {
+        height: auto;
+    }
+
+    .hud-panel > .hud-tab-panel {
+        max-height: none;
+    }
+
+    .hud-bottom-panel {
+        height: 112px;
+        margin-top: 8px;
     }
 }
 .game-message {

@@ -546,7 +546,7 @@ $manaPercentage = $maximumMana > 0
                     <section class="hud-item-section">
                         <h2>Loadout</h2>
                         <div class="loadout-grid">
-                            <?php foreach (["Skill Slot 1", "Skill Slot 2", "Skill Slot 3", "Ultimate Slot", "Potion"] as $slot): ?>
+                            <?php foreach (["Skill 1", "Skill 2", "Skill 3", "Ultimate", "Potion"] as $slot): ?>
                                 <div class="loadout-slot">
                                     <span><?= e($slot) ?></span>
                                     <strong>Empty</strong>
