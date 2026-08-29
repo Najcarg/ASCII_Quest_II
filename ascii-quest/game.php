@@ -21,6 +21,7 @@ session_start();
 
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
+require_once __DIR__ . "/lib/CharacterStats.php";
 
 $pdo = getDb();
 
@@ -65,12 +66,14 @@ $stmt = $pdo->prepare("
         c.character_name,
         c.level,
         c.experience,
+        c.stat_points,
+        c.strength,
+        c.dexterity,
+        c.vitality,
+        c.energy,
+        c.fate,
         c.current_hp,
-        c.max_hp,
         c.current_mana,
-        c.max_mana,
-        c.attack,
-        c.defense,
         c.gold,
         c.current_map_id,
         c.pos_x,
@@ -102,6 +105,17 @@ if (!$character) {
     unset($_SESSION["character_id"]);
     header("Location: character_select.php");
     exit();
+}
+
+try {
+    $characterStats = CharacterStats::calculate($character);
+} catch (InvalidArgumentException $e) {
+    error_log(
+        "CharacterStats error for character " .
+        (int) $character["id"] . ": " . $e->getMessage(),
+    );
+
+    exit("Unable to load Champion statistics.");
 }
 
 /*
@@ -286,7 +300,7 @@ $viewportHeight = 15;
                         <span>HP</span>
                         <strong id="playerHp">
                             <?= e($character["current_hp"]) ?>/<?= e(
-    $character["max_hp"],
+    $characterStats["resources"]["max_life"],
 ) ?>
                         </strong>
                     </div>
@@ -294,18 +308,18 @@ $viewportHeight = 15;
                     <div>
                         <span>Mana</span>
                         <strong><?= e($character["current_mana"]) ?>/<?= e(
-    $character["max_mana"],
+    $characterStats["resources"]["max_mana"],
 ) ?></strong>
                     </div>
 
                     <div>
-                        <span>Attack</span>
-                        <strong><?= e($character["attack"]) ?></strong>
+                        <span>Melee Damage</span>
+                        <strong><?= e($characterStats["combat"]["melee_damage"]) ?></strong>
                     </div>
 
                     <div>
-                        <span>Defense</span>
-                        <strong><?= e($character["defense"]) ?></strong>
+                        <span>Toughness</span>
+                        <strong><?= e($characterStats["combat"]["toughness"]) ?></strong>
                     </div>
 
                     <div>

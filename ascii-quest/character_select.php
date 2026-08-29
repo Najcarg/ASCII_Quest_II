@@ -4,6 +4,7 @@ declare(strict_types=1);
 session_start();
 
 require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/lib/CharacterStats.php";
 
 $pdo = getDb();
 /*
@@ -42,12 +43,14 @@ $stmt = $pdo->prepare("
         c.character_name,
         c.level,
         c.experience,
-        c.max_hp,
+        c.stat_points,
+        c.strength,
+        c.dexterity,
+        c.vitality,
+        c.energy,
+        c.fate,
         c.current_hp,
-        c.max_mana,
         c.current_mana,
-        c.attack,
-        c.defense,
         c.gold,
         c.pos_x,
         c.pos_y,
@@ -102,6 +105,17 @@ $characters = $stmt->fetchAll();
         <?php else: ?>
             <div class="character-list">
                 <?php foreach ($characters as $character): ?>
+                    <?php
+                    try {
+                        $stats = CharacterStats::calculate($character);
+                    } catch (InvalidArgumentException $e) {
+                        error_log(
+                            "CharacterStats error for character " .
+                            (int) $character["id"] . ": " . $e->getMessage(),
+                        );
+                        $stats = null;
+                    }
+                    ?>
                     <article class="character-card">
                         <div class="character-glyph-frame">
                             <div class="character-glyph">
@@ -122,51 +136,39 @@ $characters = $stmt->fetchAll();
                                 <?= e($character["description"]) ?>
                             </p>
 
-                            <div class="character-stats">
-                                <div>
-                                    <span>HP</span>
-                                    <strong><?= e(
-                                        $character["current_hp"],
-                                    ) ?>/<?= e($character["max_hp"]) ?></strong>
+                            <?php if ($stats === null): ?>
+                                <div class="message error">
+                                    Unable to load Champion statistics.
                                 </div>
+                            <?php else: ?>
+                                <div class="character-stats">
+                                    <div>
+                                        <span>HP</span>
+                                        <strong><?= e($character["current_hp"]) ?>/<?= e($stats["resources"]["max_life"]) ?></strong>
+                                    </div>
 
-                                <div>
-                                    <span>Mana</span>
-                                    <strong><?= e(
-                                        $character["current_mana"],
-                                    ) ?>/<?= e(
-    $character["max_mana"],
-) ?></strong>
-                                </div>
+                                    <div>
+                                        <span>Mana</span>
+                                        <strong><?= e($character["current_mana"]) ?>/<?= e($stats["resources"]["max_mana"]) ?></strong>
+                                    </div>
 
-                                <div>
-                                    <span>Attack</span>
-                                    <strong><?= e(
-                                        $character["attack"],
-                                    ) ?></strong>
-                                </div>
+                                    <div><span>STR</span><strong><?= e($stats["main"]["strength"]) ?></strong></div>
+                                    <div><span>DEX</span><strong><?= e($stats["main"]["dexterity"]) ?></strong></div>
+                                    <div><span>VIT</span><strong><?= e($stats["main"]["vitality"]) ?></strong></div>
+                                    <div><span>ENE</span><strong><?= e($stats["main"]["energy"]) ?></strong></div>
+                                    <div><span>FATE</span><strong><?= e($stats["main"]["fate"]) ?></strong></div>
 
-                                <div>
-                                    <span>Defense</span>
-                                    <strong><?= e(
-                                        $character["defense"],
-                                    ) ?></strong>
-                                </div>
+                                    <div>
+                                        <span>XP</span>
+                                        <strong><?= e($character["experience"]) ?></strong>
+                                    </div>
 
-                                <div>
-                                    <span>XP</span>
-                                    <strong><?= e(
-                                        $character["experience"],
-                                    ) ?></strong>
+                                    <div>
+                                        <span>Gold</span>
+                                        <strong><?= e($character["gold"]) ?></strong>
+                                    </div>
                                 </div>
-
-                                <div>
-                                    <span>Gold</span>
-                                    <strong><?= e(
-                                        $character["gold"],
-                                    ) ?></strong>
-                                </div>
-                            </div>
+                            <?php endif; ?>
 
                             <form method="post" action="select_character.php">
                                 <input

@@ -28,6 +28,7 @@ session_start();
 
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
+require_once __DIR__ . "/lib/CharacterStats.php";
 
 $pdo = getDb();
 
@@ -132,7 +133,11 @@ $stmt = $pdo->prepare("
         c.pos_y,
         c.current_map_id,
         c.current_hp,
-        c.max_hp,
+        c.strength,
+        c.dexterity,
+        c.vitality,
+        c.energy,
+        c.fate,
 
         gm.map_file
     FROM characters c
@@ -165,7 +170,23 @@ $currentX = (int) $character["pos_x"];
 $currentY = (int) $character["pos_y"];
 
 $currentHp = (int) $character["current_hp"];
-$maxHp = (int) $character["max_hp"];
+
+try {
+    $characterStats = CharacterStats::calculate($character);
+} catch (InvalidArgumentException $e) {
+    error_log(
+        "CharacterStats movement error for character " .
+        (int) $character["id"] . ": " . $e->getMessage(),
+    );
+
+    sendJson([
+        "success" => false,
+        "message" => "Unable to load Champion statistics.",
+        "messages" => ["Unable to load Champion statistics."],
+    ]);
+}
+
+$maxHp = $characterStats["resources"]["max_life"];
 
 $newX = $currentX + $dx;
 $newY = $currentY + $dy;

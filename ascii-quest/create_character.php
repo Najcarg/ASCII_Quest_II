@@ -6,22 +6,18 @@ declare(strict_types=1);
 | ASCII Quest - Character Creation
 |--------------------------------------------------------------------------
 | Purpose:
-|   Lets a logged-in user create a new character.
+|   Lets a logged-in user create a new Champion.
 |
-| What this page does:
-|   1. Loads available classes from character_classes table
-|   2. Shows class preview with glyph, description, stats and growth
-|   3. Creates character using selected class base stats
-|   4. Places new character on the starting map
-|
-| Important:
-|   Class stats come from database, not hardcoded PHP.
-|   Starting position comes from game_maps table.
+| Stat authority:
+|   The browser chooses only a class and character name.
+|   Starting main stats are reconstructed on the server from the class
+|   bonuses, then CharacterStats calculates all derived values.
 */
 
 session_start();
 
 require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/lib/CharacterStats.php";
 
 $pdo = getDb();
 
@@ -50,9 +46,10 @@ $messageType = "";
 
 /*
 |--------------------------------------------------------------------------
-| Load all character classes
+| Load character classes and build trusted preview values
 |--------------------------------------------------------------------------
-| These classes appear in the dropdown and preview panel.
+| Class rows store only starting bonuses. Final preview values are calculated
+| by CharacterStats so the UI uses the same rules as character creation.
 */
 $stmt = $pdo->query("
     SELECT
@@ -61,32 +58,35 @@ $stmt = $pdo->query("
         glyph,
         ascii_fallback,
         description,
-
-        base_hp,
-        base_mana,
-        base_attack,
-        base_defense,
-        base_crit_damage,
-        base_crit_chance,
-        base_attack_count,
-        base_dodge,
-        base_heal_per_step,
-        base_life_on_hit,
-        base_mana_per_min,
-        base_mana_on_hit,
-        base_bonus_xp_on_kill,
-        base_gold_find,
-
-        hp_per_level,
-        mana_per_level,
-        attack_per_level,
-        defense_per_level,
-        dodge_per_level
+        start_strength_bonus,
+        start_dexterity_bonus,
+        start_vitality_bonus,
+        start_energy_bonus,
+        start_fate_bonus
     FROM character_classes
     ORDER BY id
 ");
 
 $classes = $stmt->fetchAll();
+$classPreviews = [];
+
+try {
+    foreach ($classes as $class) {
+        $mainStats = CharacterStats::startingMainStats($class);
+        $calculatedStats = CharacterStats::calculate($mainStats);
+
+        $classPreviews[(int) $class["id"]] = [
+            "main" => $mainStats,
+            "stats" => $calculatedStats,
+        ];
+    }
+} catch (InvalidArgumentException $e) {
+    error_log("Character class stat error: " . $e->getMessage());
+    $classes = [];
+    $classPreviews = [];
+    $message = "Unable to load Champion statistics.";
+    $messageType = "error";
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -97,11 +97,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $characterName = trim($_POST["character_name"] ?? "");
     $classId = (int) ($_POST["class_id"] ?? 0);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Validate character name and selected class
-    |--------------------------------------------------------------------------
-    */
     if ($characterName === "") {
         $message = "Character name is required.";
         $messageType = "error";
@@ -113,14 +108,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $messageType = "error";
     } else {
         /*
-        |--------------------------------------------------------------------------
-        | Load selected class
-        |--------------------------------------------------------------------------
-        | We do not trust the class_id from browser.
-        | We check that it really exists in the database.
+        |------------------------------------------------------------------
+        | Reload the selected class from MariaDB
+        |------------------------------------------------------------------
+        | Never trust starting stats supplied by the browser. The form sends
+        | only class_id; all class bonuses come from the database again here.
         */
         $classStmt = $pdo->prepare("
-            SELECT *
+            SELECT
+                id,
+                class_name,
+                start_strength_bonus,
+                start_dexterity_bonus,
+                start_vitality_bonus,
+                start_energy_bonus,
+                start_fate_bonus
             FROM character_classes
             WHERE id = :id
             LIMIT 1
@@ -137,15 +139,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $messageType = "error";
         } else {
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Load starting map
-            |--------------------------------------------------------------------------
-            | Every new character must have:
-            |   current_map_id
-            |   pos_x
-            |   pos_y
-            |
-            | Without this, game.php cannot load the dungeon.
+            |------------------------------------------------------------------
             */
             $mapStmt = $pdo->prepare("
                 SELECT id, start_x, start_y
@@ -165,36 +161,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $messageType = "error";
             } else {
                 try {
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Create new character
-                    |--------------------------------------------------------------------------
-                    | Base stats are copied from selected class.
-                    |
-                    | Later:
-                    |   Equipment bonuses should NOT be saved here.
-                    |   They should be calculated separately.
-                    */
+                    $mainStats = CharacterStats::startingMainStats($selectedClass);
+                    $calculatedStats = CharacterStats::calculate($mainStats);
+                    $maxLife = $calculatedStats["resources"]["max_life"];
+                    $maxMana = $calculatedStats["resources"]["max_mana"];
+
+                    $pdo->beginTransaction();
+
                     $insertStmt = $pdo->prepare("
                         INSERT INTO characters (
                             user_id,
                             class_id,
                             character_name,
-
                             level,
                             experience,
-
-                            max_hp,
+                            stat_points,
+                            strength,
+                            dexterity,
+                            vitality,
+                            energy,
+                            fate,
                             current_hp,
-
-                            max_mana,
                             current_mana,
-
-                            attack,
-                            defense,
-
                             gold,
-
                             current_map_id,
                             pos_x,
                             pos_y
@@ -203,21 +192,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             :user_id,
                             :class_id,
                             :character_name,
-
                             1,
                             0,
-
-                            :max_hp,
-                            :current_hp,
-
-                            :max_mana,
-                            :current_mana,
-
-                            :attack,
-                            :defense,
-
                             0,
-
+                            :strength,
+                            :dexterity,
+                            :vitality,
+                            :energy,
+                            :fate,
+                            :current_hp,
+                            :current_mana,
+                            0,
                             :current_map_id,
                             :pos_x,
                             :pos_y
@@ -228,44 +213,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         "user_id" => $_SESSION["user_id"],
                         "class_id" => $selectedClass["id"],
                         "character_name" => $characterName,
-
-                        "max_hp" => $selectedClass["base_hp"],
-                        "current_hp" => $selectedClass["base_hp"],
-
-                        "max_mana" => $selectedClass["base_mana"],
-                        "current_mana" => $selectedClass["base_mana"],
-
-                        "attack" => $selectedClass["base_attack"],
-                        "defense" => $selectedClass["base_defense"],
-
+                        "strength" => $mainStats["strength"],
+                        "dexterity" => $mainStats["dexterity"],
+                        "vitality" => $mainStats["vitality"],
+                        "energy" => $mainStats["energy"],
+                        "fate" => $mainStats["fate"],
+                        "current_hp" => $maxLife,
+                        "current_mana" => $maxMana,
                         "current_map_id" => $startingMap["id"],
                         "pos_x" => $startingMap["start_x"],
                         "pos_y" => $startingMap["start_y"],
                     ]);
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | After creating character, go to character selection
-                    |--------------------------------------------------------------------------
-                    */
+                    $pdo->commit();
+
                     header("Location: character_select.php");
                     exit();
-                } catch (PDOException $e) {
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Duplicate character name
-                    |--------------------------------------------------------------------------
-                    | This happens if user already has a character with same name.
-                    */
-                    if ($e->getCode() === "23000") {
-                        $message =
-                            "You already have a character with this name.";
+                } catch (InvalidArgumentException $e) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+
+                    error_log("Character class stat error: " . $e->getMessage());
+                    $message = "Unable to load Champion statistics.";
+                    $messageType = "error";
+                } catch (Throwable $e) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+
+                    if ($e instanceof PDOException && $e->getCode() === "23000") {
+                        $message = "You already have a character with this name.";
                         $messageType = "error";
                     } else {
-                        error_log(
-                            "Create character error: " . $e->getMessage(),
-                        );
-
+                        error_log("Create character error: " . $e->getMessage());
                         $message = "Something went wrong. Please try again.";
                         $messageType = "error";
                     }
@@ -301,11 +282,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <?php endif; ?>
 
         <form method="post" action="create_character.php">
-            <!--
-            |--------------------------------------------------------------------------
-            | Character name
-            |--------------------------------------------------------------------------
-            -->
             <label for="character_name">Character Name</label>
             <input
                 type="text"
@@ -316,54 +292,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 value="<?= e($_POST["character_name"] ?? "") ?>"
             >
 
-            <!--
-            |--------------------------------------------------------------------------
-            | Class selector
-            |--------------------------------------------------------------------------
-            | Each option includes data-* attributes.
-            | JavaScript uses these to update the preview panel.
-            -->
             <label for="class_id">Class</label>
             <select id="class_id" name="class_id" required>
-                <option value="" selected>-- Select Class --</option>
+                <option value="">-- Select Class --</option>
 
                 <?php foreach ($classes as $class): ?>
+                    <?php $preview = $classPreviews[(int) $class["id"]]; ?>
                     <option
                         value="<?= e($class["id"]) ?>"
+                        <?= (int) ($_POST["class_id"] ?? 0) === (int) $class["id"] ? "selected" : "" ?>
 
                         data-name="<?= e($class["class_name"]) ?>"
                         data-glyph="<?= e($class["glyph"]) ?>"
                         data-description="<?= e($class["description"]) ?>"
 
-                        data-hp="<?= e($class["base_hp"]) ?>"
-                        data-mana="<?= e($class["base_mana"]) ?>"
-                        data-attack="<?= e($class["base_attack"]) ?>"
-                        data-defense="<?= e($class["base_defense"]) ?>"
-
-                        data-crit-damage="<?= e($class["base_crit_damage"]) ?>"
-                        data-crit-chance="<?= e($class["base_crit_chance"]) ?>"
-                        data-dodge="<?= e($class["base_dodge"]) ?>"
-
-                        data-hp-level="<?= e($class["hp_per_level"]) ?>"
-                        data-mana-level="<?= e($class["mana_per_level"]) ?>"
-                        data-attack-level="<?= e($class["attack_per_level"]) ?>"
-                        data-defense-level="<?= e(
-                            $class["defense_per_level"],
-                        ) ?>"
-                        data-dodge-level="<?= e($class["dodge_per_level"]) ?>"
+                        data-strength="<?= e($preview["main"]["strength"]) ?>"
+                        data-dexterity="<?= e($preview["main"]["dexterity"]) ?>"
+                        data-vitality="<?= e($preview["main"]["vitality"]) ?>"
+                        data-energy="<?= e($preview["main"]["energy"]) ?>"
+                        data-fate="<?= e($preview["main"]["fate"]) ?>"
+                        data-life="<?= e($preview["stats"]["resources"]["max_life"]) ?>"
+                        data-mana="<?= e($preview["stats"]["resources"]["max_mana"]) ?>"
+                        data-melee-damage="<?= e($preview["stats"]["combat"]["melee_damage"]) ?>"
+                        data-toughness="<?= e($preview["stats"]["combat"]["toughness"]) ?>"
+                        data-spell-power="<?= e($preview["stats"]["combat"]["spell_power"]) ?>"
                     >
                         <?= e($class["glyph"]) ?> <?= e($class["class_name"]) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
 
-            <!--
-            |--------------------------------------------------------------------------
-            | Class preview
-            |--------------------------------------------------------------------------
-            | Starts blank.
-            | When player selects a class, JavaScript fills the glyph/stats.
-            -->
             <div class="class-preview">
                 <div class="glyph-frame">
                     <div id="previewGlyph" class="big-glyph"></div>
@@ -376,75 +334,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </p>
 
                 <div class="stats-grid">
-                    <div>
-                        <span>HP</span>
-                        <strong id="statHp"></strong>
-                    </div>
-
-                    <div>
-                        <span>Mana</span>
-                        <strong id="statMana"></strong>
-                    </div>
-
-                    <div>
-                        <span>Attack</span>
-                        <strong id="statAttack"></strong>
-                    </div>
-
-                    <div>
-                        <span>Defense</span>
-                        <strong id="statDefense"></strong>
-                    </div>
-
-                    <div>
-                        <span>Crit Damage</span>
-                        <strong id="statCritDamage"></strong>
-                    </div>
-
-                    <div>
-                        <span>Crit Chance</span>
-                        <strong id="statCritChance"></strong>
-                    </div>
-
-                    <div>
-                        <span>Dodge</span>
-                        <strong id="statDodge"></strong>
-                    </div>
+                    <div><span>Strength</span><strong id="statStrength"></strong></div>
+                    <div><span>Dexterity</span><strong id="statDexterity"></strong></div>
+                    <div><span>Vitality</span><strong id="statVitality"></strong></div>
+                    <div><span>Energy</span><strong id="statEnergy"></strong></div>
+                    <div><span>Fate</span><strong id="statFate"></strong></div>
+                    <div><span>Life</span><strong id="statLife"></strong></div>
+                    <div><span>Mana</span><strong id="statMana"></strong></div>
+                    <div><span>Melee Damage</span><strong id="statMeleeDamage"></strong></div>
+                    <div><span>Toughness</span><strong id="statToughness"></strong></div>
+                    <div><span>Spell Power</span><strong id="statSpellPower"></strong></div>
                 </div>
 
                 <div class="growth-box">
-                    <p>Growth per level</p>
-
-                    <div class="stats-grid">
-                        <div>
-                            <span>HP</span>
-                            <strong id="growthHp"></strong>
-                        </div>
-
-                        <div>
-                            <span>Mana</span>
-                            <strong id="growthMana"></strong>
-                        </div>
-
-                        <div>
-                            <span>Attack</span>
-                            <strong id="growthAttack"></strong>
-                        </div>
-
-                        <div>
-                            <span>Defense</span>
-                            <strong id="growthDefense"></strong>
-                        </div>
-
-                        <div>
-                            <span>Dodge</span>
-                            <strong id="growthDodge"></strong>
-                        </div>
-                    </div>
+                    <p>Each level after Level 1 grants 5 stat points.</p>
                 </div>
             </div>
 
-            <button type="submit">Create Character</button>
+            <button type="submit" <?= $classes === [] ? "disabled" : "" ?>>Create Character</button>
         </form>
 
         <p class="small-text">
@@ -458,9 +365,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 |--------------------------------------------------------------------------
 | ASCII Quest - Character Class Preview
 |--------------------------------------------------------------------------
-| Purpose:
-|   Updates big glyph, description, base stats and growth stats
-|   when player selects a class from dropdown.
+| The browser only displays values calculated by PHP. No game-stat formula
+| is duplicated in JavaScript.
 */
 
 const classSelect = document.getElementById("class_id");
@@ -469,64 +375,42 @@ const previewGlyph = document.getElementById("previewGlyph");
 const previewName = document.getElementById("previewName");
 const previewDescription = document.getElementById("previewDescription");
 
-const statHp = document.getElementById("statHp");
+const statStrength = document.getElementById("statStrength");
+const statDexterity = document.getElementById("statDexterity");
+const statVitality = document.getElementById("statVitality");
+const statEnergy = document.getElementById("statEnergy");
+const statFate = document.getElementById("statFate");
+const statLife = document.getElementById("statLife");
 const statMana = document.getElementById("statMana");
-const statAttack = document.getElementById("statAttack");
-const statDefense = document.getElementById("statDefense");
-const statCritDamage = document.getElementById("statCritDamage");
-const statCritChance = document.getElementById("statCritChance");
-const statDodge = document.getElementById("statDodge");
+const statMeleeDamage = document.getElementById("statMeleeDamage");
+const statToughness = document.getElementById("statToughness");
+const statSpellPower = document.getElementById("statSpellPower");
 
-const growthHp = document.getElementById("growthHp");
-const growthMana = document.getElementById("growthMana");
-const growthAttack = document.getElementById("growthAttack");
-const growthDefense = document.getElementById("growthDefense");
-const growthDodge = document.getElementById("growthDodge");
-
-/*
-|--------------------------------------------------------------------------
-| Helper: safely set text
-|--------------------------------------------------------------------------
-*/
 function setText(element, value) {
     element.textContent = value || "";
 }
 
-/*
-|--------------------------------------------------------------------------
-| Clear preview when no class is selected
-|--------------------------------------------------------------------------
-*/
 function clearClassPreview() {
     setText(previewGlyph, "");
     setText(previewName, "No class selected");
     setText(previewDescription, "Select a class to see its description.");
 
-    const statElements = [
-        statHp,
+    [
+        statStrength,
+        statDexterity,
+        statVitality,
+        statEnergy,
+        statFate,
+        statLife,
         statMana,
-        statAttack,
-        statDefense,
-        statCritDamage,
-        statCritChance,
-        statDodge,
-        growthHp,
-        growthMana,
-        growthAttack,
-        growthDefense,
-        growthDodge
-    ];
-
-    statElements.forEach(function (element) {
+        statMeleeDamage,
+        statToughness,
+        statSpellPower
+    ].forEach(function (element) {
         setText(element, "");
     });
 }
 
-/*
-|--------------------------------------------------------------------------
-| Update preview when class is selected
-|--------------------------------------------------------------------------
-*/
 function updateClassPreview() {
     const selected = classSelect.options[classSelect.selectedIndex];
 
@@ -539,36 +423,25 @@ function updateClassPreview() {
     setText(previewName, selected.dataset.name);
     setText(previewDescription, selected.dataset.description);
 
-    setText(statHp, selected.dataset.hp);
+    setText(statStrength, selected.dataset.strength);
+    setText(statDexterity, selected.dataset.dexterity);
+    setText(statVitality, selected.dataset.vitality);
+    setText(statEnergy, selected.dataset.energy);
+    setText(statFate, selected.dataset.fate);
+    setText(statLife, selected.dataset.life);
     setText(statMana, selected.dataset.mana);
-    setText(statAttack, selected.dataset.attack);
-    setText(statDefense, selected.dataset.defense);
-
-    setText(statCritDamage, selected.dataset.critDamage);
-    setText(statCritChance, selected.dataset.critChance + "%");
-    setText(statDodge, selected.dataset.dodge + "%");
-
-    setText(growthHp, "+" + selected.dataset.hpLevel);
-    setText(growthMana, "+" + selected.dataset.manaLevel);
-    setText(growthAttack, "+" + selected.dataset.attackLevel);
-    setText(growthDefense, "+" + selected.dataset.defenseLevel);
-    setText(growthDodge, "+" + selected.dataset.dodgeLevel);
+    setText(statMeleeDamage, selected.dataset.meleeDamage);
+    setText(statToughness, selected.dataset.toughness);
+    setText(statSpellPower, selected.dataset.spellPower);
 }
 
-/*
-|--------------------------------------------------------------------------
-| Event listener
-|--------------------------------------------------------------------------
-*/
 classSelect.addEventListener("change", updateClassPreview);
 
-/*
-|--------------------------------------------------------------------------
-| First page load
-|--------------------------------------------------------------------------
-| Keep preview blank unless user selects a class.
-*/
-clearClassPreview();
+if (classSelect.value) {
+    updateClassPreview();
+} else {
+    clearClassPreview();
+}
 </script>
 
 </body>
