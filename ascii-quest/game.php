@@ -274,6 +274,11 @@ $hpPercentage = $maximumLife > 0
 $manaPercentage = $maximumMana > 0
     ? max(0.0, min(100.0, ($currentMana / $maximumMana) * 100.0))
     : 0.0;
+$styleVersion = (int) filemtime(__DIR__ . "/css/style.css");
+$explorationHudVersion = (int) filemtime(
+    __DIR__ . "/js/exploration_hud.js",
+);
+$gameControlsVersion = (int) filemtime(__DIR__ . "/js/game_controls.js");
 ?>
 
 <!DOCTYPE html>
@@ -281,7 +286,7 @@ $manaPercentage = $maximumMana > 0
 <head>
     <meta charset="UTF-8">
     <title>ASCII Quest - Game</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=<?= $styleVersion ?>">
 </head>
 <body>
 
@@ -423,10 +428,6 @@ $manaPercentage = $maximumMana > 0
                         </div>
                     </div>
 
-                    <div class="champion-gold">
-                        <span>Gold</span>
-                        <strong id="playerGold"><?= e($character["gold"]) ?></strong>
-                    </div>
                 </section>
 
                 <section
@@ -484,6 +485,69 @@ $manaPercentage = $maximumMana > 0
                         Full map: <?= e($mapWidth) ?> x <?= e($mapHeight) ?>
                     </span>
                 </div>
+
+                <section class="hud-bottom-panel" data-tab-group>
+                    <div class="hud-tabs hud-bottom-tabs" role="tablist" aria-label="Exploration information panels">
+                        <button
+                            type="button"
+                            class="hud-tab is-active"
+                            role="tab"
+                            aria-selected="true"
+                            aria-controls="bottom-information"
+                            data-tab-target="bottom-information"
+                        >Information</button>
+                        <button
+                            type="button"
+                            class="hud-tab"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="bottom-server"
+                            data-tab-target="bottom-server"
+                        >Server Info</button>
+                        <button
+                            type="button"
+                            class="hud-tab"
+                            role="tab"
+                            aria-selected="false"
+                            aria-controls="bottom-chat"
+                            data-tab-target="bottom-chat"
+                        >Chat</button>
+                    </div>
+
+                    <section
+                        id="bottom-information"
+                        class="hud-tab-panel"
+                        role="tabpanel"
+                        data-tab-panel
+                    >
+                        <div class="game-log">
+                            <div class="game-log-title">Exploration Information</div>
+                            <div id="gameLogMessages" class="game-log-messages">
+                                <!-- JavaScript adds exploration messages here -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <section
+                        id="bottom-server"
+                        class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
+                        role="tabpanel"
+                        data-tab-panel
+                        hidden
+                    >
+                        <p>Server information will appear here in a later milestone.</p>
+                    </section>
+
+                    <section
+                        id="bottom-chat"
+                        class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
+                        role="tabpanel"
+                        data-tab-panel
+                        hidden
+                    >
+                        <p>Chat will be implemented in a later milestone.</p>
+                    </section>
+                </section>
             </section>
 
             <aside class="hud-panel hud-right-panel" data-tab-group>
@@ -522,24 +586,58 @@ $manaPercentage = $maximumMana > 0
                 >
                     <section class="hud-item-section">
                         <h2>Equipment</h2>
-                        <div class="equipment-groups">
-                            <div class="equipment-group">
-                                <?php foreach (["Helm", "Chest", "Gloves", "Belt", "Boots"] as $slot): ?>
-                                    <div class="equipment-slot">
-                                        <span><?= e($slot) ?></span>
-                                        <strong>Empty</strong>
-                                    </div>
-                                <?php endforeach; ?>
+                        <div class="paper-doll" aria-label="Empty equipment paper doll">
+                            <div class="equipment-slot equipment-slot-helm" data-equipment-slot="helm">
+                                <span class="equipment-slot-glyph" aria-hidden="true">◇</span>
+                                <span>Helm</span>
                             </div>
+                            <div class="equipment-slot equipment-slot-gloves" data-equipment-slot="gloves">
+                                <span class="equipment-slot-glyph" aria-hidden="true">◇</span>
+                                <span>Gloves</span>
+                            </div>
+                            <div class="equipment-slot equipment-slot-chest" data-equipment-slot="chest">
+                                <span class="equipment-slot-glyph" aria-hidden="true">◇</span>
+                                <span>Chest</span>
+                            </div>
+                            <div class="equipment-slot equipment-slot-ring" data-equipment-slot="ring">
+                                <span class="equipment-slot-glyph" aria-hidden="true">◇</span>
+                                <span>Ring</span>
+                            </div>
+                            <div class="equipment-slot equipment-slot-weapon" data-equipment-slot="weapon">
+                                <span class="equipment-slot-glyph" aria-hidden="true">╱</span>
+                                <span>Weapon</span>
+                            </div>
+                            <div class="paper-doll-body" aria-label="Champion body">
+                                <pre aria-hidden="true"> O
+/|\
+/ \</pre>
+                                <span>Body</span>
+                            </div>
+                            <div class="equipment-slot equipment-slot-offhand" data-equipment-slot="off-hand">
+                                <span class="equipment-slot-glyph" aria-hidden="true">▱</span>
+                                <span>Off-Hand</span>
+                            </div>
+                            <div class="equipment-slot equipment-slot-amulet" data-equipment-slot="amulet">
+                                <span class="equipment-slot-glyph" aria-hidden="true">◇</span>
+                                <span>Amulet</span>
+                            </div>
+                            <div class="equipment-slot equipment-slot-belt" data-equipment-slot="belt">
+                                <span class="equipment-slot-glyph" aria-hidden="true">◇</span>
+                                <span>Belt</span>
+                            </div>
+                            <div class="equipment-slot equipment-slot-charm" data-equipment-slot="charm">
+                                <span class="equipment-slot-glyph" aria-hidden="true">◇</span>
+                                <span>Charm</span>
+                            </div>
+                            <div class="equipment-slot equipment-slot-boots" data-equipment-slot="boots">
+                                <span class="equipment-slot-glyph" aria-hidden="true">◇</span>
+                                <span>Boots</span>
+                            </div>
+                        </div>
 
-                            <div class="equipment-group">
-                                <?php foreach (["Weapon", "Off-Hand", "Ring", "Amulet", "Charm"] as $slot): ?>
-                                    <div class="equipment-slot">
-                                        <span><?= e($slot) ?></span>
-                                        <strong>Empty</strong>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
+                        <div class="equipment-gold">
+                            <span>Gold</span>
+                            <strong id="playerGold"><?= e($character["gold"]) ?></strong>
                         </div>
                     </section>
 
@@ -593,68 +691,6 @@ $manaPercentage = $maximumMana > 0
             </aside>
         </section>
 
-        <section class="hud-bottom-panel" data-tab-group>
-            <div class="hud-tabs hud-bottom-tabs" role="tablist" aria-label="Exploration information panels">
-                <button
-                    type="button"
-                    class="hud-tab is-active"
-                    role="tab"
-                    aria-selected="true"
-                    aria-controls="bottom-information"
-                    data-tab-target="bottom-information"
-                >Information</button>
-                <button
-                    type="button"
-                    class="hud-tab"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="bottom-server"
-                    data-tab-target="bottom-server"
-                >Server Info</button>
-                <button
-                    type="button"
-                    class="hud-tab"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="bottom-chat"
-                    data-tab-target="bottom-chat"
-                >Chat</button>
-            </div>
-
-            <section
-                id="bottom-information"
-                class="hud-tab-panel"
-                role="tabpanel"
-                data-tab-panel
-            >
-                <div class="game-log">
-                    <div class="game-log-title">Exploration Information</div>
-                    <div id="gameLogMessages" class="game-log-messages">
-                        <!-- JavaScript adds exploration messages here -->
-                    </div>
-                </div>
-            </section>
-
-            <section
-                id="bottom-server"
-                class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
-                role="tabpanel"
-                data-tab-panel
-                hidden
-            >
-                <p>Server information will appear here in a later milestone.</p>
-            </section>
-
-            <section
-                id="bottom-chat"
-                class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
-                role="tabpanel"
-                data-tab-panel
-                hidden
-            >
-                <p>Chat will be implemented in a later milestone.</p>
-            </section>
-        </section>
     </section>
 </main>
 
@@ -699,8 +735,8 @@ window.ASCII_QUEST_STATE = {
 };
 </script>
 
-<script src="js/exploration_hud.js"></script>
-<script src="js/game_controls.js"></script>
+<script src="js/exploration_hud.js?v=<?= $explorationHudVersion ?>"></script>
+<script src="js/game_controls.js?v=<?= $gameControlsVersion ?>"></script>
 
 </body>
 </html>

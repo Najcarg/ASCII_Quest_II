@@ -13,6 +13,10 @@ const hudPath = path.join(
 );
 
 const hud = fs.existsSync(hudPath) ? require(hudPath) : {};
+const gameMarkup = fs.readFileSync(
+    path.join(__dirname, "..", "ascii-quest", "game.php"),
+    "utf8",
+);
 
 function createClassList(initialClasses = []) {
     const classes = new Set(initialClasses);
@@ -70,6 +74,27 @@ function createTabGroup(buttons, panels) {
             }
 
             return [];
+        },
+    };
+}
+
+function createResourceDocument(resourceName) {
+    const attributes = {};
+    const elements = {
+        [`player${resourceName}`]: { textContent: "" },
+        [`player${resourceName}Bar`]: {
+            setAttribute(name, value) {
+                attributes[name] = value;
+            },
+        },
+        [`player${resourceName}Fill`]: { style: {} },
+    };
+
+    return {
+        attributes,
+        elements,
+        getElementById(id) {
+            return elements[id] || null;
         },
     };
 }
@@ -148,6 +173,54 @@ const tests = {
         assert.equal(fill.style.width, "22.5%");
         assert.equal(attributes["aria-valuenow"], "45");
         assert.equal(attributes["aria-valuemax"], "200");
+    },
+
+    "trap HP response synchronizes the game DOM value and fill"() {
+        assert.equal(
+            typeof hud.synchronizeResourceDisplay,
+            "function",
+            "The game DOM resource synchronizer must exist.",
+        );
+
+        const gameDocument = createResourceDocument("Hp");
+
+        assert.equal((gameMarkup.match(/id="playerHp"/g) || []).length, 1);
+        assert.equal((gameMarkup.match(/id="playerHpBar"/g) || []).length, 1);
+        assert.equal((gameMarkup.match(/id="playerHpFill"/g) || []).length, 1);
+
+        hud.synchronizeResourceDisplay(gameDocument, "Hp", 110, 220);
+
+        assert.equal(gameDocument.elements.playerHp.textContent, "110/220");
+        assert.equal(gameDocument.elements.playerHpFill.style.width, "50%");
+        assert.equal(gameDocument.attributes["aria-valuenow"], "110");
+        assert.equal(gameDocument.attributes["aria-valuemax"], "220");
+    },
+
+    "Mana uses the same server-value DOM synchronization"() {
+        assert.equal(
+            typeof hud.synchronizeResourceDisplay,
+            "function",
+            "The game DOM resource synchronizer must exist.",
+        );
+
+        const gameDocument = createResourceDocument("Mana");
+
+        assert.equal((gameMarkup.match(/id="playerMana"/g) || []).length, 1);
+        assert.equal(
+            (gameMarkup.match(/id="playerManaBar"/g) || []).length,
+            1,
+        );
+        assert.equal(
+            (gameMarkup.match(/id="playerManaFill"/g) || []).length,
+            1,
+        );
+
+        hud.synchronizeResourceDisplay(gameDocument, "Mana", 45, 180);
+
+        assert.equal(gameDocument.elements.playerMana.textContent, "45/180");
+        assert.equal(gameDocument.elements.playerManaFill.style.width, "25%");
+        assert.equal(gameDocument.attributes["aria-valuenow"], "45");
+        assert.equal(gameDocument.attributes["aria-valuemax"], "180");
     },
 };
 

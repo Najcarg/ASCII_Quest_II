@@ -86,10 +86,35 @@
         bar.setAttribute("aria-valuemax", String(safeMaximum));
     }
 
+    function synchronizeResourceDisplay(
+        documentRoot,
+        resourceName,
+        currentValue,
+        maximumValue,
+    ) {
+        const value = documentRoot.getElementById("player" + resourceName);
+        const bar = documentRoot.getElementById(
+            "player" + resourceName + "Bar",
+        );
+        const fill = documentRoot.getElementById(
+            "player" + resourceName + "Fill",
+        );
+
+        if (!value || !bar || !fill) {
+            return false;
+        }
+
+        value.textContent = String(currentValue) + "/" + String(maximumValue);
+        updateResourceBar(bar, fill, currentValue, maximumValue);
+
+        return true;
+    }
+
     return {
         activateTab,
         initializeTabGroup,
         initializeTabs,
+        synchronizeResourceDisplay,
         updateResourceBar,
     };
 });

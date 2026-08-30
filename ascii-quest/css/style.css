@@ -561,10 +561,7 @@ a:hover {
     }
 }
 .game-page {
-    height: 100vh;
-    min-height: 620px;
     padding: 8px;
-    overflow: hidden;
     background:
         radial-gradient(
             circle at center,
@@ -577,13 +574,8 @@ a:hover {
 }
 
 .game-shell {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr) 112px;
-    gap: 8px;
     width: 100%;
     max-width: 1760px;
-    height: calc(100vh - 16px);
-    min-height: 604px;
     margin: 0 auto;
     padding: 8px;
     border: 2px solid #7b5a2e;
@@ -665,10 +657,9 @@ a:hover {
         clamp(168px, 17vw, 240px)
         minmax(0, 1fr)
         clamp(220px, 21vw, 300px);
-    align-items: stretch;
-    min-height: 0;
+    align-items: start;
     gap: 8px;
-    margin-top: 0;
+    margin-top: 8px;
 }
 
 .hud-panel,
@@ -681,7 +672,6 @@ a:hover {
 
 .hud-panel {
     min-width: 0;
-    height: 100%;
     padding: 6px;
     overflow: hidden;
 }
@@ -726,10 +716,7 @@ a:hover {
 }
 
 .hud-panel > .hud-tab-panel {
-    max-height: calc(100% - 29px);
-    overflow: auto;
-    scrollbar-color: #6d532f #080605;
-    scrollbar-width: thin;
+    max-height: none;
 }
 
 .hud-tab-panel[hidden] {
@@ -821,22 +808,6 @@ a:hover {
     background: linear-gradient(to right, #6d532f, #c69b4a);
 }
 
-.champion-gold {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 9px;
-    padding: 6px;
-    border: 1px solid rgba(169, 122, 59, 0.4);
-    background: rgba(0, 0, 0, 0.35);
-    color: #b8a98b;
-    font-size: 12px;
-}
-
-.champion-gold strong {
-    color: #f0d58a;
-}
-
 .hud-placeholder {
     min-height: 130px;
     padding: 18px 8px;
@@ -865,9 +836,7 @@ a:hover {
 
 .map-area {
     min-width: 0;
-    height: 100%;
     padding: 8px;
-    overflow: auto;
 }
 
 .hud-item-section + .hud-item-section {
@@ -876,19 +845,12 @@ a:hover {
     border-top: 1px solid rgba(169, 122, 59, 0.3);
 }
 
-.equipment-groups {
-    display: grid;
-    gap: 4px;
-}
-
-.equipment-group,
 .loadout-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 3px;
 }
 
-.equipment-slot,
 .loadout-slot {
     display: flex;
     flex-direction: column;
@@ -902,7 +864,6 @@ a:hover {
     text-align: center;
 }
 
-.equipment-slot span,
 .loadout-slot span {
     display: block;
     color: #c9b88e;
@@ -911,7 +872,6 @@ a:hover {
     overflow-wrap: anywhere;
 }
 
-.equipment-slot strong,
 .loadout-slot strong {
     display: block;
     margin-top: 2px;
@@ -919,6 +879,149 @@ a:hover {
     font-size: 7px;
     font-weight: normal;
     text-transform: uppercase;
+}
+
+.paper-doll {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+        ". helm ."
+        "gloves chest ring"
+        "weapon body offhand"
+        "amulet belt charm"
+        ". boots .";
+    gap: 3px;
+    padding: 4px;
+    border: 1px solid rgba(123, 90, 46, 0.4);
+    background:
+        radial-gradient(circle, rgba(111, 29, 20, 0.16), transparent 56%),
+        rgba(0, 0, 0, 0.24);
+}
+
+.equipment-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 34px;
+    padding: 2px;
+    border: 1px dashed rgba(169, 122, 59, 0.55);
+    background: rgba(0, 0, 0, 0.42);
+    color: #c9b88e;
+    text-align: center;
+}
+
+.equipment-slot > span:last-child {
+    font-size: 8px;
+    line-height: 1;
+    overflow-wrap: anywhere;
+}
+
+.equipment-slot-glyph {
+    color: #665b49;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.equipment-slot-helm {
+    grid-area: helm;
+}
+
+.equipment-slot-gloves {
+    grid-area: gloves;
+}
+
+.equipment-slot-chest {
+    grid-area: chest;
+}
+
+.equipment-slot-ring {
+    grid-area: ring;
+}
+
+.equipment-slot-weapon {
+    grid-area: weapon;
+}
+
+.equipment-slot-offhand {
+    grid-area: offhand;
+}
+
+.equipment-slot-amulet {
+    grid-area: amulet;
+}
+
+.equipment-slot-belt {
+    grid-area: belt;
+}
+
+.equipment-slot-charm {
+    grid-area: charm;
+}
+
+.equipment-slot-boots {
+    grid-area: boots;
+}
+
+.equipment-slot-weapon,
+.equipment-slot-offhand {
+    min-height: 52px;
+    border-style: solid;
+    background: linear-gradient(
+        to bottom,
+        rgba(87, 58, 30, 0.28),
+        rgba(0, 0, 0, 0.5)
+    );
+}
+
+.equipment-slot-weapon .equipment-slot-glyph,
+.equipment-slot-offhand .equipment-slot-glyph {
+    font-size: 23px;
+}
+
+.paper-doll-body {
+    grid-area: body;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    color: #8d7043;
+    text-align: center;
+    text-shadow: 0 0 8px rgba(217, 191, 122, 0.18);
+}
+
+.paper-doll-body pre {
+    margin: 0;
+    color: #b4945e;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+    line-height: 0.85;
+}
+
+.paper-doll-body span {
+    margin-top: 3px;
+    color: #665b49;
+    font-size: 7px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.equipment-gold {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+    padding: 4px 6px;
+    border: 1px solid rgba(169, 122, 59, 0.4);
+    background: rgba(0, 0, 0, 0.35);
+    color: #b8a98b;
+    font-size: 11px;
+}
+
+.equipment-gold strong {
+    color: #f0d58a;
 }
 
 .hud-section-note {
@@ -1043,8 +1146,7 @@ a:hover {
 }
 
 .hud-bottom-panel {
-    height: 112px;
-    margin-top: 0;
+    margin-top: 8px;
     padding: 5px;
     overflow: hidden;
 }
@@ -1085,15 +1187,11 @@ a:hover {
 
 @media (max-width: 720px) {
     .game-page {
-        height: auto;
-        min-height: 100vh;
-        overflow: visible;
+        padding: 4px;
     }
 
     .game-shell {
-        display: block;
-        height: auto;
-        min-height: 0;
+        padding: 6px;
     }
 
     .game-layout {
@@ -1119,19 +1217,6 @@ a:hover {
         font-size: 12px;
     }
 
-    .hud-panel,
-    .map-area {
-        height: auto;
-    }
-
-    .hud-panel > .hud-tab-panel {
-        max-height: none;
-    }
-
-    .hud-bottom-panel {
-        height: 112px;
-        margin-top: 8px;
-    }
 }
 .game-message {
     margin-top: 14px;

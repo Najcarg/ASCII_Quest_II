@@ -19,8 +19,7 @@ const gameLogMessages = document.getElementById("gameLogMessages");
 const playerPosition = document.getElementById("playerPosition");
 const playerGold = document.getElementById("playerGold");
 const playerHp = document.getElementById("playerHp");
-const playerHpBar = document.getElementById("playerHpBar");
-const playerHpFill = document.getElementById("playerHpFill");
+const playerMana = document.getElementById("playerMana");
 
 let isMoving = false;
 /*
@@ -281,18 +280,49 @@ function applyCharacterUpdates(characterUpdates) {
         const maxHp = String(characterUpdates.max_hp ?? "");
 
         if (maxHp !== "") {
-            playerHp.textContent = currentHp + "/" + maxHp;
-
-            if (window.ASCIIQuestHud) {
-                window.ASCIIQuestHud.updateResourceBar(
-                    playerHpBar,
-                    playerHpFill,
+            if (
+                typeof window.ASCIIQuestHud?.synchronizeResourceDisplay ===
+                "function"
+            ) {
+                window.ASCIIQuestHud.synchronizeResourceDisplay(
+                    document,
+                    "Hp",
                     characterUpdates.current_hp,
                     characterUpdates.max_hp,
                 );
+            } else {
+                playerHp.textContent = currentHp + "/" + maxHp;
             }
         } else {
             playerHp.textContent = currentHp;
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mana update
+    |--------------------------------------------------------------------------
+    */
+    if (characterUpdates.current_mana !== undefined && playerMana) {
+        const currentMana = String(characterUpdates.current_mana);
+        const maxMana = String(characterUpdates.max_mana ?? "");
+
+        if (maxMana !== "") {
+            if (
+                typeof window.ASCIIQuestHud?.synchronizeResourceDisplay ===
+                "function"
+            ) {
+                window.ASCIIQuestHud.synchronizeResourceDisplay(
+                    document,
+                    "Mana",
+                    characterUpdates.current_mana,
+                    characterUpdates.max_mana,
+                );
+            } else {
+                playerMana.textContent = currentMana + "/" + maxMana;
+            }
+        } else {
+            playerMana.textContent = currentMana;
         }
     }
 }
