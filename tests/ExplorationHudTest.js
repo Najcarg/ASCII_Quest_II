@@ -214,6 +214,79 @@ function createAllocationDocument() {
     };
 }
 
+function createWarpDocument() {
+    function createElement(tagName) {
+        const listeners = {};
+        const element = {
+            tagName,
+            children: [],
+            className: "",
+            dataset: {},
+            disabled: false,
+            hidden: false,
+            textContent: "",
+            addEventListener(eventName, listener) {
+                listeners[eventName] = listener;
+            },
+            appendChild(child) {
+                this.children.push(child);
+            },
+            click(event = { target: this }) {
+                return listeners.click?.(event);
+            },
+            closest(selector) {
+                return selector === "[data-warp-travel]" &&
+                    this.dataset.warpTravel
+                    ? this
+                    : null;
+            },
+            listeners,
+        };
+
+        Object.defineProperty(element, "innerHTML", {
+            set(value) {
+                if (value === "") {
+                    this.children = [];
+                }
+            },
+        });
+
+        return element;
+    }
+
+    const elements = {
+        "left-warp": createElement("section"),
+        warpDestinationList: createElement("div"),
+        warpConfirmation: createElement("div"),
+        warpConfirmationText: createElement("p"),
+        warpConfirmButton: createElement("button"),
+        warpCancelButton: createElement("button"),
+        warpMessage: createElement("div"),
+        playerGold: createElement("strong"),
+    };
+    elements["left-warp"].dataset = {
+        csrfToken: "csrf-token",
+        currentGold: "20",
+        destinations: JSON.stringify([
+            {
+                id: "forgotten_cave",
+                name: "Forgotten Cave",
+                cost: 10,
+                current_location: false,
+            },
+        ]),
+    };
+    elements.warpConfirmation.hidden = true;
+
+    return {
+        elements,
+        createElement,
+        getElementById(id) {
+            return elements[id] || null;
+        },
+    };
+}
+
 function authoritativeAllocationState(stat = "strength") {
     const state = {
         stat_points: 0,
@@ -307,6 +380,278 @@ function authoritativeAllocationState(stat = "strength") {
 }
 
 const tests = {
+    "Warp destinations expose current, disabled, and travel actions"() {
+        assert.equal(typeof hud.buildWarpDestinationView, "function");
+
+        const destinations = hud.buildWarpDestinationView(
+            [
+                { id: "deep_cave", name: "Deep Cave", cost: 5, current_location: true },
+                { id: "forgotten_cave", name: "Forgotten Cave", cost: 10, current_location: false },
+            ],
+            7,
+        );
+
+        assert.deepEqual(destinations[0], {
+            id: "deep_cave",
+            name: "Deep Cave",
+            cost: 5,
+            action: "current",
+            actionLabel: "CURRENT LOCATION",
+            disabled: true,
+        });
+        assert.equal(destinations[1].action, "insufficient");
+        assert.equal(destinations[1].actionLabel, "NOT ENOUGH GOLD");
+        assert.equal(destinations[1].disabled, true);
+
+        const affordable = hud.buildWarpDestinationView(
+            [{ id: "forgotten_cave", name: "Forgotten Cave", cost: 10, current_location: false }],
+            10,
+        );
+        assert.equal(affordable[0].action, "travel");
+        assert.equal(affordable[0].actionLabel, "WARP");
+        assert.equal(affordable[0].disabled, false);
+    },
+
+    "Warp confirmation cancel sends no request"() {
+        assert.equal(typeof hud.createWarpTravelController, "function");
+
+        let selected = null;
+        let requests = 0;
+        const controller = hud.createWarpTravelController({
+            csrfToken: "csrf",
+            fetchImplementation() {
+                requests++;
+            },
+            onConfirmation(destination) {
+                selected = destination;
+            },
+        });
+        const destination = {
+            id: "forgotten_cave",
+            name: "Forgotten Cave",
+            cost: 10,
+            action: "travel",
+        };
+
+        controller.select(destination);
+        assert.equal(selected, destination);
+        controller.cancel();
+
+        assert.equal(selected, null);
+        assert.equal(requests, 0);
+    },
+
+    async "Warp confirm posts only identifier and CSRF and blocks duplicate submission"() {
+        const requests = [];
+        let releaseResponse;
+        const pendingResponse = new Promise(function (resolve) {
+            releaseResponse = resolve;
+        });
+        const controller = hud.createWarpTravelController({
+            csrfToken: "csrf-token",
+            fetchImplementation(url, options) {
+                requests.push({ url, options });
+                return pendingResponse;
+            },
+        });
+        controller.select({
+            id: "forgotten_cave",
+            name: "Forgotten Cave",
+            cost: 10,
+            action: "travel",
+        });
+
+        const first = controller.confirm();
+        const duplicate = controller.confirm();
+        assert.equal(requests.length, 1);
+        assert.equal(requests[0].url, "travel_warp.php");
+        assert.equal(requests[0].options.body.get("warp_id"), "forgotten_cave");
+        assert.equal(requests[0].options.body.get("csrf_token"), "csrf-token");
+        assert.equal(requests[0].options.body.has("cost"), false);
+        assert.equal(requests[0].options.body.has("map"), false);
+        assert.equal(requests[0].options.body.has("arrival_x"), false);
+
+        releaseResponse({
+            ok: true,
+            async json() {
+                return {
+                    success: true,
+                    reload: true,
+                    character_updates: { gold: 10 },
+                };
+            },
+        });
+        await first;
+        await duplicate;
+    },
+
+    async "Successful Warp travel updates Gold and requests authoritative map reload"() {
+        let travelResult = null;
+        const controller = hud.createWarpTravelController({
+            csrfToken: "csrf-token",
+            async fetchImplementation() {
+                return {
+                    ok: true,
+                    async json() {
+                        return {
+                            success: true,
+                            reload: true,
+                            destination: { map_name: "Forgotten Cave" },
+                            character_updates: { gold: 10 },
+                        };
+                    },
+                };
+            },
+            onTravel(result) {
+                travelResult = result;
+            },
+        });
+        controller.select({ id: "forgotten_cave", action: "travel" });
+
+        await controller.confirm();
+
+        assert.equal(travelResult.character_updates.gold, 10);
+        assert.equal(travelResult.reload, true);
+        assert.equal(travelResult.destination.map_name, "Forgotten Cave");
+    },
+
+    async "Warp server errors are delivered as safe display text"() {
+        let displayedError = "";
+        const controller = hud.createWarpTravelController({
+            csrfToken: "csrf-token",
+            async fetchImplementation() {
+                return {
+                    ok: false,
+                    async json() {
+                        return { success: false, message: "Not enough Gold to use that Warp." };
+                    },
+                };
+            },
+            onError(message) {
+                displayedError = message;
+            },
+        });
+        controller.select({ id: "forgotten_cave", action: "travel" });
+
+        await controller.confirm();
+
+        assert.equal(displayedError, "Not enough Gold to use that Warp.");
+    },
+
+    "Successful unlock data refreshes the Warp destination view immediately"() {
+        assert.equal(typeof hud.applyWarpUnlockState, "function");
+
+        let rendered = null;
+        const state = hud.applyWarpUnlockState(
+            {
+                destinations: [
+                    { id: "deep_cave", name: "Deep Cave", cost: 5, current_location: true },
+                ],
+                character_updates: { gold: 20 },
+            },
+            function (destinations, gold) {
+                rendered = hud.buildWarpDestinationView(destinations, gold);
+            },
+        );
+
+        assert.equal(state, true);
+        assert.equal(rendered.length, 1);
+        assert.equal(rendered[0].id, "deep_cave");
+        assert.equal(rendered[0].action, "current");
+    },
+
+    "live Gold changes recalculate stored Warp affordability"() {
+        assert.equal(typeof hud.applyWarpGoldState, "function");
+
+        const panel = {
+            dataset: {
+                currentGold: "4",
+                destinations: JSON.stringify([
+                    {
+                        id: "deep_cave",
+                        name: "Deep Cave",
+                        cost: 5,
+                        current_location: false,
+                    },
+                ]),
+            },
+        };
+        const documentRoot = {
+            getElementById(id) {
+                return id === "left-warp" ? panel : null;
+            },
+        };
+        let rendered = null;
+
+        const applied = hud.applyWarpGoldState(
+            documentRoot,
+            5,
+            function (destinations, gold) {
+                rendered = hud.buildWarpDestinationView(destinations, gold);
+            },
+        );
+
+        assert.equal(applied, true);
+        assert.equal(panel.dataset.currentGold, "5");
+        assert.equal(rendered[0].action, "travel");
+    },
+
+    "pending Warp state is shared through the exploration DOM"() {
+        assert.equal(typeof hud.setWarpTravelPending, "function");
+
+        const panel = { dataset: {} };
+        const documentRoot = {
+            getElementById(id) {
+                return id === "left-warp" ? panel : null;
+            },
+        };
+
+        hud.setWarpTravelPending(documentRoot, true);
+        assert.equal(panel.dataset.warpPending, "true");
+        hud.setWarpTravelPending(documentRoot, false);
+        assert.equal(panel.dataset.warpPending, "false");
+    },
+
+    async "confirmed HUD travel updates Gold and reloads the authoritative map"() {
+        const gameDocument = createWarpDocument();
+        let reloads = 0;
+        hud.initializeWarpTravel(
+            gameDocument,
+            async function () {
+                return {
+                    ok: true,
+                    async json() {
+                        return {
+                            success: true,
+                            reload: true,
+                            message: "Warped to Forgotten Cave.",
+                            character_updates: { gold: 10 },
+                        };
+                    },
+                };
+            },
+            function () {
+                reloads++;
+            },
+        );
+
+        const card = gameDocument.elements.warpDestinationList.children[0];
+        const warpButton = card.children[2];
+        await gameDocument.elements["left-warp"].click({ target: warpButton });
+
+        assert.equal(gameDocument.elements.warpConfirmation.hidden, false);
+        assert.equal(
+            gameDocument.elements.warpConfirmationText.textContent,
+            "Warp to Forgotten Cave for 10 Gold?",
+        );
+
+        await gameDocument.elements.warpConfirmButton.click();
+
+        assert.equal(gameDocument.elements.playerGold.textContent, "10");
+        assert.equal(gameDocument.elements.warpConfirmation.hidden, true);
+        assert.equal(reloads, 1);
+    },
+
     "allocation controls belong to Main and Details is derived-only"() {
         const mainStart = gameMarkup.indexOf('id="left-main"');
         const detailsStart = gameMarkup.indexOf('id="left-details"');

@@ -473,6 +473,9 @@ $updateStmt = $pdo->prepare("
         pos_y = :pos_y
     WHERE id = :character_id
       AND user_id = :user_id
+      AND current_map_id = :current_map_id
+      AND pos_x = :current_pos_x
+      AND pos_y = :current_pos_y
 ");
 
 $updateStmt->execute([
@@ -480,7 +483,18 @@ $updateStmt->execute([
     "pos_y" => $newY,
     "character_id" => $characterId,
     "user_id" => $_SESSION["user_id"],
+    "current_map_id" => $currentMapId,
+    "current_pos_x" => $currentX,
+    "current_pos_y" => $currentY,
 ]);
+
+if ($updateStmt->rowCount() !== 1) {
+    sendJson([
+        "success" => false,
+        "message" => "Your position changed. Please move again.",
+        "messages" => ["Your position changed. Please move again."],
+    ]);
+}
 
 /*
 |--------------------------------------------------------------------------

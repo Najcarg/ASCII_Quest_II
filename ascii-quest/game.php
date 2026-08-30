@@ -22,6 +22,7 @@ session_start();
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
+require_once __DIR__ . "/lib/WarpBootstrap.php";
 
 $pdo = getDb();
 
@@ -187,6 +188,22 @@ $mapWidth = (int) $mapData["width"];
 $mapHeight = (int) $mapData["height"];
 $mapRows = $mapData["layout"];
 $mapName = (string) $mapData["map_name"];
+
+try {
+    $warpDefinitions = WarpBootstrap::definitions();
+    $warpService = WarpBootstrap::service($pdo, $warpDefinitions);
+    $currentWarp = $warpDefinitions->forMapFile(
+        (string) $character["map_file"],
+    );
+    $warpDestinations = $warpService->listDestinations(
+        (int) $_SESSION["user_id"],
+        (int) $character["id"],
+    );
+} catch (Throwable $e) {
+    error_log("Warp HUD loading error: " . $e->getMessage());
+    http_response_code(500);
+    exit("Unable to load Warp destinations.");
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -555,13 +572,40 @@ $detailStatGroups = [
 
                 <section
                     id="left-warp"
-                    class="hud-tab-panel hud-placeholder"
+                    class="hud-tab-panel hud-warp-panel"
                     role="tabpanel"
                     data-tab-panel
+                    data-csrf-token="<?= e($_SESSION["csrf_token"]) ?>"
+                    data-current-gold="<?= e($character["gold"]) ?>"
+                    data-destinations="<?= e(json_encode(
+                        $warpDestinations,
+                        JSON_UNESCAPED_UNICODE,
+                    )) ?>"
                     hidden
                 >
                     <h2>Warp</h2>
-                    <p>Discovered warp destinations will appear here.</p>
+                    <div
+                        id="warpMessage"
+                        class="warp-message"
+                        role="status"
+                        aria-live="polite"
+                        hidden
+                    ></div>
+                    <div id="warpDestinationList" class="warp-destination-list"></div>
+                    <div
+                        id="warpConfirmation"
+                        class="warp-confirmation"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="warpConfirmationText"
+                        hidden
+                    >
+                        <p id="warpConfirmationText"></p>
+                        <div class="warp-confirmation-actions">
+                            <button id="warpConfirmButton" type="button">Warp</button>
+                            <button id="warpCancelButton" type="button">Cancel</button>
+                        </div>
+                    </div>
                 </section>
             </aside>
 
@@ -836,6 +880,12 @@ window.ASCII_QUEST_STATE = {
     ) ?>,
 
     tileTypes: <?= json_encode($tileTypes, JSON_UNESCAPED_UNICODE) ?>,
+
+    csrfToken: <?= json_encode(
+        (string) $_SESSION["csrf_token"],
+        JSON_UNESCAPED_UNICODE,
+    ) ?>,
+    currentWarp: <?= json_encode($currentWarp, JSON_UNESCAPED_UNICODE) ?>,
 
     initialMessages: [
         <?= json_encode(

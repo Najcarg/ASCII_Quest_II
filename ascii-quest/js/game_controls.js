@@ -22,6 +22,12 @@ const playerHp = document.getElementById("playerHp");
 const playerMana = document.getElementById("playerMana");
 
 let isMoving = false;
+
+function isExplorationActionPending() {
+    const warpPanel = document.getElementById("left-warp");
+
+    return isMoving || warpPanel?.dataset.warpPending === "true";
+}
 /*
 |--------------------------------------------------------------------------
 | Sync map state from server
@@ -149,12 +155,22 @@ function setMapGlyphAt(x, y, glyph) {
 function createMapCell(mapX, mapY) {
     const isPlayer = mapX === gameState.playerX && mapY === gameState.playerY;
     const tileGlyph = getTileGlyph(mapX, mapY);
+    const isWarp =
+        gameState.currentWarp &&
+        mapX === Number(gameState.currentWarp.x) &&
+        mapY === Number(gameState.currentWarp.y);
 
-    const tileInfo = gameState.tileTypes[tileGlyph] || {
-        display_glyph: tileGlyph,
-        css_class: "tile-unknown",
-        name: "Unknown",
-    };
+    const tileInfo = isWarp
+        ? {
+              display_glyph: gameState.currentWarp.glyph || "◈",
+              css_class: "tile-warp",
+              name: gameState.currentWarp.name + " Warp",
+          }
+        : gameState.tileTypes[tileGlyph] || {
+              display_glyph: tileGlyph,
+              css_class: "tile-unknown",
+              name: "Unknown",
+          };
 
     const cell = document.createElement("div");
 
@@ -268,6 +284,13 @@ function applyCharacterUpdates(characterUpdates) {
     */
     if (characterUpdates.gold !== undefined && playerGold) {
         playerGold.textContent = String(characterUpdates.gold);
+
+        if (typeof window.ASCIIQuestHud?.applyWarpGoldState === "function") {
+            window.ASCIIQuestHud.applyWarpGoldState(
+                document,
+                characterUpdates.gold,
+            );
+        }
     }
 
     /*
@@ -334,7 +357,7 @@ function applyCharacterUpdates(characterUpdates) {
 | PHP validates collision and saves position.
 */
 async function moveCharacter(direction) {
-    if (isMoving) {
+    if (isExplorationActionPending()) {
         return;
     }
 
@@ -410,7 +433,7 @@ async function moveCharacter(direction) {
 |   chests O
 */
 async function interactWithCurrentTile() {
-    if (isMoving) {
+    if (isExplorationActionPending()) {
         return;
     }
 
@@ -480,6 +503,65 @@ async function interactWithCurrentTile() {
 
 /*
 |--------------------------------------------------------------------------
+| Unlock a clicked Warp
+|--------------------------------------------------------------------------
+| The browser sends only the Warp identifier and CSRF token. PHP reloads the
+| current Champion/map/coordinates and validates direct adjacency.
+*/
+async function unlockWarp(warpId) {
+    if (isExplorationActionPending()) {
+        return;
+    }
+
+    isMoving = true;
+
+    try {
+        const requestBody = new URLSearchParams();
+        requestBody.set("csrf_token", gameState.csrfToken);
+        requestBody.set("warp_id", warpId);
+
+        const response = await fetch("unlock_warp.php", {
+            method: "POST",
+            headers: { Accept: "application/json" },
+            body: requestBody,
+        });
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            addLogMessage(
+                result.message || "Unable to unlock that Warp.",
+                "warning",
+            );
+            return;
+        }
+
+        applyCharacterUpdates(result.character_updates);
+        if (
+            typeof window.ASCIIQuestHud?.applyWarpUnlockState === "function" &&
+            typeof window.ASCIIQuestHud?.updateWarpDestinations === "function"
+        ) {
+            window.ASCIIQuestHud.applyWarpUnlockState(
+                result,
+                function (destinations, gold) {
+                    window.ASCIIQuestHud.updateWarpDestinations(
+                        document,
+                        destinations,
+                        gold,
+                    );
+                },
+            );
+        }
+        addLogMessage(result.message || "Warp unlocked.", "success");
+    } catch (error) {
+        console.error("Warp unlock error:", error);
+        addLogMessage("Unable to unlock that Warp.", "danger");
+    } finally {
+        isMoving = false;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
 | Mouse movement
 |--------------------------------------------------------------------------
 | Click an adjacent tile to move there.
@@ -517,6 +599,15 @@ gameMap.addEventListener("click", function (event) {
 
     const mapX = Number(cell.dataset.mapX);
     const mapY = Number(cell.dataset.mapY);
+
+    if (
+        gameState.currentWarp &&
+        mapX === Number(gameState.currentWarp.x) &&
+        mapY === Number(gameState.currentWarp.y)
+    ) {
+        unlockWarp(String(gameState.currentWarp.id));
+        return;
+    }
 
     const direction = getDirectionFromAdjacentTile(mapX, mapY);
 

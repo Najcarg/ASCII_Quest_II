@@ -4,6 +4,7 @@ declare(strict_types=1);
 $tests = array_merge(
     require __DIR__ . '/CharacterStatsTest.php',
     require __DIR__ . '/CharacterStatAllocatorTest.php',
+    require __DIR__ . '/WarpTest.php',
 );
 
 $passed = 0;

@@ -18,12 +18,18 @@
             hud.initialize(
                 root.document,
                 typeof root.fetch === "function" ? root.fetch.bind(root) : null,
+                function () {
+                    root.location.reload();
+                },
             );
         });
     } else {
         hud.initialize(
             root.document,
             typeof root.fetch === "function" ? root.fetch.bind(root) : null,
+            function () {
+                root.location.reload();
+            },
         );
     }
 })(typeof window === "undefined" ? null : window, function () {
@@ -302,19 +308,357 @@
         });
     }
 
-    function initialize(documentRoot, fetchImplementation) {
+    function buildWarpDestinationView(destinations, currentGold) {
+        const gold = Number(currentGold);
+        const safeGold = Number.isFinite(gold) ? gold : 0;
+
+        return (Array.isArray(destinations) ? destinations : []).map(
+            function (destination) {
+                const cost = Math.max(0, Number(destination.cost) || 0);
+                let action = "travel";
+                let actionLabel = "WARP";
+                let disabled = false;
+
+                if (destination.current_location === true) {
+                    action = "current";
+                    actionLabel = "CURRENT LOCATION";
+                    disabled = true;
+                } else if (safeGold < cost) {
+                    action = "insufficient";
+                    actionLabel = "NOT ENOUGH GOLD";
+                    disabled = true;
+                }
+
+                return {
+                    id: String(destination.id),
+                    name: String(destination.name),
+                    cost,
+                    action,
+                    actionLabel,
+                    disabled,
+                };
+            },
+        );
+    }
+
+    function createWarpTravelController(options) {
+        let selectedDestination = null;
+        let pending = false;
+
+        function notify(name, value) {
+            if (typeof options[name] === "function") {
+                options[name](value);
+            }
+        }
+
+        return {
+            select(destination) {
+                if (!destination || destination.action !== "travel" || pending) {
+                    return false;
+                }
+
+                selectedDestination = destination;
+                notify("onConfirmation", selectedDestination);
+                return true;
+            },
+
+            cancel() {
+                if (pending) {
+                    return false;
+                }
+
+                selectedDestination = null;
+                notify("onConfirmation", null);
+                return true;
+            },
+
+            async confirm() {
+                if (
+                    pending ||
+                    selectedDestination === null ||
+                    typeof options.fetchImplementation !== "function"
+                ) {
+                    return false;
+                }
+
+                pending = true;
+                notify("onPending", true);
+
+                const requestBody = new URLSearchParams();
+                requestBody.set("csrf_token", String(options.csrfToken || ""));
+                requestBody.set("warp_id", selectedDestination.id);
+                let errorMessage = "Unable to use that Warp. Please try again.";
+
+                try {
+                    const response = await options.fetchImplementation(
+                        "travel_warp.php",
+                        {
+                            method: "POST",
+                            headers: { Accept: "application/json" },
+                            body: requestBody,
+                        },
+                    );
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success) {
+                        if (typeof result.message === "string") {
+                            errorMessage = result.message;
+                        }
+                        throw new Error("Warp travel rejected by server.");
+                    }
+
+                    selectedDestination = null;
+                    notify("onConfirmation", null);
+                    notify("onTravel", result);
+                    return true;
+                } catch (error) {
+                    notify("onError", errorMessage);
+                    return false;
+                } finally {
+                    pending = false;
+                    notify("onPending", false);
+                }
+            },
+        };
+    }
+
+    function showWarpMessage(documentRoot, message, type) {
+        const element = documentRoot.getElementById("warpMessage");
+        if (!element) {
+            return;
+        }
+
+        element.textContent = message;
+        element.dataset.messageType = type;
+        element.hidden = message === "";
+    }
+
+    function renderWarpDestinations(documentRoot, destinations, currentGold) {
+        const container = documentRoot.getElementById("warpDestinationList");
+        if (!container) {
+            return false;
+        }
+
+        const views = buildWarpDestinationView(destinations, currentGold);
+        container.innerHTML = "";
+
+        if (views.length === 0) {
+            const empty = documentRoot.createElement("p");
+            empty.className = "warp-empty";
+            empty.textContent = "No Warp destinations discovered.";
+            container.appendChild(empty);
+            return true;
+        }
+
+        views.forEach(function (destination) {
+            const card = documentRoot.createElement("article");
+            card.className = "warp-destination";
+
+            const name = documentRoot.createElement("h3");
+            name.textContent = destination.name;
+            card.appendChild(name);
+
+            const cost = documentRoot.createElement("p");
+            cost.textContent = "Cost: " + destination.cost + " Gold";
+            card.appendChild(cost);
+
+            const action = documentRoot.createElement("button");
+            action.type = "button";
+            action.className = "warp-action warp-action-" + destination.action;
+            action.textContent = destination.actionLabel;
+            action.disabled = destination.disabled;
+            if (destination.action === "travel") {
+                action.dataset.warpTravel = destination.id;
+                action.dataset.warpName = destination.name;
+                action.dataset.warpCost = String(destination.cost);
+            }
+            card.appendChild(action);
+            container.appendChild(card);
+        });
+
+        return true;
+    }
+
+    function updateWarpDestinations(documentRoot, destinations, currentGold) {
+        const panel = documentRoot.getElementById("left-warp");
+        if (!panel) {
+            return false;
+        }
+
+        panel.dataset.destinations = JSON.stringify(destinations || []);
+        panel.dataset.currentGold = String(currentGold);
+        return renderWarpDestinations(documentRoot, destinations, currentGold);
+    }
+
+    function applyWarpUnlockState(result, render) {
+        if (
+            !result ||
+            !Array.isArray(result.destinations) ||
+            typeof render !== "function"
+        ) {
+            return false;
+        }
+
+        const gold = result.character_updates?.gold;
+        render(result.destinations, gold);
+        return true;
+    }
+
+    function applyWarpGoldState(
+        documentRoot,
+        currentGold,
+        renderImplementation,
+    ) {
+        const panel = documentRoot.getElementById("left-warp");
+        if (!panel) {
+            return false;
+        }
+
+        let destinations;
+        try {
+            destinations = JSON.parse(panel.dataset.destinations || "[]");
+        } catch (error) {
+            return false;
+        }
+
+        panel.dataset.currentGold = String(currentGold);
+        if (typeof renderImplementation === "function") {
+            renderImplementation(destinations, currentGold);
+        } else {
+            renderWarpDestinations(documentRoot, destinations, currentGold);
+        }
+
+        return true;
+    }
+
+    function setWarpTravelPending(documentRoot, isPending) {
+        const panel = documentRoot.getElementById("left-warp");
+        if (!panel) {
+            return false;
+        }
+
+        panel.dataset.warpPending = String(isPending === true);
+        return true;
+    }
+
+    function initializeWarpTravel(
+        documentRoot,
+        fetchImplementation,
+        reloadImplementation,
+    ) {
+        const panel = documentRoot.getElementById("left-warp");
+        const confirmation = documentRoot.getElementById("warpConfirmation");
+        const confirmationText = documentRoot.getElementById(
+            "warpConfirmationText",
+        );
+        const confirmButton = documentRoot.getElementById("warpConfirmButton");
+        const cancelButton = documentRoot.getElementById("warpCancelButton");
+        if (!panel || !confirmation || !confirmButton || !cancelButton) {
+            return;
+        }
+
+        let destinations = [];
+        try {
+            destinations = JSON.parse(panel.dataset.destinations || "[]");
+        } catch (error) {
+            showWarpMessage(documentRoot, "Unable to load Warp destinations.", "error");
+        }
+
+        renderWarpDestinations(
+            documentRoot,
+            destinations,
+            panel.dataset.currentGold,
+        );
+
+        const controller = createWarpTravelController({
+            csrfToken: panel.dataset.csrfToken,
+            fetchImplementation,
+            onConfirmation(destination) {
+                confirmation.hidden = destination === null;
+                if (destination !== null && confirmationText) {
+                    confirmationText.textContent =
+                        "Warp to " +
+                        destination.name +
+                        " for " +
+                        destination.cost +
+                        " Gold?";
+                }
+            },
+            onPending(isPending) {
+                setWarpTravelPending(documentRoot, isPending);
+                confirmButton.disabled = isPending;
+                cancelButton.disabled = isPending;
+            },
+            onError(message) {
+                showWarpMessage(documentRoot, message, "error");
+            },
+            onTravel(result) {
+                const goldElement = documentRoot.getElementById("playerGold");
+                if (result.character_updates?.gold !== undefined && goldElement) {
+                    goldElement.textContent = String(
+                        result.character_updates.gold,
+                    );
+                }
+                showWarpMessage(documentRoot, result.message || "Warp complete.", "success");
+
+                if (result.reload && typeof reloadImplementation === "function") {
+                    reloadImplementation();
+                }
+            },
+        });
+
+        panel.addEventListener("click", function (event) {
+            const button = event.target.closest("[data-warp-travel]");
+            if (!button) {
+                return;
+            }
+
+            showWarpMessage(documentRoot, "", "");
+            controller.select({
+                id: button.dataset.warpTravel,
+                name: button.dataset.warpName,
+                cost: Number(button.dataset.warpCost),
+                action: "travel",
+            });
+        });
+        confirmButton.addEventListener("click", function () {
+            return controller.confirm();
+        });
+        cancelButton.addEventListener("click", function () {
+            controller.cancel();
+        });
+    }
+
+    function initialize(
+        documentRoot,
+        fetchImplementation,
+        reloadImplementation,
+    ) {
         initializeTabs(documentRoot);
         initializeStatAllocation(documentRoot, fetchImplementation);
+        initializeWarpTravel(
+            documentRoot,
+            fetchImplementation,
+            reloadImplementation,
+        );
     }
 
     return {
         activateTab,
         applyAllocationState,
+        applyWarpGoldState,
+        applyWarpUnlockState,
+        buildWarpDestinationView,
+        createWarpTravelController,
         initialize,
         initializeStatAllocation,
         initializeTabGroup,
         initializeTabs,
+        initializeWarpTravel,
+        renderWarpDestinations,
+        setWarpTravelPending,
         synchronizeResourceDisplay,
         updateResourceBar,
+        updateWarpDestinations,
     };
 });
