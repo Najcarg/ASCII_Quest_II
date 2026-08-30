@@ -834,6 +834,166 @@ a:hover {
     font-size: 12px;
 }
 
+.hud-panel > .hud-details-panel {
+    max-height: min(560px, calc(100vh - 135px));
+    padding-right: 3px;
+    overflow-y: auto;
+    scrollbar-color: #6d532f #080605;
+    scrollbar-width: thin;
+}
+
+.hud-details-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(169, 122, 59, 0.4);
+}
+
+.hud-details-header h2,
+.hud-details-header p {
+    margin: 0;
+}
+
+.hud-details-header h2 {
+    color: #d2b97a;
+    font-size: 13px;
+    font-weight: normal;
+}
+
+.hud-details-header p {
+    color: #a99a7d;
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.hud-details-header strong {
+    color: #f0d58a;
+}
+
+.hud-allocation-message {
+    margin-top: 5px;
+    padding: 4px 5px;
+    border: 1px solid rgba(169, 122, 59, 0.45);
+    background: rgba(0, 0, 0, 0.4);
+    color: #d2b97a;
+    font-size: 9px;
+    line-height: 1.25;
+}
+
+.hud-allocation-message[data-message-type="error"] {
+    border-color: rgba(160, 58, 43, 0.75);
+    color: #e2a096;
+}
+
+.hud-allocation-message[data-message-type="success"] {
+    border-color: rgba(122, 137, 74, 0.75);
+    color: #c9d39a;
+}
+
+.hud-main-stats {
+    display: grid;
+    gap: 3px;
+    margin-top: 6px;
+}
+
+.hud-main-stat-row {
+    display: grid;
+    grid-template-columns: 1fr 34px 23px;
+    align-items: center;
+    gap: 4px;
+    min-height: 25px;
+    padding: 2px 3px 2px 6px;
+    border: 1px solid rgba(123, 90, 46, 0.4);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.hud-main-stat-row > span {
+    color: #b8a98b;
+    font-size: 10px;
+    letter-spacing: 0.7px;
+}
+
+.hud-main-stat-row > strong {
+    color: #f0d58a;
+    font-size: 11px;
+    font-weight: normal;
+    text-align: right;
+}
+
+.hud-stat-plus {
+    width: 23px;
+    height: 21px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #7b5a2e;
+    background: linear-gradient(to bottom, #49331e, #25170e);
+    box-shadow: none;
+    color: #f0d58a;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.hud-stat-plus:hover,
+.hud-stat-plus:focus-visible {
+    background: linear-gradient(to bottom, #6f1d14, #32100c);
+}
+
+.hud-stat-plus:disabled {
+    border-color: #493d2d;
+    background: #16110d;
+    color: #5f5546;
+    cursor: not-allowed;
+}
+
+.hud-detail-group {
+    margin-top: 7px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(169, 122, 59, 0.3);
+}
+
+.hud-detail-group h3 {
+    margin: 0 0 4px;
+    color: #d2b97a;
+    font-size: 10px;
+    font-weight: normal;
+    letter-spacing: 0.4px;
+}
+
+.hud-detail-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+}
+
+.hud-detail-stat-grid > div {
+    min-width: 0;
+    padding: 3px 4px;
+    border: 1px solid rgba(123, 90, 46, 0.28);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.hud-detail-stat-grid span,
+.hud-detail-stat-grid strong {
+    display: block;
+}
+
+.hud-detail-stat-grid span {
+    color: #8f8067;
+    font-size: 7px;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.hud-detail-stat-grid strong {
+    margin-top: 2px;
+    color: #c9b88e;
+    font-size: 9px;
+    font-weight: normal;
+}
+
 .map-area {
     min-width: 0;
     padding: 8px;

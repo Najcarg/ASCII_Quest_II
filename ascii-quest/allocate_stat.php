@@ -3,13 +3,34 @@ declare(strict_types=1);
 
 session_start();
 
+$wantsJson = str_contains(
+    (string) ($_SERVER['HTTP_ACCEPT'] ?? ''),
+    'application/json',
+);
+
+function sendJson(array $payload, int $status): never
+{
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+    exit();
+}
+
 if (!isset($_SESSION['user_id'])) {
+    if ($wantsJson) {
+        sendJson([
+            'success' => false,
+            'message' => 'Your session has expired. Please sign in again.',
+        ], 401);
+    }
+
     header('Location: login.php');
     exit();
 }
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/lib/CharacterStatAllocator.php';
+require_once __DIR__ . '/lib/CharacterStats.php';
 
 function redirectToStatPage(?int $characterId = null): never
 {
@@ -28,7 +49,32 @@ function setAllocationFlash(string $message, string $type): void
     $_SESSION['flash_type'] = $type;
 }
 
+function respondAllocationError(
+    bool $wantsJson,
+    string $message,
+    int $status,
+    ?int $characterId = null,
+): never {
+    if ($wantsJson) {
+        sendJson([
+            'success' => false,
+            'message' => $message,
+        ], $status);
+    }
+
+    setAllocationFlash($message, 'error');
+    redirectToStatPage($characterId);
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    if ($wantsJson) {
+        respondAllocationError(
+            true,
+            'Invalid allocation request.',
+            405,
+        );
+    }
+
     redirectToStatPage();
 }
 
@@ -40,8 +86,11 @@ $characterId = is_string($rawCharacterId)
     : false;
 
 if ($characterId === false) {
-    setAllocationFlash('Invalid allocation request.', 'error');
-    redirectToStatPage();
+    respondAllocationError(
+        $wantsJson,
+        'Invalid allocation request.',
+        400,
+    );
 }
 
 $postedToken = $_POST['csrf_token'] ?? '';
@@ -53,20 +102,29 @@ if (
     $sessionToken === '' ||
     !hash_equals($sessionToken, $postedToken)
 ) {
-    setAllocationFlash('Security check failed. Please try again.', 'error');
-    redirectToStatPage((int) $characterId);
+    respondAllocationError(
+        $wantsJson,
+        'Security check failed. Please try again.',
+        403,
+        (int) $characterId,
+    );
 }
 
 $stat = $_POST['stat'] ?? '';
 if (!is_string($stat)) {
-    setAllocationFlash('Invalid stat selection.', 'error');
-    redirectToStatPage((int) $characterId);
+    respondAllocationError(
+        $wantsJson,
+        'Invalid stat selection.',
+        422,
+        (int) $characterId,
+    );
 }
 
 $userId = (int) $_SESSION['user_id'];
-$pdo = getDb();
+$pdo = null;
 
 try {
+    $pdo = getDb();
     $pdo->beginTransaction();
 
     $stmt = $pdo->prepare('
@@ -99,6 +157,7 @@ try {
     }
 
     $allocated = CharacterStatAllocator::allocate($character, $userId, $stat);
+    $calculatedStats = CharacterStats::calculate($allocated);
 
     $updateStmt = $pdo->prepare('
         UPDATE characters
@@ -130,15 +189,19 @@ try {
     }
 
     $pdo->commit();
-    setAllocationFlash('Stat point allocated.', 'success');
 } catch (InvalidArgumentException | DomainException | OutOfBoundsException $e) {
-    if ($pdo->inTransaction()) {
+    if ($pdo !== null && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
 
-    setAllocationFlash($e->getMessage(), 'error');
+    respondAllocationError(
+        $wantsJson,
+        $e->getMessage(),
+        422,
+        (int) $characterId,
+    );
 } catch (Throwable $e) {
-    if ($pdo->inTransaction()) {
+    if ($pdo !== null && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
 
@@ -146,7 +209,26 @@ try {
         'Stat allocation failed for character ' .
         (int) $characterId . ': ' . $e->getMessage(),
     );
-    setAllocationFlash('Unable to allocate the stat point. Please try again.', 'error');
+    respondAllocationError(
+        $wantsJson,
+        'Unable to allocate the stat point. Please try again.',
+        500,
+        (int) $characterId,
+    );
 }
 
+if ($wantsJson) {
+    sendJson([
+        'success' => true,
+        'message' => 'Stat point allocated.',
+        'character' => [
+            'stat_points' => (int) $allocated['stat_points'],
+            'current_hp' => (int) $allocated['current_hp'],
+            'current_mana' => (int) $allocated['current_mana'],
+            'stats' => $calculatedStats,
+        ],
+    ], 200);
+}
+
+setAllocationFlash('Stat point allocated.', 'success');
 redirectToStatPage((int) $characterId);

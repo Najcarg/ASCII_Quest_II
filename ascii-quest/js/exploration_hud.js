@@ -15,10 +15,16 @@
 
     if (root.document.readyState === "loading") {
         root.document.addEventListener("DOMContentLoaded", function () {
-            hud.initializeTabs(root.document);
+            hud.initialize(
+                root.document,
+                typeof root.fetch === "function" ? root.fetch.bind(root) : null,
+            );
         });
     } else {
-        hud.initializeTabs(root.document);
+        hud.initialize(
+            root.document,
+            typeof root.fetch === "function" ? root.fetch.bind(root) : null,
+        );
     }
 })(typeof window === "undefined" ? null : window, function () {
     "use strict";
@@ -110,8 +116,206 @@
         return true;
     }
 
+    function readCharacterStat(stats, path) {
+        return path.split(".").reduce(function (value, key) {
+            if (value === null || value === undefined) {
+                return undefined;
+            }
+
+            return value[key];
+        }, stats);
+    }
+
+    function formatCharacterStat(value, format) {
+        if (format === "percentage") {
+            return String(value) + "%";
+        }
+
+        if (format === "rate") {
+            const rate = Number(value);
+            return Number.isFinite(rate) ? rate.toFixed(2) : String(value);
+        }
+
+        return String(value);
+    }
+
+    function applyAllocationState(documentRoot, allocationState) {
+        if (!allocationState || !allocationState.stats) {
+            return false;
+        }
+
+        const statPoints = documentRoot.getElementById("detailStatPoints");
+        if (statPoints) {
+            statPoints.textContent = String(allocationState.stat_points);
+        }
+
+        Object.entries(allocationState.stats.main).forEach(function (entry) {
+            const statValue = documentRoot.getElementById(
+                "detailStat-" + entry[0],
+            );
+
+            if (statValue) {
+                statValue.textContent = String(entry[1]);
+            }
+        });
+
+        documentRoot
+            .querySelectorAll("[data-character-stat-path]")
+            .forEach(function (element) {
+                const value = readCharacterStat(
+                    allocationState.stats,
+                    element.dataset.characterStatPath,
+                );
+
+                if (value !== undefined) {
+                    element.textContent = formatCharacterStat(
+                        value,
+                        element.dataset.characterStatFormat,
+                    );
+                }
+            });
+
+        synchronizeResourceDisplay(
+            documentRoot,
+            "Hp",
+            allocationState.current_hp,
+            allocationState.stats.resources.max_life,
+        );
+        synchronizeResourceDisplay(
+            documentRoot,
+            "Mana",
+            allocationState.current_mana,
+            allocationState.stats.resources.max_mana,
+        );
+
+        const noPointsRemaining = Number(allocationState.stat_points) <= 0;
+        documentRoot
+            .querySelectorAll("[data-stat-allocate]")
+            .forEach(function (button) {
+                button.disabled = noPointsRemaining;
+            });
+
+        return true;
+    }
+
+    function setAllocationButtonsDisabled(documentRoot, disabled) {
+        documentRoot
+            .querySelectorAll("[data-stat-allocate]")
+            .forEach(function (button) {
+                button.disabled = disabled;
+            });
+    }
+
+    function showAllocationMessage(documentRoot, message, type) {
+        const messageElement = documentRoot.getElementById(
+            "detailAllocationMessage",
+        );
+
+        if (!messageElement) {
+            return;
+        }
+
+        messageElement.textContent = message;
+        messageElement.dataset.messageType = type;
+        messageElement.hidden = message === "";
+    }
+
+    function initializeStatAllocation(documentRoot, fetchImplementation) {
+        const detailsPanel = documentRoot.getElementById("left-details");
+        const statPoints = documentRoot.getElementById("detailStatPoints");
+        const buttons = Array.from(
+            documentRoot.querySelectorAll("[data-stat-allocate]"),
+        );
+
+        if (
+            !detailsPanel ||
+            !statPoints ||
+            buttons.length === 0 ||
+            typeof fetchImplementation !== "function"
+        ) {
+            return;
+        }
+
+        let isAllocating = false;
+
+        setAllocationButtonsDisabled(
+            documentRoot,
+            Number(statPoints.textContent) <= 0,
+        );
+
+        buttons.forEach(function (button) {
+            button.addEventListener("click", async function () {
+                if (isAllocating || Number(statPoints.textContent) <= 0) {
+                    return;
+                }
+
+                isAllocating = true;
+                setAllocationButtonsDisabled(documentRoot, true);
+                showAllocationMessage(documentRoot, "", "");
+
+                const requestBody = new URLSearchParams();
+                requestBody.set(
+                    "character_id",
+                    detailsPanel.dataset.characterId,
+                );
+                requestBody.set("csrf_token", detailsPanel.dataset.csrfToken);
+                requestBody.set("stat", button.dataset.statAllocate);
+
+                let errorMessage =
+                    "Unable to allocate the stat point. Please try again.";
+
+                try {
+                    const response = await fetchImplementation(
+                        "allocate_stat.php",
+                        {
+                            method: "POST",
+                            headers: { Accept: "application/json" },
+                            body: requestBody,
+                        },
+                    );
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success) {
+                        if (typeof result.message === "string") {
+                            errorMessage = result.message;
+                        }
+
+                        throw new Error("Allocation rejected by server.");
+                    }
+
+                    applyAllocationState(documentRoot, result.character);
+                    showAllocationMessage(
+                        documentRoot,
+                        result.message || "Stat point allocated.",
+                        "success",
+                    );
+                } catch (error) {
+                    showAllocationMessage(
+                        documentRoot,
+                        errorMessage,
+                        "error",
+                    );
+                } finally {
+                    isAllocating = false;
+                    setAllocationButtonsDisabled(
+                        documentRoot,
+                        Number(statPoints.textContent) <= 0,
+                    );
+                }
+            });
+        });
+    }
+
+    function initialize(documentRoot, fetchImplementation) {
+        initializeTabs(documentRoot);
+        initializeStatAllocation(documentRoot, fetchImplementation);
+    }
+
     return {
         activateTab,
+        applyAllocationState,
+        initialize,
+        initializeStatAllocation,
         initializeTabGroup,
         initializeTabs,
         synchronizeResourceDisplay,

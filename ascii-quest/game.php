@@ -55,6 +55,19 @@ function e(mixed $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, "UTF-8");
 }
 
+function formatDetailValue(mixed $value, string $format): string
+{
+    if ($format === "percentage") {
+        return (string) $value . "%";
+    }
+
+    if ($format === "rate") {
+        return number_format((float) $value, 2, ".", "");
+    }
+
+    return (string) $value;
+}
+
 /*
 |--------------------------------------------------------------------------
 | Load selected character + class + current map file
@@ -105,6 +118,10 @@ if (!$character) {
     unset($_SESSION["character_id"]);
     header("Location: character_select.php");
     exit();
+}
+
+if (empty($_SESSION["csrf_token"])) {
+    $_SESSION["csrf_token"] = bin2hex(random_bytes(32));
 }
 
 try {
@@ -279,6 +296,59 @@ $explorationHudVersion = (int) filemtime(
     __DIR__ . "/js/exploration_hud.js",
 );
 $gameControlsVersion = (int) filemtime(__DIR__ . "/js/game_controls.js");
+
+$mainStatLabels = [
+    "strength" => ["short" => "STR", "label" => "Strength"],
+    "dexterity" => ["short" => "DEX", "label" => "Dexterity"],
+    "vitality" => ["short" => "VIT", "label" => "Vitality"],
+    "energy" => ["short" => "ENE", "label" => "Energy"],
+    "fate" => ["short" => "FATE", "label" => "Fate"],
+];
+
+$detailStatGroups = [
+    "Core" => [
+        ["Maximum Life", "resources.max_life", $characterStats["resources"]["max_life"], "number"],
+        ["Maximum Mana", "resources.max_mana", $characterStats["resources"]["max_mana"], "number"],
+        ["Melee Damage", "combat.melee_damage", $characterStats["combat"]["melee_damage"], "number"],
+        ["Toughness", "combat.toughness", $characterStats["combat"]["toughness"], "number"],
+        ["Spell Power", "combat.spell_power", $characterStats["combat"]["spell_power"], "number"],
+        ["Action", "rates.action", $characterStats["rates"]["action"], "number"],
+    ],
+    "Combat / Chances / Rates" => [
+        ["Dodging", "combat.dodging", $characterStats["combat"]["dodging"], "percentage"],
+        ["Accuracy", "combat.accuracy", $characterStats["combat"]["accuracy"], "percentage"],
+        ["Critical Damage", "combat.critical_damage", $characterStats["combat"]["critical_damage"], "number"],
+        ["Critical Chance", "combat.critical_chance", $characterStats["combat"]["critical_chance"], "percentage"],
+        ["Attack Rate", "rates.attack_rate", $characterStats["rates"]["attack_rate"], "rate"],
+        ["Cast Rate", "rates.cast_rate", $characterStats["rates"]["cast_rate"], "rate"],
+        ["Block Rate", "rates.block_rate", $characterStats["rates"]["block_rate"], "rate"],
+    ],
+    "Resistances" => [
+        ["Fire", "resistances.fire", $characterStats["resistances"]["fire"], "percentage"],
+        ["Lightning", "resistances.lightning", $characterStats["resistances"]["lightning"], "percentage"],
+        ["Poison", "resistances.poison", $characterStats["resistances"]["poison"], "percentage"],
+        ["Cold", "resistances.cold", $characterStats["resistances"]["cold"], "percentage"],
+    ],
+    "Utility / Recovery / Status" => [
+        ["Loot Chance", "fortune.loot_chance", $characterStats["fortune"]["loot_chance"], "percentage"],
+        ["Gold Find", "fortune.gold_find", $characterStats["fortune"]["gold_find"], "percentage"],
+        ["Life Regeneration", "utility.life_regeneration", $characterStats["utility"]["life_regeneration"], "number"],
+        ["Mana Regeneration", "utility.mana_regeneration", $characterStats["utility"]["mana_regeneration"], "number"],
+        ["Life on Hit", "utility.life_on_hit", $characterStats["utility"]["life_on_hit"], "number"],
+        ["Mana on Hit", "utility.mana_on_hit", $characterStats["utility"]["mana_on_hit"], "number"],
+        ["Life per Kill", "utility.life_per_kill", $characterStats["utility"]["life_per_kill"], "number"],
+        ["Mana per Kill", "utility.mana_per_kill", $characterStats["utility"]["mana_per_kill"], "number"],
+        ["Fire Damage", "utility.fire_damage", $characterStats["utility"]["fire_damage"], "number"],
+        ["Lightning Damage", "utility.lightning_damage", $characterStats["utility"]["lightning_damage"], "number"],
+        ["Cold Damage", "utility.cold_damage", $characterStats["utility"]["cold_damage"], "number"],
+        ["Poison Damage", "utility.poison_damage", $characterStats["utility"]["poison_damage"], "number"],
+        ["Bleed Damage", "utility.bleed_damage", $characterStats["utility"]["bleed_damage"], "number"],
+        ["Burn Damage", "utility.burn_damage", $characterStats["utility"]["burn_damage"], "number"],
+        ["Freeze Damage", "utility.freeze_damage", $characterStats["utility"]["freeze_damage"], "number"],
+        ["Shock Damage", "utility.shock_damage", $characterStats["utility"]["shock_damage"], "number"],
+        ["Status Effect Chance", "utility.status_effect_chance", $characterStats["utility"]["status_effect_chance"], "percentage"],
+    ],
+];
 ?>
 
 <!DOCTYPE html>
@@ -432,13 +502,65 @@ $gameControlsVersion = (int) filemtime(__DIR__ . "/js/game_controls.js");
 
                 <section
                     id="left-details"
-                    class="hud-tab-panel hud-placeholder"
+                    class="hud-tab-panel hud-details-panel"
                     role="tabpanel"
                     data-tab-panel
+                    data-character-id="<?= e($character["id"]) ?>"
+                    data-csrf-token="<?= e($_SESSION["csrf_token"]) ?>"
                     hidden
                 >
-                    <h2>Details</h2>
-                    <p>Detailed Champion statistics will appear here.</p>
+                    <div class="hud-details-header">
+                        <h2>Champion Details</h2>
+                        <p>
+                            Stat Points:
+                            <strong id="detailStatPoints"><?= e($character["stat_points"]) ?></strong>
+                        </p>
+                    </div>
+
+                    <div
+                        id="detailAllocationMessage"
+                        class="hud-allocation-message"
+                        role="status"
+                        aria-live="polite"
+                        hidden
+                    ></div>
+
+                    <section class="hud-main-stats" aria-label="Main Champion statistics">
+                        <?php foreach ($mainStatLabels as $statKey => $statLabel): ?>
+                            <div class="hud-main-stat-row">
+                                <span title="<?= e($statLabel["label"]) ?>">
+                                    <?= e($statLabel["short"]) ?>
+                                </span>
+                                <strong id="detailStat-<?= e($statKey) ?>">
+                                    <?= e($characterStats["main"][$statKey]) ?>
+                                </strong>
+                                <button
+                                    type="button"
+                                    class="hud-stat-plus"
+                                    data-stat-allocate="<?= e($statKey) ?>"
+                                    aria-label="Add one point to <?= e($statLabel["label"]) ?>"
+                                    <?= (int) $character["stat_points"] > 0 ? "" : "disabled" ?>
+                                >+</button>
+                            </div>
+                        <?php endforeach; ?>
+                    </section>
+
+                    <?php foreach ($detailStatGroups as $groupLabel => $groupStats): ?>
+                        <section class="hud-detail-group">
+                            <h3><?= e($groupLabel) ?></h3>
+                            <div class="hud-detail-stat-grid">
+                                <?php foreach ($groupStats as [$label, $path, $value, $format]): ?>
+                                    <div>
+                                        <span><?= e($label) ?></span>
+                                        <strong
+                                            data-character-stat-path="<?= e($path) ?>"
+                                            data-character-stat-format="<?= e($format) ?>"
+                                        ><?= e(formatDetailValue($value, $format)) ?></strong>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </section>
+                    <?php endforeach; ?>
                 </section>
 
                 <section
