@@ -144,14 +144,14 @@
             return false;
         }
 
-        const statPoints = documentRoot.getElementById("detailStatPoints");
+        const statPoints = documentRoot.getElementById("mainStatPoints");
         if (statPoints) {
             statPoints.textContent = String(allocationState.stat_points);
         }
 
         Object.entries(allocationState.stats.main).forEach(function (entry) {
             const statValue = documentRoot.getElementById(
-                "detailStat-" + entry[0],
+                "mainStat-" + entry[0],
             );
 
             if (statValue) {
@@ -208,7 +208,7 @@
 
     function showAllocationMessage(documentRoot, message, type) {
         const messageElement = documentRoot.getElementById(
-            "detailAllocationMessage",
+            "mainAllocationMessage",
         );
 
         if (!messageElement) {
@@ -221,14 +221,14 @@
     }
 
     function initializeStatAllocation(documentRoot, fetchImplementation) {
-        const detailsPanel = documentRoot.getElementById("left-details");
-        const statPoints = documentRoot.getElementById("detailStatPoints");
+        const mainPanel = documentRoot.getElementById("left-main");
+        const statPoints = documentRoot.getElementById("mainStatPoints");
         const buttons = Array.from(
             documentRoot.querySelectorAll("[data-stat-allocate]"),
         );
 
         if (
-            !detailsPanel ||
+            !mainPanel ||
             !statPoints ||
             buttons.length === 0 ||
             typeof fetchImplementation !== "function"
@@ -256,9 +256,9 @@
                 const requestBody = new URLSearchParams();
                 requestBody.set(
                     "character_id",
-                    detailsPanel.dataset.characterId,
+                    mainPanel.dataset.characterId,
                 );
-                requestBody.set("csrf_token", detailsPanel.dataset.csrfToken);
+                requestBody.set("csrf_token", mainPanel.dataset.csrfToken);
                 requestBody.set("stat", button.dataset.statAllocate);
 
                 let errorMessage =
@@ -284,11 +284,7 @@
                     }
 
                     applyAllocationState(documentRoot, result.character);
-                    showAllocationMessage(
-                        documentRoot,
-                        result.message || "Stat point allocated.",
-                        "success",
-                    );
+                    showAllocationMessage(documentRoot, "", "");
                 } catch (error) {
                     showAllocationMessage(
                         documentRoot,

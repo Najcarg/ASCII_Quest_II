@@ -6,38 +6,32 @@ ACTIVE
 
 ## Task
 
-Integrate Champion stat allocation and calculated statistics into the
-in-game exploration HUD Details tab.
+Refine the accepted exploration HUD after successful live testing of in-game
+stat allocation.
 
-The stat-allocation backend already exists and has been live-tested.
+This task is primarily presentation/layout work.
 
-This task must reuse that implementation rather than creating a second
-stat system.
-
-The player must be able to spend stat points while remaining inside the
-dungeon.
+Do not create new gameplay systems.
 
 ## Read First
 
 Read:
 
 - `/AGENTS.md`
-- current `ascii-quest/game.php`
-- `ascii-quest/character_stats.php`
-- `ascii-quest/allocate_stat.php`
-- `ascii-quest/lib/CharacterStatAllocator.php`
-- `ascii-quest/lib/CharacterStats.php`
-- `ascii-quest/config/character_stats.php`
+- `ascii-quest/game.php`
+- `ascii-quest/css/style.css`
 - `ascii-quest/js/exploration_hud.js`
 - `ascii-quest/js/game_controls.js`
-- existing stat/allocation tests
+- `ascii-quest/allocate_stat.php`
 - existing HUD tests
 
-Inspect the existing implementation before changing anything.
+Preserve all currently working stat-allocation behavior.
 
-## Existing Rules To Preserve
+## 1. Move Main Stats And Allocation To Main Tab
 
-Main stats:
+The five main stats no longer belong in Details.
+
+Move these to the Main tab:
 
 - Strength
 - Dexterity
@@ -45,197 +39,62 @@ Main stats:
 - Energy
 - Fate
 
-Stat allocation rules already established:
+The Main tab should contain, in compact form:
 
-- spending one point increases exactly one selected main stat by 1
-- stat_points decreases by exactly 1
-- stat_points must never become negative
-- allocation is server-authoritative
-- player may modify only their own Champion
-- stat names are whitelisted
-- transaction/locking behavior remains intact
-- CSRF protection remains intact
-- prepared statements remain in use
+- Champion glyph
+- Champion name
+- class
+- level
+- HP bar + current/max
+- Mana bar + current/max
+- XP bar + stored XP
+- available Stat Points
+- STR value + compact `+`
+- DEX value + compact `+`
+- VIT value + compact `+`
+- ENE value + compact `+`
+- FATE value + compact `+`
 
-Do not duplicate or weaken CharacterStatAllocator security.
+Stat allocation must continue working from Main without page reload.
 
-## No-Free-Healing Rule
+Reuse the current allocation implementation.
 
-Current HP and current Mana are stored resources.
+Do not duplicate allocator logic.
 
-Increasing maximum Life or Mana must NOT restore the current resource.
+When stat_points reaches zero:
 
-Example:
+- disable every +
+- do not send allocation requests
 
-Before:
+The Main tab must stay compact and visually consistent with the existing HUD.
 
-HP 145 / 220
+## 2. Details Becomes Derived Statistics Only
 
-Spend +1 Vitality.
+Remove from Details:
 
-After:
+- Champion Details heading if no longer useful
+- Stat Points
+- STR
+- DEX
+- VIT
+- ENE
+- FATE
+- allocation + buttons
 
-HP 145 / 230
+Details should begin directly with derived CharacterStats information.
 
-NOT:
-
-HP 230 / 230
-
-Same rule for Energy / Mana.
-
-CharacterStats remains authoritative for calculated maximums.
-
-JavaScript must never calculate Champion stat formulas.
-
-## Details Tab Layout
-
-Replace the current Details placeholder inside the LEFT exploration HUD.
-
-The Details tab remains inside the existing narrow left-side panel.
-
-Do not resize or redesign the accepted three-column HUD.
-
-If the Details content is taller than the available left panel, use
-INTERNAL scrolling for the Details content.
-
-Do not increase the overall page height simply to fit all statistics.
-
-## Details Header
-
-At the top show:
-
-Champion Details
-
-Stat Points: X
-
-The real available stat_points value must be displayed.
-
-## Main Stat Allocation
-
-Display five compact rows:
-
-STR   <value>   [+]
-DEX   <value>   [+]
-VIT   <value>   [+]
-ENE   <value>   [+]
-FATE  <value>   [+]
-
-Use the existing ASCII Quest dark/gold visual style.
-
-The + controls should be compact HUD controls rather than large page buttons.
-
-When stat_points is zero:
-
-- all + buttons must be disabled
-- allocation requests must not be sent
-
-While an allocation request is in progress:
-
-- prevent duplicate clicks for that request
-- avoid double-spending caused by rapid repeated clicks
-
-The server remains the final authority regardless of client state.
-
-## In-Game Allocation Behavior
-
-Allocation must happen without leaving or reloading the dungeon.
-
-Use lightweight vanilla JavaScript / fetch.
-
-Do NOT introduce:
-
-- React
-- Vue
-- jQuery
-- npm packages
-- frontend frameworks
-
-Reuse the existing allocation backend and CharacterStatAllocator.
-
-Do not implement a second SQL allocation path.
-
-If `allocate_stat.php` currently only supports form POST + redirect, extend it
-carefully so the existing standalone page continues working while the HUD can
-request a machine-readable JSON response.
-
-Preserve backward compatibility with the existing stat-allocation test page.
-
-Do not expose raw database exceptions to the browser.
-
-## JSON / Server Response
-
-After a successful HUD allocation, the browser must receive authoritative
-server values sufficient to refresh the HUD.
-
-The response should contain the authoritative post-allocation state required
-by the UI, including:
-
-- remaining stat_points
-- Strength
-- Dexterity
-- Vitality
-- Energy
-- Fate
-- current HP
-- maximum Life
-- current Mana
-- maximum Mana
-- calculated CharacterStats values used by Details
-
-Do not return formulas.
-
-Do not make JavaScript reconstruct derived statistics.
-
-CharacterStats must calculate them on the server.
-
-## HUD Synchronization
-
-After a successful point allocation:
-
-1. Update Stat Points.
-2. Update all five main stat values.
-3. Update all displayed Details derived statistics.
-4. If maximum Life changed:
-   - update Main-tab HP current/max text
-   - update HP bar width using the existing HUD resource synchronization
-   - current HP remains unchanged
-5. If maximum Mana changed:
-   - update Main-tab Mana current/max text
-   - update Mana bar width
-   - current Mana remains unchanged
-6. Keep the Details tab selected.
-7. Do not reload game.php.
-8. Do not reset map position.
-9. Do not interrupt exploration state.
-
-Reuse existing HUD resource synchronization instead of creating another
-HP/Mana bar implementation.
-
-## Calculated Statistics
-
-Display the real calculated values already supported by CharacterStats.
-
-Do not invent statistics or formulas.
-
-Inspect the CharacterStats output and display its supported values in compact
-groups.
-
-Suggested presentation groups are:
+Keep the current groups:
 
 ### Core
 
-Examples only where already supported by CharacterStats:
-
-- Life
-- Mana
+- Maximum Life
+- Maximum Mana
 - Melee Damage
 - Toughness
 - Spell Power
 - Action
 
 ### Combat / Chances / Rates
-
-Display existing supported values such as:
 
 - Dodging
 - Accuracy
@@ -245,226 +104,240 @@ Display existing supported values such as:
 - Cast Rate
 - Block Rate
 
-Only show fields actually supported by CharacterStats.
-
 ### Resistances
 
-Display every resistance currently produced by CharacterStats.
-
-Do not invent missing resistance types.
+Keep every currently supported resistance.
 
 ### Utility / Recovery / Status
 
-Display the remaining supported CharacterStats values, including existing
-utility, recovery, elemental/status-related values where they are already part
-of the current CharacterStats result.
+Keep all remaining currently supported CharacterStats values.
 
-Do not create formulas or new game mechanics merely to populate this section.
+Do not change formulas or formatting rules.
 
-Use sensible user-facing labels.
+Critical Damage remains a flat number, not a percentage.
 
-Percentages must be displayed as percentages where CharacterStats represents
-them as percentages.
+## 3. Remove Successful Allocation Message
 
-Rates must retain the existing rate meaning/precision.
+Do not show:
 
-## Error Handling
+`Stat point allocated.`
 
-Allocation errors should appear inside the Details tab.
+A successful click already provides visible feedback because:
+
+- stat value changes
+- Stat Points changes
+- derived values change
+- HP/Mana maximum may change
+
+Successful allocation therefore needs no message.
+
+The allocation message/error area should:
+
+- remain hidden/empty after success
+- appear only when there is an actual error
 
 Examples:
 
-- no stat points remaining
+- no points available
 - invalid request
-- invalid stat
-- stale/invalid CSRF token
+- CSRF/session problem
 - server failure
 
-Do not display raw SQL/database exception text.
+Do not remove useful error handling.
 
-Do not navigate away from the dungeon for a normal allocation error.
+## 4. Increase Left Panel Useful Height
 
-After an error, controls should return to a usable state when appropriate.
+The Details panel currently stops significantly above the bottom of the
+map + Information/Chat region.
 
-## CSRF
+Extend the usable left-side tab content vertically so its bottom aligns
+approximately with the bottom of the center Information/Chat panel.
 
-Reuse the existing stat-allocation CSRF mechanism.
+Goal:
 
-The HUD must send the valid token with allocation requests.
+Left HUD vertical extent approximately matches:
 
-Do not weaken CSRF protection because the request uses fetch.
-
-## Temporary Standalone Page
-
-KEEP for this task:
-
-- `ascii-quest/character_stats.php`
-- `ascii-quest/allocate_stat.php`
-- Character Selection Allocate Stats link/button
-
-The standalone page remains a fallback/test harness until this in-game
-implementation passes live browser testing.
-
-Do NOT remove it yet.
-
-Removal will be a separate small cleanup task after acceptance.
-
-## Existing HUD To Preserve
-
-Do not redesign the accepted HUD.
-
-Preserve:
-
-- Main / Details / Warp tabs
-- Items / Skill Tree / Passive Tree tabs
-- paper-doll Equipment
-- Gold in Items
-- Loadout
-- Inventory shell
 - center map
-- map title
-- Information / Server Info / Chat panel beneath map
-- responsive behavior currently accepted
-- automatic asset cache-busting
+- map status line
+- Information / Server Info / Chat panel
 
-## Existing Gameplay To Protect
+Do not make Details expand the whole page downward.
+
+Do not add artificial blank space.
+
+Details should use the available taller left panel and retain internal scrolling
+when its content exceeds that height.
+
+Main and Warp should use the same overall left-panel height so switching tabs
+does not resize the HUD.
+
+Preserve the accepted three-column layout.
+
+## 5. Add One Visual Inventory Row
+
+The current inventory grid is still only a visual placeholder.
+
+Add exactly one additional visible row to the inventory grid.
+
+This is for visual balance only.
+
+IMPORTANT:
+
+This does NOT define final inventory capacity.
+
+Do not add:
+
+- database inventory slots
+- item records
+- drag/drop
+- item interaction
+- inventory backend logic
+
+Update markup/CSS only as needed.
+
+## 6. Preserve Existing Right HUD
+
+Do not redesign:
+
+- paper-doll equipment
+- Gold placement
+- equipment slots
+- loadout
+- Items / Skill Tree / Passive Tree tabs
+
+Still exactly:
+
+- 1 Ring
+- 1 Charm
+
+Gold must retain:
+
+`id="playerGold"`
+
+and chest rewards must continue updating it live.
+
+## 7. Preserve Stat Allocation Rules
+
+Do not change:
+
+- CharacterStatAllocator
+- ownership security
+- CSRF
+- transaction locking
+- whitelist
+- prepared statements
+- JSON response behavior
+- no-free-healing rule
+- CharacterStats formulas
+
+Vitality:
+
+current HP remains unchanged while Maximum Life may increase.
+
+Energy:
+
+current Mana remains unchanged while Maximum Mana may increase.
+
+## 8. Preserve Existing Gameplay
 
 Do not break:
 
-- login
-- sessions
-- Character Selection
-- map rendering
+- map
 - movement
 - collision
-- position persistence
 - traps
-- trap HP updates
-- HP bar updates
+- trap HP/bar updates
 - chests
 - Gold updates
 - stairs
 - map transitions
-- map overrides
-- current HP persistence
-- current Mana persistence
-- CharacterStats calculations
+- position persistence
+- HP persistence
+- Mana persistence
+- Change Character
+- Main Menu
+
+## 9. Temporary Standalone Allocation Page
+
+Keep for now:
+
+- `character_stats.php`
+- Character Selection Allocate Stats button/link
+
+Do not remove them in this task.
+
+That cleanup will happen only after this revised Main-tab allocation layout is
+accepted live.
 
 ## Database
 
-No schema changes.
+No database changes.
 
 No migration.
 
-Use the existing:
-
-- stat_points
-- strength
-- dexterity
-- vitality
-- energy
-- fate
-- current_hp
-- current_mana
-
-Do not add new columns.
-
-## Scope Exclusions
-
-Do NOT implement in this task:
-
-- XP progression
-- level-up mechanics
-- automatic level rewards
-- respec
-- equipment backend
-- inventory backend
-- item stat bonuses
-- skill tree
-- passive tree
-- warp backend
-- combat
-- monsters
-- chat backend
-- new CharacterStats formulas
-- database migrations
-
 ## Testing
 
-Use TDD for the new interactive HUD behavior where meaningful.
+Use TDD where useful.
 
-At minimum cover the client-side behavior that applies an authoritative
-successful allocation response.
+Update HUD tests to prove:
 
-Tests should prove that:
-
-- stat_points updates
-- selected main stat updates
-- derived stat display updates
-- HP maximum can change while current HP remains unchanged
-- Mana maximum can change while current Mana remains unchanged
-- HP/Mana bar synchronization uses server-supplied current/max values
-- buttons disable when stat_points reaches zero
-- allocation UI remains in Details without page reload
-
-Do not replace the existing server-side CharacterStatAllocator tests.
+- allocation controls are now rendered/managed from Main
+- Details still receives derived-stat updates
+- successful allocation does not display a success message
+- actual errors still display
+- zero points disable all allocation buttons
+- HP/Mana synchronization remains unchanged
+- the extra inventory row is present if practical to test structurally
 
 Run:
 
 php tests/run.php
-
 node tests/ExplorationHudTest.js
 
-Run PHP syntax checks for every changed PHP file.
+Run PHP syntax checks for changed PHP files.
 
-Run JavaScript syntax checks for every changed JS file.
+Run JavaScript syntax checks for changed JS files.
 
 Run:
 
 git diff --check
 git status --short --branch
 
-## Manual Browser Test Checklist
+## Manual Browser Checklist
 
-Report a checklist covering:
+Report testing required for:
 
-1. Details tab opens without reload.
-2. Correct Stat Points shown.
-3. Correct STR/DEX/VIT/ENE/FATE shown.
-4. Derived CharacterStats values are correct.
-5. +Strength spends exactly one point.
-6. +Dexterity spends exactly one point.
-7. +Vitality increases Maximum Life.
-8. Vitality does not restore current HP.
-9. +Energy increases Maximum Mana.
-10. Energy does not restore current Mana.
-11. +Fate updates its derived values.
-12. Remaining Stat Points update immediately.
-13. Main-tab HP text/bar update after Vitality allocation.
-14. Main-tab Mana text/bar update after Energy allocation.
-15. Zero remaining points disables all + controls.
-16. Rapid clicking cannot spend more points than available.
-17. Refresh preserves allocated stats.
-18. Map position remains unchanged.
-19. Movement still works afterward.
-20. Trap HP updates still work.
-21. Chest Gold updates still work.
-22. Standalone Character Selection Allocate Stats page still works.
+1. Main opens initially.
+2. Champion information remains correct.
+3. STR/DEX/VIT/ENE/FATE are visible on Main.
+4. Stat Points are visible on Main.
+5. + buttons work from Main.
+6. Successful allocation shows no success banner.
+7. Errors still display if one occurs.
+8. Details contains derived stats only.
+9. Details has increased useful vertical height.
+10. Details internal scrolling works.
+11. Left panel does not resize when switching tabs.
+12. Vitality updates max HP without healing.
+13. Energy updates max Mana without restoring Mana.
+14. Zero points disables + buttons.
+15. Main HP/Mana bars remain correct.
+16. Inventory shows one additional visual row.
+17. Paper doll remains unchanged.
+18. Gold/chests still work.
+19. Movement/traps/stairs/transitions still work.
+20. Refresh preserves state.
 
 ## Completion Report
 
 Report:
 
-- files created
 - files modified
 - implementation summary
-- whether allocate_stat.php required backward-compatible JSON support
-- security behavior preserved
-- tests added/changed
-- exact verification commands
-- exact results
+- tests changed
+- exact verification results
 - manual browser testing required
-- any known compromises
+- known compromises
 
 Do not commit.
 

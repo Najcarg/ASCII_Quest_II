@@ -410,9 +410,11 @@ $detailStatGroups = [
 
                 <section
                     id="left-main"
-                    class="hud-tab-panel"
+                    class="hud-tab-panel hud-main-panel"
                     role="tabpanel"
                     data-tab-panel
+                    data-character-id="<?= e($character["id"]) ?>"
+                    data-csrf-token="<?= e($_SESSION["csrf_token"]) ?>"
                 >
                     <div class="champion-summary">
                         <div class="sidebar-glyph" aria-label="Champion portrait">
@@ -498,27 +500,13 @@ $detailStatGroups = [
                         </div>
                     </div>
 
-                </section>
-
-                <section
-                    id="left-details"
-                    class="hud-tab-panel hud-details-panel"
-                    role="tabpanel"
-                    data-tab-panel
-                    data-character-id="<?= e($character["id"]) ?>"
-                    data-csrf-token="<?= e($_SESSION["csrf_token"]) ?>"
-                    hidden
-                >
-                    <div class="hud-details-header">
-                        <h2>Champion Details</h2>
-                        <p>
-                            Stat Points:
-                            <strong id="detailStatPoints"><?= e($character["stat_points"]) ?></strong>
-                        </p>
+                    <div class="hud-main-allocation-header">
+                        <span>Stat Points</span>
+                        <strong id="mainStatPoints"><?= e($character["stat_points"]) ?></strong>
                     </div>
 
                     <div
-                        id="detailAllocationMessage"
+                        id="mainAllocationMessage"
                         class="hud-allocation-message"
                         role="status"
                         aria-live="polite"
@@ -531,7 +519,7 @@ $detailStatGroups = [
                                 <span title="<?= e($statLabel["label"]) ?>">
                                     <?= e($statLabel["short"]) ?>
                                 </span>
-                                <strong id="detailStat-<?= e($statKey) ?>">
+                                <strong id="mainStat-<?= e($statKey) ?>">
                                     <?= e($characterStats["main"][$statKey]) ?>
                                 </strong>
                                 <button
@@ -544,7 +532,15 @@ $detailStatGroups = [
                             </div>
                         <?php endforeach; ?>
                     </section>
+                </section>
 
+                <section
+                    id="left-details"
+                    class="hud-tab-panel hud-details-panel"
+                    role="tabpanel"
+                    data-tab-panel
+                    hidden
+                >
                     <?php foreach ($detailStatGroups as $groupLabel => $groupStats): ?>
                         <section class="hud-detail-group">
                             <h3><?= e($groupLabel) ?></h3>
@@ -779,7 +775,7 @@ $detailStatGroups = [
                         <h2>Inventory</h2>
                         <p class="hud-section-note">Visual shell only</p>
                         <div class="inventory-grid" aria-label="Empty inventory placeholders">
-                            <?php for ($slot = 1; $slot <= 20; $slot++): ?>
+                            <?php for ($slot = 1; $slot <= 25; $slot++): ?>
                                 <div
                                     class="inventory-slot"
                                     aria-label="Empty inventory slot <?= e($slot) ?>"

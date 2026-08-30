@@ -676,6 +676,25 @@ a:hover {
     overflow: hidden;
 }
 
+.hud-left-panel {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.hud-left-panel > .hud-tabs {
+    flex: none;
+}
+
+.hud-left-panel > .hud-tab-panel {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-color: #6d532f #080605;
+    scrollbar-width: thin;
+}
+
 .hud-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -835,40 +854,23 @@ a:hover {
 }
 
 .hud-panel > .hud-details-panel {
-    max-height: min(560px, calc(100vh - 135px));
     padding-right: 3px;
-    overflow-y: auto;
-    scrollbar-color: #6d532f #080605;
-    scrollbar-width: thin;
 }
 
-.hud-details-header {
+.hud-main-allocation-header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 6px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid rgba(169, 122, 59, 0.4);
-}
-
-.hud-details-header h2,
-.hud-details-header p {
-    margin: 0;
-}
-
-.hud-details-header h2 {
-    color: #d2b97a;
-    font-size: 13px;
-    font-weight: normal;
-}
-
-.hud-details-header p {
+    margin-top: 8px;
+    padding: 5px 6px;
+    border: 1px solid rgba(169, 122, 59, 0.4);
+    background: rgba(0, 0, 0, 0.3);
     color: #a99a7d;
-    font-size: 9px;
-    white-space: nowrap;
+    font-size: 10px;
 }
 
-.hud-details-header strong {
+.hud-main-allocation-header strong {
     color: #f0d58a;
 }
 
@@ -885,11 +887,6 @@ a:hover {
 .hud-allocation-message[data-message-type="error"] {
     border-color: rgba(160, 58, 43, 0.75);
     color: #e2a096;
-}
-
-.hud-allocation-message[data-message-type="success"] {
-    border-color: rgba(122, 137, 74, 0.75);
-    color: #c9d39a;
 }
 
 .hud-main-stats {
@@ -1357,6 +1354,19 @@ a:hover {
     .game-layout {
         grid-template-columns: 1fr;
         margin-top: 8px;
+    }
+
+    .hud-left-panel {
+        display: block;
+    }
+
+    .hud-left-panel > .hud-tab-panel {
+        overflow-y: visible;
+    }
+
+    .hud-left-panel > .hud-details-panel {
+        max-height: min(560px, calc(100vh - 135px));
+        overflow-y: auto;
     }
 
     .game-map {

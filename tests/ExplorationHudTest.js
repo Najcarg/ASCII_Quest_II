@@ -113,17 +113,21 @@ function createAllocationDocument() {
     }
 
     const elements = {
-        "left-details": {
+        "left-main": {
             dataset: { characterId: "42", csrfToken: "test-token" },
             hidden: false,
         },
-        detailStatPoints: { textContent: "1" },
-        "detailStat-strength": { textContent: "10" },
-        "detailStat-dexterity": { textContent: "5" },
-        "detailStat-vitality": { textContent: "10" },
-        "detailStat-energy": { textContent: "5" },
-        "detailStat-fate": { textContent: "5" },
-        detailAllocationMessage: { dataset: {}, hidden: true, textContent: "" },
+        "left-details": {
+            dataset: {},
+            hidden: true,
+        },
+        mainStatPoints: { textContent: "1" },
+        "mainStat-strength": { textContent: "10" },
+        "mainStat-dexterity": { textContent: "5" },
+        "mainStat-vitality": { textContent: "10" },
+        "mainStat-energy": { textContent: "5" },
+        "mainStat-fate": { textContent: "5" },
+        mainAllocationMessage: { dataset: {}, hidden: true, textContent: "" },
         playerHp: { textContent: "145/200" },
         playerHpBar: createBar(),
         playerHpFill: { style: { width: "72.5%" } },
@@ -303,6 +307,30 @@ function authoritativeAllocationState(stat = "strength") {
 }
 
 const tests = {
+    "allocation controls belong to Main and Details is derived-only"() {
+        const mainStart = gameMarkup.indexOf('id="left-main"');
+        const detailsStart = gameMarkup.indexOf('id="left-details"');
+        const warpStart = gameMarkup.indexOf('id="left-warp"');
+        const mainMarkup = gameMarkup.slice(mainStart, detailsStart);
+        const detailsMarkup = gameMarkup.slice(detailsStart, warpStart);
+
+        assert.ok(mainMarkup.includes('id="mainStatPoints"'));
+        assert.ok(mainMarkup.includes("data-stat-allocate"));
+        assert.ok(mainMarkup.includes("data-character-id"));
+        assert.equal(detailsMarkup.includes("data-stat-allocate"), false);
+        assert.equal(detailsMarkup.includes("Stat Points:"), false);
+        assert.ok(detailsMarkup.includes("data-character-stat-path"));
+    },
+
+    "inventory shell contains five visual rows"() {
+        const inventoryLimit = gameMarkup.match(
+            /for \(\$slot = 1; \$slot <= (\d+); \$slot\+\+\)/,
+        );
+
+        assert.ok(inventoryLimit, "The inventory placeholder loop must exist.");
+        assert.equal(inventoryLimit[1], "25");
+    },
+
     "default tab remains active when a group initializes"() {
         assert.equal(
             typeof hud.initializeTabGroup,
@@ -440,9 +468,9 @@ const tests = {
             authoritativeAllocationState(),
         );
 
-        assert.equal(gameDocument.elements.detailStatPoints.textContent, "0");
+        assert.equal(gameDocument.elements.mainStatPoints.textContent, "0");
         assert.equal(
-            gameDocument.elements["detailStat-strength"].textContent,
+            gameDocument.elements["mainStat-strength"].textContent,
             "11",
         );
         assert.equal(gameDocument.derivedStats[0].textContent, "60");
@@ -452,7 +480,8 @@ const tests = {
             gameDocument.allocationButtons.every((button) => button.disabled),
             true,
         );
-        assert.equal(gameDocument.elements["left-details"].hidden, false);
+        assert.equal(gameDocument.elements["left-details"].hidden, true);
+        assert.equal(gameDocument.elements["left-main"].hidden, false);
     },
 
     "allocation state preserves stored resources while updating maximums"() {
@@ -587,11 +616,41 @@ const tests = {
         assert.equal(requests[0].options.body.get("character_id"), "42");
         assert.equal(requests[0].options.body.get("csrf_token"), "test-token");
         assert.equal(requests[0].options.body.get("stat"), "strength");
-        assert.equal(gameDocument.elements.detailStatPoints.textContent, "0");
-        assert.equal(gameDocument.elements["left-details"].hidden, false);
+        assert.equal(gameDocument.elements.mainStatPoints.textContent, "0");
+        assert.equal(gameDocument.elements["left-main"].hidden, false);
+        assert.equal(gameDocument.elements["left-details"].hidden, true);
+        assert.equal(gameDocument.elements.mainAllocationMessage.textContent, "");
+        assert.equal(gameDocument.elements.mainAllocationMessage.hidden, true);
+    },
+
+    async "HUD allocation errors remain visible on Main"() {
+        const gameDocument = createAllocationDocument();
+
+        hud.initializeStatAllocation(gameDocument, async function () {
+            return {
+                ok: false,
+                async json() {
+                    return {
+                        success: false,
+                        message: "Security check failed. Please try again.",
+                    };
+                },
+            };
+        });
+        await gameDocument.allocationButtons[0].click();
+
         assert.equal(
-            gameDocument.elements.detailAllocationMessage.textContent,
-            "Stat point allocated.",
+            gameDocument.elements.mainAllocationMessage.textContent,
+            "Security check failed. Please try again.",
+        );
+        assert.equal(gameDocument.elements.mainAllocationMessage.hidden, false);
+        assert.equal(
+            gameDocument.elements.mainAllocationMessage.dataset.messageType,
+            "error",
+        );
+        assert.equal(
+            gameDocument.allocationButtons.every((button) => !button.disabled),
+            true,
         );
     },
 
@@ -603,7 +662,7 @@ const tests = {
         );
 
         const gameDocument = createAllocationDocument();
-        gameDocument.elements.detailStatPoints.textContent = "0";
+        gameDocument.elements.mainStatPoints.textContent = "0";
         let requestCount = 0;
 
         hud.initializeStatAllocation(gameDocument, async function () {
