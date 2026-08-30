@@ -6,12 +6,13 @@ ACTIVE
 
 ## Task
 
-Refine the accepted exploration HUD after successful live testing of in-game
-stat allocation.
+Clean up obsolete exploration/character-selection UI after acceptance of the
+in-game Main + Details stat-allocation HUD.
 
-This task is primarily presentation/layout work.
+This task removes redundant labels and the temporary standalone stat-allocation
+entry point.
 
-Do not create new gameplay systems.
+Do not add new gameplay systems.
 
 ## Read First
 
@@ -19,255 +20,155 @@ Read:
 
 - `/AGENTS.md`
 - `ascii-quest/game.php`
-- `ascii-quest/css/style.css`
-- `ascii-quest/js/exploration_hud.js`
-- `ascii-quest/js/game_controls.js`
+- `ascii-quest/character_select.php`
+- `ascii-quest/character_stats.php`
 - `ascii-quest/allocate_stat.php`
 - existing HUD tests
+- existing PHP tests
 
-Preserve all currently working stat-allocation behavior.
+Inspect references before deleting anything.
 
-## 1. Move Main Stats And Allocation To Main Tab
+## 1. Simplify Exploration Header
 
-The five main stats no longer belong in Details.
+In `game.php` remove the redundant subtitle:
 
-Move these to the Main tab:
+`Exploration`
 
-- Strength
-- Dexterity
-- Vitality
-- Energy
-- Fate
+under the main:
 
-The Main tab should contain, in compact form:
+`ASCII Quest`
 
-- Champion glyph
-- Champion name
+title.
+
+The main title remains.
+
+## 2. Remove Duplicate Current Area Block
+
+Remove the header block that currently shows:
+
+`CURRENT AREA`
+`Deep Cave`
+
+or equivalent current map name.
+
+The map name must continue to appear above the center map viewport.
+
+There should be only one visible map/area title in the exploration HUD.
+
+Do not remove the map title above the map.
+
+Do not change map-loading logic.
+
+## 3. Remove Character Selection Allocate Stats Entry
+
+The in-game Main tab is now the accepted stat-allocation UI.
+
+Remove the Character Selection button/link that displays:
+
+`Allocate Stats (X available)`
+
+or equivalent.
+
+Character Selection must continue showing:
+
+- Champion identity
 - class
 - level
-- HP bar + current/max
-- Mana bar + current/max
-- XP bar + stored XP
-- available Stat Points
-- STR value + compact `+`
-- DEX value + compact `+`
-- VIT value + compact `+`
-- ENE value + compact `+`
-- FATE value + compact `+`
+- HP
+- Mana
+- main stats
+- XP
+- Gold
+- Enter Dungeon
+- Delete Character
+- Create Another Character
+- Back to Main Menu
 
-Stat allocation must continue working from Main without page reload.
+Do not remove stat values from Character Selection.
 
-Reuse the current allocation implementation.
+## 4. Remove Temporary Standalone Stat Page
 
-Do not duplicate allocator logic.
+The temporary:
 
-When stat_points reaches zero:
+`ascii-quest/character_stats.php`
 
-- disable every +
-- do not send allocation requests
+page is no longer required if no remaining application code depends on it.
 
-The Main tab must stay compact and visually consistent with the existing HUD.
+Before deleting it:
 
-## 2. Details Becomes Derived Statistics Only
+- search the repository for references to `character_stats.php`
+- confirm nothing except the obsolete Character Selection link depends on it
 
-Remove from Details:
+If safe, delete:
 
-- Champion Details heading if no longer useful
-- Stat Points
-- STR
-- DEX
-- VIT
-- ENE
-- FATE
-- allocation + buttons
+`ascii-quest/character_stats.php`
 
-Details should begin directly with derived CharacterStats information.
+Do NOT delete:
 
-Keep the current groups:
+`ascii-quest/lib/CharacterStats.php`
 
-### Core
+These are completely different files.
 
-- Maximum Life
-- Maximum Mana
-- Melee Damage
-- Toughness
-- Spell Power
-- Action
+The CharacterStats calculation service is core game logic and must remain.
 
-### Combat / Chances / Rates
+## 5. Keep Allocation Backend
 
-- Dodging
-- Accuracy
-- Critical Damage
-- Critical Chance
-- Attack Rate
-- Cast Rate
-- Block Rate
+KEEP:
 
-### Resistances
+`ascii-quest/allocate_stat.php`
 
-Keep every currently supported resistance.
+The in-game HUD still uses this endpoint.
 
-### Utility / Recovery / Status
+Do not remove or weaken:
 
-Keep all remaining currently supported CharacterStats values.
+- authentication
+- CSRF
+- ownership checking
+- transaction locking
+- whitelist validation
+- JSON response mode
+- standalone redirect compatibility unless it becomes unreachable naturally
 
-Do not change formulas or formatting rules.
+Do not redesign the endpoint in this cleanup.
 
-Critical Damage remains a flat number, not a percentage.
-
-## 3. Remove Successful Allocation Message
-
-Do not show:
-
-`Stat point allocated.`
-
-A successful click already provides visible feedback because:
-
-- stat value changes
-- Stat Points changes
-- derived values change
-- HP/Mana maximum may change
-
-Successful allocation therefore needs no message.
-
-The allocation message/error area should:
-
-- remain hidden/empty after success
-- appear only when there is an actual error
-
-Examples:
-
-- no points available
-- invalid request
-- CSRF/session problem
-- server failure
-
-Do not remove useful error handling.
-
-## 4. Increase Left Panel Useful Height
-
-The Details panel currently stops significantly above the bottom of the
-map + Information/Chat region.
-
-Extend the usable left-side tab content vertically so its bottom aligns
-approximately with the bottom of the center Information/Chat panel.
-
-Goal:
-
-Left HUD vertical extent approximately matches:
-
-- center map
-- map status line
-- Information / Server Info / Chat panel
-
-Do not make Details expand the whole page downward.
-
-Do not add artificial blank space.
-
-Details should use the available taller left panel and retain internal scrolling
-when its content exceeds that height.
-
-Main and Warp should use the same overall left-panel height so switching tabs
-does not resize the HUD.
-
-Preserve the accepted three-column layout.
-
-## 5. Add One Visual Inventory Row
-
-The current inventory grid is still only a visual placeholder.
-
-Add exactly one additional visible row to the inventory grid.
-
-This is for visual balance only.
-
-IMPORTANT:
-
-This does NOT define final inventory capacity.
-
-Do not add:
-
-- database inventory slots
-- item records
-- drag/drop
-- item interaction
-- inventory backend logic
-
-Update markup/CSS only as needed.
-
-## 6. Preserve Existing Right HUD
+## 6. Preserve Current HUD
 
 Do not redesign:
 
-- paper-doll equipment
-- Gold placement
-- equipment slots
-- loadout
-- Items / Skill Tree / Passive Tree tabs
+- Main
+- Details
+- Warp
+- Items
+- Skill Tree
+- Passive Tree
+- paper doll
+- Gold
+- Loadout
+- Inventory
+- map
+- Information/Server Info/Chat
 
-Still exactly:
+This is only header/obsolete-page cleanup.
 
-- 1 Ring
-- 1 Charm
-
-Gold must retain:
-
-`id="playerGold"`
-
-and chest rewards must continue updating it live.
-
-## 7. Preserve Stat Allocation Rules
-
-Do not change:
-
-- CharacterStatAllocator
-- ownership security
-- CSRF
-- transaction locking
-- whitelist
-- prepared statements
-- JSON response behavior
-- no-free-healing rule
-- CharacterStats formulas
-
-Vitality:
-
-current HP remains unchanged while Maximum Life may increase.
-
-Energy:
-
-current Mana remains unchanged while Maximum Mana may increase.
-
-## 8. Preserve Existing Gameplay
+## 7. Preserve Gameplay
 
 Do not break:
 
-- map
-- movement
-- collision
-- traps
-- trap HP/bar updates
-- chests
-- Gold updates
-- stairs
-- map transitions
-- position persistence
-- HP persistence
-- Mana persistence
+- login
+- sessions
+- Character Selection
+- Enter Dungeon
 - Change Character
 - Main Menu
-
-## 9. Temporary Standalone Allocation Page
-
-Keep for now:
-
-- `character_stats.php`
-- Character Selection Allocate Stats button/link
-
-Do not remove them in this task.
-
-That cleanup will happen only after this revised Main-tab allocation layout is
-accepted live.
+- movement
+- traps
+- chests
+- stairs
+- map transitions
+- HP/Mana persistence
+- Gold updates
+- stat allocation in Main
+- Details derived statistics
 
 ## Database
 
@@ -277,26 +178,21 @@ No migration.
 
 ## Testing
 
-Use TDD where useful.
-
-Update HUD tests to prove:
-
-- allocation controls are now rendered/managed from Main
-- Details still receives derived-stat updates
-- successful allocation does not display a success message
-- actual errors still display
-- zero points disable all allocation buttons
-- HP/Mana synchronization remains unchanged
-- the extra inventory row is present if practical to test structurally
+Update tests only where existing assertions refer to removed UI.
 
 Run:
 
 php tests/run.php
 node tests/ExplorationHudTest.js
 
-Run PHP syntax checks for changed PHP files.
+Run PHP syntax checks for every changed PHP file.
 
-Run JavaScript syntax checks for changed JS files.
+If `character_stats.php` is deleted, confirm there are no repository references
+remaining to that page.
+
+Run:
+
+git grep -n "character_stats.php" -- . ':!docs' || true
 
 Run:
 
@@ -307,35 +203,26 @@ git status --short --branch
 
 Report testing required for:
 
-1. Main opens initially.
-2. Champion information remains correct.
-3. STR/DEX/VIT/ENE/FATE are visible on Main.
-4. Stat Points are visible on Main.
-5. + buttons work from Main.
-6. Successful allocation shows no success banner.
-7. Errors still display if one occurs.
-8. Details contains derived stats only.
-9. Details has increased useful vertical height.
-10. Details internal scrolling works.
-11. Left panel does not resize when switching tabs.
-12. Vitality updates max HP without healing.
-13. Energy updates max Mana without restoring Mana.
-14. Zero points disables + buttons.
-15. Main HP/Mana bars remain correct.
-16. Inventory shows one additional visual row.
-17. Paper doll remains unchanged.
-18. Gold/chests still work.
-19. Movement/traps/stairs/transitions still work.
-20. Refresh preserves state.
+1. Exploration header shows ASCII Quest without `Exploration`.
+2. Header no longer shows duplicate Current Area/map name.
+3. Map name remains visible above map.
+4. Character Selection no longer shows Allocate Stats.
+5. Character Selection Champion information remains correct.
+6. Enter Dungeon works.
+7. Main in-game stat allocation still works.
+8. Details still works.
+9. Change Character works.
+10. Main Menu works.
+11. No broken link to character_stats.php exists.
 
 ## Completion Report
 
 Report:
 
 - files modified
-- implementation summary
-- tests changed
-- exact verification results
+- files deleted
+- repository reference check result
+- tests/results
 - manual browser testing required
 - known compromises
 

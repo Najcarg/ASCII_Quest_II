@@ -170,13 +170,6 @@ $characters = $stmt->fetchAll();
                                 </div>
                             <?php endif; ?>
 
-                            <a
-                                class="menu-button secondary character-stat-link"
-                                href="character_stats.php?character_id=<?= e($character["id"]) ?>"
-                            >
-                                Allocate Stats (<?= e($character["stat_points"]) ?> available)
-                            </a>
-
                             <form method="post" action="select_character.php">
                                 <input
                                     type="hidden"

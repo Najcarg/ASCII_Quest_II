@@ -365,12 +365,6 @@ $detailStatGroups = [
         <header class="game-header">
             <div class="game-branding">
                 <h1>ASCII Quest</h1>
-                <p>Exploration</p>
-            </div>
-
-            <div class="game-current-area">
-                <span>Current Area</span>
-                <strong><?= e($mapName) ?></strong>
             </div>
 
             <nav class="game-nav">
