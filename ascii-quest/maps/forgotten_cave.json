@@ -13,7 +13,7 @@
         "arrival_x": 4,
         "arrival_y": 1,
         "cost": 10,
-        "glyph": "◈"
+        "glyph": "⬡"
     },
 
     "layout": [

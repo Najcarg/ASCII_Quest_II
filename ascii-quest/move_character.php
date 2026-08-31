@@ -29,6 +29,7 @@ session_start();
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
+require_once __DIR__ . "/lib/WarpBootstrap.php";
 
 $pdo = getDb();
 
@@ -221,6 +222,37 @@ if ($newX < 0 || $newY < 0 || $newX >= $mapWidth || $newY >= $mapHeight) {
         "success" => false,
         "message" => "You cannot leave the map.",
         "messages" => ["You cannot leave the map."],
+    ]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Warp occupancy
+|--------------------------------------------------------------------------
+| Warp metadata remains authoritative even though its underlying layout
+| character is an ordinary floor tile.
+*/
+try {
+    $warpDefinitions = WarpBootstrap::definitions();
+} catch (RuntimeException $e) {
+    error_log("Move Warp loading error: " . $e->getMessage());
+
+    sendJson([
+        "success" => false,
+        "message" => "Map loading failed.",
+        "messages" => ["Map loading failed."],
+    ]);
+}
+
+if ($warpDefinitions->isWarpPosition(
+    (string) $character["map_file"],
+    $newX,
+    $newY,
+)) {
+    sendJson([
+        "success" => false,
+        "message" => "The Warp blocks your path.",
+        "messages" => ["The Warp blocks your path."],
     ]);
 }
 

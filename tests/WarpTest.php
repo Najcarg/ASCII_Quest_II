@@ -39,7 +39,7 @@ function warpMap(string $key, ?array $warp = null): array
             'arrival_x' => 2,
             'arrival_y' => 1,
             'cost' => 5,
-            'glyph' => '◈',
+            'glyph' => '⬡',
         ], $warp);
     }
 
@@ -231,6 +231,7 @@ return [
             $deepCave['arrival_y'],
             $deepCave['cost'],
         ], 'Deep Cave Warp definition.');
+        assertSameValue('⬡', $deepCave['glyph'], 'Deep Cave Warp glyph.');
         assertSameValue([4, 2, 4, 1, 10], [
             $forgottenCave['x'],
             $forgottenCave['y'],
@@ -238,6 +239,22 @@ return [
             $forgottenCave['arrival_y'],
             $forgottenCave['cost'],
         ], 'Forgotten Cave Warp definition.');
+        assertSameValue('⬡', $forgottenCave['glyph'], 'Forgotten Cave Warp glyph.');
+    },
+
+    'Warp position is authoritative occupied space for movement' => function (): void {
+        $registry = warpRegistry();
+
+        assertSameValue(
+            true,
+            $registry->isWarpPosition('deep_cave.json', 2, 2),
+            'Warp tile must be occupied.',
+        );
+        assertSameValue(
+            false,
+            $registry->isWarpPosition('deep_cave.json', 2, 1),
+            'Adjacent floor must not be occupied by the Warp.',
+        );
     },
 
     'Map without warp is valid' => function (): void {
@@ -433,6 +450,35 @@ return [
         assertSameValue(false, WarpService::isAdjacent(1, 1, 2, 2), 'Diagonal.');
         assertSameValue(false, WarpService::isAdjacent(0, 2, 2, 2), 'Distance two.');
         assertSameValue(false, WarpService::isAdjacent(2, 2, 2, 2), 'Same tile.');
+    },
+
+    'E interaction finds an orthogonally adjacent Warp' => function (): void {
+        [$service] = warpService();
+
+        foreach ([[2, 1], [2, 3], [1, 2], [3, 2]] as [$x, $y]) {
+            $warp = $service->findInteractableWarp('deep_cave.json', $x, $y);
+            assertSameValue('deep_cave', $warp['id'] ?? null, 'Direct E interaction.');
+        }
+    },
+
+    'E interaction ignores diagonal and distant Warps' => function (): void {
+        [$service] = warpService();
+
+        assertSameValue(
+            null,
+            $service->findInteractableWarp('deep_cave.json', 1, 1),
+            'Diagonal E interaction.',
+        );
+        assertSameValue(
+            null,
+            $service->findInteractableWarp('deep_cave.json', 0, 2),
+            'Distant E interaction.',
+        );
+        assertSameValue(
+            null,
+            $service->findInteractableWarp('deep_cave.json', 2, 2),
+            'Same-tile E interaction.',
+        );
     },
 
     'Adjacent owner unlocks for free without resource changes' => function (): void {

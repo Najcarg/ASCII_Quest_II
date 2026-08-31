@@ -1301,7 +1301,6 @@ a:hover {
         rgba(0, 0, 0, 0.85) 100%
     );
     text-shadow: 0 0 8px rgba(240, 213, 138, 0.85);
-    cursor: pointer;
 }
 
 .tile-wall {

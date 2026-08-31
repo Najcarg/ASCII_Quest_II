@@ -10,6 +10,7 @@ declare(strict_types=1);
 |
 | Current interactions:
 |   E on > or <     = map transition
+|   E next to Warp  = discover Warp
 |   E next to chest = open chest and collect gold
 |
 | Static map design comes from JSON.
@@ -20,6 +21,7 @@ session_start();
 
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
+require_once __DIR__ . "/lib/WarpBootstrap.php";
 
 $pdo = getDb();
 
@@ -284,7 +286,72 @@ foreach ($mapData["transitions"] ?? [] as $transition) {
 
 /*
 |--------------------------------------------------------------------------
-| Interaction 2: chests
+| Interaction 2: Warp discovery
+|--------------------------------------------------------------------------
+| The shared E interaction dispatcher selects only a directly adjacent Warp.
+| WarpService then reloads and revalidates the owned Champion before writing.
+*/
+try {
+    $warpService = WarpBootstrap::service($pdo);
+    $interactableWarp = $warpService->findInteractableWarp(
+        (string) $character["map_file"],
+        $playerX,
+        $playerY,
+    );
+
+    if ($interactableWarp !== null) {
+        $postedToken = $_POST["csrf_token"] ?? "";
+        $sessionToken = $_SESSION["csrf_token"] ?? "";
+        if (
+            !is_string($postedToken) ||
+            !is_string($sessionToken) ||
+            $postedToken === "" ||
+            $sessionToken === "" ||
+            !hash_equals($sessionToken, $postedToken)
+        ) {
+            sendJson([
+                "success" => false,
+                "message" => "Security check failed. Please try again.",
+                "messages" => ["Security check failed. Please try again."],
+            ]);
+        }
+
+        $result = $warpService->unlock(
+            (int) $_SESSION["user_id"],
+            $characterId,
+            (string) $interactableWarp["id"],
+        );
+
+        sendJson([
+            "success" => true,
+            "action" => "unlock_warp",
+            "reload" => false,
+        ] + $result + ["messages" => [$result["message"]]]);
+    }
+} catch (DomainException $e) {
+    sendJson([
+        "success" => false,
+        "message" => $e->getMessage(),
+        "messages" => [$e->getMessage()],
+    ]);
+} catch (OutOfBoundsException) {
+    sendJson([
+        "success" => false,
+        "message" => "Champion unavailable.",
+        "messages" => ["Champion unavailable."],
+    ]);
+} catch (Throwable $e) {
+    error_log("Warp interaction failed: " . $e->getMessage());
+    sendJson([
+        "success" => false,
+        "message" => "Unable to unlock that Warp. Please try again.",
+        "messages" => ["Unable to unlock that Warp. Please try again."],
+    ]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Interaction 3: chests
 |--------------------------------------------------------------------------
 | Chest tiles are not walkable, so player interacts from adjacent tile.
 */

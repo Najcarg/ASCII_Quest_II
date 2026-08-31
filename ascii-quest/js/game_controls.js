@@ -162,7 +162,7 @@ function createMapCell(mapX, mapY) {
 
     const tileInfo = isWarp
         ? {
-              display_glyph: gameState.currentWarp.glyph || "◈",
+              display_glyph: gameState.currentWarp.glyph || "⬡",
               css_class: "tile-warp",
               name: gameState.currentWarp.name + " Warp",
           }
@@ -440,8 +440,12 @@ async function interactWithCurrentTile() {
     isMoving = true;
 
     try {
+        const requestBody = new FormData();
+        requestBody.append("csrf_token", gameState.csrfToken);
+
         const response = await fetch("interact.php", {
             method: "POST",
+            body: requestBody,
         });
 
         const result = await response.json();
@@ -474,6 +478,23 @@ async function interactWithCurrentTile() {
         */
         applyCharacterUpdates(result.character_updates);
 
+        if (
+            result.action === "unlock_warp" &&
+            typeof window.ASCIIQuestHud?.applyWarpUnlockState === "function" &&
+            typeof window.ASCIIQuestHud?.updateWarpDestinations === "function"
+        ) {
+            window.ASCIIQuestHud.applyWarpUnlockState(
+                result,
+                function (destinations, gold) {
+                    window.ASCIIQuestHud.updateWarpDestinations(
+                        document,
+                        destinations,
+                        gold,
+                    );
+                },
+            );
+        }
+
         const messages = result.messages || [
             result.message || "Interaction complete.",
         ];
@@ -496,65 +517,6 @@ async function interactWithCurrentTile() {
     } catch (error) {
         console.error("Interaction error:", error);
         addLogMessage("Interaction error.", "danger");
-    } finally {
-        isMoving = false;
-    }
-}
-
-/*
-|--------------------------------------------------------------------------
-| Unlock a clicked Warp
-|--------------------------------------------------------------------------
-| The browser sends only the Warp identifier and CSRF token. PHP reloads the
-| current Champion/map/coordinates and validates direct adjacency.
-*/
-async function unlockWarp(warpId) {
-    if (isExplorationActionPending()) {
-        return;
-    }
-
-    isMoving = true;
-
-    try {
-        const requestBody = new URLSearchParams();
-        requestBody.set("csrf_token", gameState.csrfToken);
-        requestBody.set("warp_id", warpId);
-
-        const response = await fetch("unlock_warp.php", {
-            method: "POST",
-            headers: { Accept: "application/json" },
-            body: requestBody,
-        });
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-            addLogMessage(
-                result.message || "Unable to unlock that Warp.",
-                "warning",
-            );
-            return;
-        }
-
-        applyCharacterUpdates(result.character_updates);
-        if (
-            typeof window.ASCIIQuestHud?.applyWarpUnlockState === "function" &&
-            typeof window.ASCIIQuestHud?.updateWarpDestinations === "function"
-        ) {
-            window.ASCIIQuestHud.applyWarpUnlockState(
-                result,
-                function (destinations, gold) {
-                    window.ASCIIQuestHud.updateWarpDestinations(
-                        document,
-                        destinations,
-                        gold,
-                    );
-                },
-            );
-        }
-        addLogMessage(result.message || "Warp unlocked.", "success");
-    } catch (error) {
-        console.error("Warp unlock error:", error);
-        addLogMessage("Unable to unlock that Warp.", "danger");
     } finally {
         isMoving = false;
     }
@@ -599,15 +561,6 @@ gameMap.addEventListener("click", function (event) {
 
     const mapX = Number(cell.dataset.mapX);
     const mapY = Number(cell.dataset.mapY);
-
-    if (
-        gameState.currentWarp &&
-        mapX === Number(gameState.currentWarp.x) &&
-        mapY === Number(gameState.currentWarp.y)
-    ) {
-        unlockWarp(String(gameState.currentWarp.id));
-        return;
-    }
 
     const direction = getDirectionFromAdjacentTile(mapX, mapY);
 

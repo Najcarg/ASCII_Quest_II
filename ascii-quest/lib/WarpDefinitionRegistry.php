@@ -76,6 +76,15 @@ final class WarpDefinitionRegistry
         return $this->definitionsByMapFile[$mapFile] ?? null;
     }
 
+    public function isWarpPosition(string $mapFile, int $x, int $y): bool
+    {
+        $warp = $this->forMapFile($mapFile);
+
+        return $warp !== null &&
+            (int) $warp['x'] === $x &&
+            (int) $warp['y'] === $y;
+    }
+
     private static function validateWarp(
         string $mapFile,
         array $map,
@@ -105,7 +114,7 @@ final class WarpDefinitionRegistry
         if (!is_string($warp['name']) || trim($warp['name']) === '') {
             throw new RuntimeException('Warp name is invalid.');
         }
-        if (!is_string($warp['glyph']) || $warp['glyph'] !== '◈') {
+        if (!is_string($warp['glyph']) || $warp['glyph'] !== '⬡') {
             throw new RuntimeException('Warp glyph is invalid.');
         }
 

@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 
 const hudPath = path.join(
     __dirname,
@@ -13,6 +14,10 @@ const hudPath = path.join(
 );
 
 const hud = fs.existsSync(hudPath) ? require(hudPath) : {};
+const gameControlsSource = fs.readFileSync(
+    path.join(__dirname, "..", "ascii-quest", "js", "game_controls.js"),
+    "utf8",
+);
 const gameMarkup = fs.readFileSync(
     path.join(__dirname, "..", "ascii-quest", "game.php"),
     "utf8",
@@ -287,6 +292,156 @@ function createWarpDocument() {
     };
 }
 
+function createGameControlsHarness(interactionResult = null) {
+    const documentListeners = {};
+    const elementListeners = {};
+    const requests = [];
+    const unlockStates = [];
+
+    function createElement() {
+        return {
+            children: [],
+            dataset: {},
+            textContent: "",
+            className: "",
+            title: "",
+            scrollHeight: 0,
+            scrollTop: 0,
+            appendChild(child) {
+                this.children.push(child);
+                this.firstElementChild = this.children[0] || null;
+            },
+            removeChild(child) {
+                this.children = this.children.filter((candidate) => candidate !== child);
+                this.firstElementChild = this.children[0] || null;
+            },
+            addEventListener(eventName, listener) {
+                elementListeners[eventName] = listener;
+            },
+        };
+    }
+
+    const elements = {
+        gameMap: createElement(),
+        gameLogMessages: createElement(),
+        playerPosition: createElement(),
+        playerGold: createElement(),
+        playerHp: createElement(),
+        playerMana: createElement(),
+        "left-warp": createElement(),
+    };
+    elements["left-warp"].dataset.warpPending = "false";
+
+    const documentRoot = {
+        getElementById(id) {
+            return elements[id] || null;
+        },
+        createElement,
+        createDocumentFragment() {
+            return createElement();
+        },
+        addEventListener(eventName, listener) {
+            documentListeners[eventName] = listener;
+        },
+    };
+    const state = {
+        mapRows: [".....", ".....", "....."],
+        mapWidth: 5,
+        mapHeight: 3,
+        viewportWidth: 5,
+        viewportHeight: 3,
+        playerX: 3,
+        playerY: 2,
+        playerGlyph: "@",
+        playerName: "Tester",
+        tileTypes: {
+            ".": { display_glyph: ".", css_class: "tile-floor", name: "Floor" },
+        },
+        csrfToken: "test-token",
+        currentWarp: {
+            id: "deep_cave",
+            name: "Deep Cave",
+            x: 4,
+            y: 2,
+            glyph: "⬡",
+        },
+        initialMessages: [],
+    };
+    const windowRoot = {
+        ASCII_QUEST_STATE: state,
+        ASCIIQuestHud: {
+            applyWarpUnlockState(result) {
+                unlockStates.push(result);
+                return true;
+            },
+            updateWarpDestinations() {},
+        },
+        location: { reload() {} },
+    };
+
+    async function fetchImplementation(url, options = {}) {
+        requests.push({ url, options });
+
+        return {
+            ok: true,
+            async json() {
+                if (url === "interact.php") {
+                    return interactionResult || {
+                        success: false,
+                        message: "There is nothing to interact with here.",
+                        messages: ["There is nothing to interact with here."],
+                    };
+                }
+
+                return {
+                    success: false,
+                    message: "Blocked.",
+                    messages: ["Blocked."],
+                };
+            },
+        };
+    }
+
+    vm.runInNewContext(gameControlsSource, {
+        window: windowRoot,
+        document: documentRoot,
+        fetch: fetchImplementation,
+        FormData,
+        URLSearchParams,
+        setInterval() {},
+        setTimeout(callback) {
+            callback();
+        },
+        console,
+    });
+
+    return {
+        requests,
+        unlockStates,
+        clickMap(x, y) {
+            elementListeners.click({
+                target: {
+                    closest(selector) {
+                        return selector === ".map-cell"
+                            ? { dataset: { mapX: String(x), mapY: String(y) } }
+                            : null;
+                    },
+                },
+            });
+        },
+        pressE() {
+            documentListeners.keydown({
+                key: "e",
+                preventDefault() {},
+            });
+        },
+    };
+}
+
+function waitForGameControlRequest() {
+    return new Promise((resolve) => setImmediate(resolve));
+}
+
 function authoritativeAllocationState(stat = "strength") {
     const state = {
         stat_points: 0,
@@ -380,6 +535,60 @@ function authoritativeAllocationState(stat = "strength") {
 }
 
 const tests = {
+    async "clicking the Warp glyph never sends an unlock request"() {
+        const controls = createGameControlsHarness();
+
+        controls.clickMap(4, 2);
+        await waitForGameControlRequest();
+
+        assert.equal(controls.requests.length, 1);
+        assert.equal(controls.requests[0].url, "move_character.php");
+        assert.equal(controls.requests[0].options.body.get("direction"), "right");
+    },
+
+    async "E uses the shared interaction endpoint and applies a Warp unlock response"() {
+        const warpResult = {
+            success: true,
+            action: "unlock_warp",
+            reload: false,
+            message: "Warp unlocked: Deep Cave",
+            messages: ["Warp unlocked: Deep Cave"],
+            destinations: [
+                { id: "deep_cave", name: "Deep Cave", cost: 5, current_location: true },
+            ],
+            character_updates: { gold: 20 },
+        };
+        const controls = createGameControlsHarness(warpResult);
+
+        controls.pressE();
+        await waitForGameControlRequest();
+
+        assert.equal(controls.requests.length, 1);
+        assert.equal(controls.requests[0].url, "interact.php");
+        assert.equal(controls.requests[0].options.body.get("csrf_token"), "test-token");
+        assert.equal(controls.unlockStates.length, 1);
+        assert.equal(controls.unlockStates[0].action, "unlock_warp");
+    },
+
+    async "E still dispatches chest interaction through the existing endpoint"() {
+        const controls = createGameControlsHarness({
+            success: true,
+            action: "open_chest",
+            reload: false,
+            message: "You open the chest.",
+            messages: ["You open the chest."],
+            tile_updates: [{ x: 1, y: 1, glyph: "o" }],
+            character_updates: { gold: 25 },
+        });
+
+        controls.pressE();
+        await waitForGameControlRequest();
+
+        assert.equal(controls.requests.length, 1);
+        assert.equal(controls.requests[0].url, "interact.php");
+        assert.equal(controls.unlockStates.length, 0);
+    },
+
     "Warp destinations expose current, disabled, and travel actions"() {
         assert.equal(typeof hud.buildWarpDestinationView, "function");
 

@@ -20,6 +20,24 @@ final class WarpService
         return abs($playerX - $warpX) + abs($playerY - $warpY) === 1;
     }
 
+    public function findInteractableWarp(
+        string $mapFile,
+        int $playerX,
+        int $playerY,
+    ): ?array {
+        $warp = $this->definitions->forMapFile($mapFile);
+        if ($warp === null) {
+            return null;
+        }
+
+        return self::isAdjacent(
+            $playerX,
+            $playerY,
+            (int) $warp['x'],
+            (int) $warp['y'],
+        ) ? $warp : null;
+    }
+
     public function unlock(int $userId, int $characterId, string $warpId): array
     {
         $character = $this->ownedCharacter($userId, $characterId);
