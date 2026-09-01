@@ -19,8 +19,15 @@ const gameLogMessages = document.getElementById("gameLogMessages");
 const playerPosition = document.getElementById("playerPosition");
 const playerGold = document.getElementById("playerGold");
 const playerHp = document.getElementById("playerHp");
+const playerMana = document.getElementById("playerMana");
 
 let isMoving = false;
+
+function isExplorationActionPending() {
+    const warpPanel = document.getElementById("left-warp");
+
+    return isMoving || warpPanel?.dataset.warpPending === "true";
+}
 /*
 |--------------------------------------------------------------------------
 | Sync map state from server
@@ -148,12 +155,22 @@ function setMapGlyphAt(x, y, glyph) {
 function createMapCell(mapX, mapY) {
     const isPlayer = mapX === gameState.playerX && mapY === gameState.playerY;
     const tileGlyph = getTileGlyph(mapX, mapY);
+    const isWarp =
+        gameState.currentWarp &&
+        mapX === Number(gameState.currentWarp.x) &&
+        mapY === Number(gameState.currentWarp.y);
 
-    const tileInfo = gameState.tileTypes[tileGlyph] || {
-        display_glyph: tileGlyph,
-        css_class: "tile-unknown",
-        name: "Unknown",
-    };
+    const tileInfo = isWarp
+        ? {
+              display_glyph: gameState.currentWarp.glyph || "⬡",
+              css_class: "tile-warp",
+              name: gameState.currentWarp.name + " Warp",
+          }
+        : gameState.tileTypes[tileGlyph] || {
+              display_glyph: tileGlyph,
+              css_class: "tile-unknown",
+              name: "Unknown",
+          };
 
     const cell = document.createElement("div");
 
@@ -267,6 +284,13 @@ function applyCharacterUpdates(characterUpdates) {
     */
     if (characterUpdates.gold !== undefined && playerGold) {
         playerGold.textContent = String(characterUpdates.gold);
+
+        if (typeof window.ASCIIQuestHud?.applyWarpGoldState === "function") {
+            window.ASCIIQuestHud.applyWarpGoldState(
+                document,
+                characterUpdates.gold,
+            );
+        }
     }
 
     /*
@@ -279,9 +303,49 @@ function applyCharacterUpdates(characterUpdates) {
         const maxHp = String(characterUpdates.max_hp ?? "");
 
         if (maxHp !== "") {
-            playerHp.textContent = currentHp + "/" + maxHp;
+            if (
+                typeof window.ASCIIQuestHud?.synchronizeResourceDisplay ===
+                "function"
+            ) {
+                window.ASCIIQuestHud.synchronizeResourceDisplay(
+                    document,
+                    "Hp",
+                    characterUpdates.current_hp,
+                    characterUpdates.max_hp,
+                );
+            } else {
+                playerHp.textContent = currentHp + "/" + maxHp;
+            }
         } else {
             playerHp.textContent = currentHp;
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mana update
+    |--------------------------------------------------------------------------
+    */
+    if (characterUpdates.current_mana !== undefined && playerMana) {
+        const currentMana = String(characterUpdates.current_mana);
+        const maxMana = String(characterUpdates.max_mana ?? "");
+
+        if (maxMana !== "") {
+            if (
+                typeof window.ASCIIQuestHud?.synchronizeResourceDisplay ===
+                "function"
+            ) {
+                window.ASCIIQuestHud.synchronizeResourceDisplay(
+                    document,
+                    "Mana",
+                    characterUpdates.current_mana,
+                    characterUpdates.max_mana,
+                );
+            } else {
+                playerMana.textContent = currentMana + "/" + maxMana;
+            }
+        } else {
+            playerMana.textContent = currentMana;
         }
     }
 }
@@ -293,7 +357,7 @@ function applyCharacterUpdates(characterUpdates) {
 | PHP validates collision and saves position.
 */
 async function moveCharacter(direction) {
-    if (isMoving) {
+    if (isExplorationActionPending()) {
         return;
     }
 
@@ -369,15 +433,19 @@ async function moveCharacter(direction) {
 |   chests O
 */
 async function interactWithCurrentTile() {
-    if (isMoving) {
+    if (isExplorationActionPending()) {
         return;
     }
 
     isMoving = true;
 
     try {
+        const requestBody = new FormData();
+        requestBody.append("csrf_token", gameState.csrfToken);
+
         const response = await fetch("interact.php", {
             method: "POST",
+            body: requestBody,
         });
 
         const result = await response.json();
@@ -409,6 +477,23 @@ async function interactWithCurrentTile() {
         |   gold changes after opening chest
         */
         applyCharacterUpdates(result.character_updates);
+
+        if (
+            result.action === "unlock_warp" &&
+            typeof window.ASCIIQuestHud?.applyWarpUnlockState === "function" &&
+            typeof window.ASCIIQuestHud?.updateWarpDestinations === "function"
+        ) {
+            window.ASCIIQuestHud.applyWarpUnlockState(
+                result,
+                function (destinations, gold) {
+                    window.ASCIIQuestHud.updateWarpDestinations(
+                        document,
+                        destinations,
+                        gold,
+                    );
+                },
+            );
+        }
 
         const messages = result.messages || [
             result.message || "Interaction complete.",

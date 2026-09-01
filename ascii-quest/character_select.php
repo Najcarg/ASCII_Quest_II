@@ -11,7 +11,7 @@ $pdo = getDb();
 |--------------------------------------------------------------------------
 | CSRF token
 |--------------------------------------------------------------------------
-| Used by delete form to protect character deletion.
+| Used by forms that change character data.
 */
 if (empty($_SESSION["csrf_token"])) {
     $_SESSION["csrf_token"] = bin2hex(random_bytes(32));

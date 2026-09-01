@@ -29,6 +29,7 @@ session_start();
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
+require_once __DIR__ . "/lib/WarpBootstrap.php";
 
 $pdo = getDb();
 
@@ -221,6 +222,37 @@ if ($newX < 0 || $newY < 0 || $newX >= $mapWidth || $newY >= $mapHeight) {
         "success" => false,
         "message" => "You cannot leave the map.",
         "messages" => ["You cannot leave the map."],
+    ]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Warp occupancy
+|--------------------------------------------------------------------------
+| Warp metadata remains authoritative even though its underlying layout
+| character is an ordinary floor tile.
+*/
+try {
+    $warpDefinitions = WarpBootstrap::definitions();
+} catch (RuntimeException $e) {
+    error_log("Move Warp loading error: " . $e->getMessage());
+
+    sendJson([
+        "success" => false,
+        "message" => "Map loading failed.",
+        "messages" => ["Map loading failed."],
+    ]);
+}
+
+if ($warpDefinitions->isWarpPosition(
+    (string) $character["map_file"],
+    $newX,
+    $newY,
+)) {
+    sendJson([
+        "success" => false,
+        "message" => "The Warp blocks your path.",
+        "messages" => ["The Warp blocks your path."],
     ]);
 }
 
@@ -473,6 +505,9 @@ $updateStmt = $pdo->prepare("
         pos_y = :pos_y
     WHERE id = :character_id
       AND user_id = :user_id
+      AND current_map_id = :current_map_id
+      AND pos_x = :current_pos_x
+      AND pos_y = :current_pos_y
 ");
 
 $updateStmt->execute([
@@ -480,7 +515,18 @@ $updateStmt->execute([
     "pos_y" => $newY,
     "character_id" => $characterId,
     "user_id" => $_SESSION["user_id"],
+    "current_map_id" => $currentMapId,
+    "current_pos_x" => $currentX,
+    "current_pos_y" => $currentY,
 ]);
+
+if ($updateStmt->rowCount() !== 1) {
+    sendJson([
+        "success" => false,
+        "message" => "Your position changed. Please move again.",
+        "messages" => ["Your position changed. Please move again."],
+    ]);
+}
 
 /*
 |--------------------------------------------------------------------------
