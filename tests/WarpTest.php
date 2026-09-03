@@ -82,7 +82,9 @@ final class FakeWarpRepository
     public array $characters;
     public array $unlocks;
     public array $maps;
+    public array $operationLog = [];
     public int $travelUpdates = 0;
+    public int $transactionBegins = 0;
     private ?array $snapshot = null;
 
     public function __construct()
@@ -122,6 +124,7 @@ final class FakeWarpRepository
 
     public function findOwnedCharacter(int $userId, int $characterId, bool $forUpdate = false): ?array
     {
+        $this->operationLog[] = $forUpdate ? 'champion_lock' : 'champion_read';
         $character = $this->characters[$characterId] ?? null;
 
         return $character !== null && $character['user_id'] === $userId
@@ -131,6 +134,7 @@ final class FakeWarpRepository
 
     public function unlock(int $characterId, string $warpId): bool
     {
+        $this->operationLog[] = 'warp_unlock';
         $alreadyUnlocked = isset($this->unlocks[$characterId][$warpId]);
         $this->unlocks[$characterId][$warpId] = true;
 
@@ -154,6 +158,11 @@ final class FakeWarpRepository
 
     public function beginTransaction(): void
     {
+        if ($this->snapshot !== null) {
+            throw new LogicException('Nested Warp transaction attempted.');
+        }
+        $this->transactionBegins++;
+        $this->operationLog[] = 'transaction_begin';
         $this->snapshot = [$this->characters, $this->unlocks, $this->travelUpdates];
     }
 
@@ -585,5 +594,45 @@ return [
         assertSameValue(20, $repository->characters[42]['gold'], 'No current-map charge.');
         assertSameValue(0, $repository->travelUpdates, 'No current-map update.');
         assertSameValue(true, $result['current_location'], 'Current-location response.');
+    },
+
+    'Warp travel can participate in a caller-owned combat guard transaction' => function (): void {
+        [$service, $repository] = warpService();
+        $repository->unlocks[42]['forgotten_cave'] = true;
+        $repository->beginTransaction();
+        $lockedCharacter = $repository->findOwnedCharacter(7, 42, true);
+
+        $result = $service->travelInTransaction(
+            7,
+            42,
+            'forgotten_cave',
+            $lockedCharacter,
+        );
+
+        assertSameValue(true, $result['reload'], 'Travel result.');
+        assertSameValue(10, $repository->characters[42]['gold'], 'Travel mutation is pending.');
+        $repository->rollBack();
+        assertSameValue(20, $repository->characters[42]['gold'], 'Caller rollback restores travel.');
+    },
+
+    'Warp unlock belongs to its caller transaction without nesting' => function (): void {
+        [$service, $repository] = warpService();
+        $repository->beginTransaction();
+        $lockedCharacter = $repository->findOwnedCharacter(7, 42, true);
+
+        assertSameValue(42, $lockedCharacter['id'] ?? null, 'Champion locked by caller.');
+        $result = $service->unlock(7, 42, 'deep_cave');
+
+        assertSameValue(true, $result['newly_unlocked'], 'Warp unlock executes.');
+        assertSameValue(1, $repository->transactionBegins, 'No nested transaction begins.');
+        assertSameValue(
+            ['transaction_begin', 'champion_lock', 'champion_read', 'warp_unlock'],
+            array_slice($repository->operationLog, 0, 4),
+            'Caller locks Champion before Warp unlock.',
+        );
+        assertSameValue(['deep_cave'], $repository->unlockedWarpIds(42), 'Unlock is pending in caller transaction.');
+
+        $repository->rollBack();
+        assertSameValue([], $repository->unlockedWarpIds(42), 'Caller rollback removes unlock.');
     },
 ];

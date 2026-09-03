@@ -4,8 +4,10 @@ declare(strict_types=1);
 final class CombatRepository
 {
     private ?int $lockedCharacterId = null;
+    private ?int $lockedUserId = null;
     private bool $activeEncounterLockChecked = false;
     private ?int $lockedEncounterId = null;
+    private ?array $lockedEncounter = null;
     private bool $detailRowsTouched = false;
 
     public function __construct(private PDO $pdo)
@@ -15,17 +17,13 @@ final class CombatRepository
     public function findOwnedCharacter(int $userId, int $characterId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT
-                id,
-                user_id,
-                current_map_id,
-                pos_x,
-                pos_y,
-                current_hp,
-                current_mana,
-                life_state
-            FROM characters
-            WHERE id = :character_id
-              AND user_id = :user_id
+                c.*,
+                gm.map_key AS current_map_key,
+                gm.map_file AS current_map_file
+            FROM characters c
+            INNER JOIN game_maps gm ON gm.id = c.current_map_id
+            WHERE c.id = :character_id
+              AND c.user_id = :user_id
             LIMIT 1');
         $stmt->execute([
             'character_id' => $characterId,
@@ -71,17 +69,13 @@ final class CombatRepository
         }
 
         $stmt = $this->pdo->prepare('SELECT
-                id,
-                user_id,
-                current_map_id,
-                pos_x,
-                pos_y,
-                current_hp,
-                current_mana,
-                life_state
-            FROM characters
-            WHERE id = :character_id
-              AND user_id = :user_id
+                c.*,
+                gm.map_key AS current_map_key,
+                gm.map_file AS current_map_file
+            FROM characters c
+            INNER JOIN game_maps gm ON gm.id = c.current_map_id
+            WHERE c.id = :character_id
+              AND c.user_id = :user_id
             LIMIT 1
             FOR UPDATE');
         $stmt->execute([
@@ -95,6 +89,7 @@ final class CombatRepository
         }
 
         $this->lockedCharacterId = $characterId;
+        $this->lockedUserId = $userId;
 
         return $character;
     }
@@ -116,9 +111,144 @@ final class CombatRepository
         $encounter = $stmt->fetch();
 
         $this->activeEncounterLockChecked = true;
-        $this->lockedEncounterId = is_array($encounter) ? (int) $encounter['id'] : null;
+        $this->lockedEncounter = is_array($encounter) ? $encounter : null;
+        $this->lockedEncounterId = $this->lockedEncounter !== null
+            ? (int) $this->lockedEncounter['id']
+            : null;
 
         return is_array($encounter) ? $encounter : null;
+    }
+
+    public function lockOwnedAccountActiveEncounter(int $userId, int $characterId): ?array
+    {
+        $this->requireChampionLock($characterId);
+        if ($this->lockedUserId !== $userId) {
+            throw new LogicException('The locked Champion does not belong to this account.');
+        }
+        if ($this->detailRowsTouched) {
+            throw new LogicException('Account encounter must be locked before action or event rows.');
+        }
+
+        $account = $this->pdo->prepare('SELECT id
+            FROM users
+            WHERE id = :user_id
+            LIMIT 1
+            FOR UPDATE');
+        $account->execute(['user_id' => $userId]);
+        if (!is_array($account->fetch())) {
+            throw new OutOfBoundsException('Account not found.');
+        }
+
+        $lookup = $this->pdo->prepare('SELECT ce.id
+            FROM combat_encounters ce
+            INNER JOIN characters c ON c.id = ce.character_id
+            WHERE c.user_id = :user_id
+              AND ce.active_slot = 1
+            ORDER BY ce.id
+            LIMIT 1');
+        $lookup->execute(['user_id' => $userId]);
+        $found = $lookup->fetch();
+
+        $encounter = null;
+        if (is_array($found)) {
+            $stmt = $this->pdo->prepare('SELECT *
+                FROM combat_encounters
+                WHERE id = :encounter_id
+                  AND active_slot = 1
+                LIMIT 1
+                FOR UPDATE');
+            $stmt->execute(['encounter_id' => (int) $found['id']]);
+            $locked = $stmt->fetch();
+            $encounter = is_array($locked) ? $locked : null;
+        }
+
+        $this->activeEncounterLockChecked = true;
+        $this->lockedEncounter = is_array($encounter) ? $encounter : null;
+        $this->lockedEncounterId = $this->lockedEncounter !== null
+            ? (int) $this->lockedEncounter['id']
+            : null;
+
+        return $this->lockedEncounter;
+    }
+
+    public function lockedActiveEncounter(int $characterId): ?array
+    {
+        $this->requireChampionLock($characterId);
+        if (!$this->activeEncounterLockChecked) {
+            throw new LogicException('The active encounter slot must be locked second.');
+        }
+
+        if (
+            $this->lockedEncounter !== null &&
+            (int) $this->lockedEncounter['character_id'] !== $characterId
+        ) {
+            throw new LogicException('Another Champion owns the locked active encounter.');
+        }
+
+        return $this->lockedEncounter;
+    }
+
+    public function findActiveEncounter(int $characterId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT *
+            FROM combat_encounters
+            WHERE character_id = :character_id
+              AND active_slot = 1
+            LIMIT 1');
+        $stmt->execute(['character_id' => $characterId]);
+        $encounter = $stmt->fetch();
+
+        return is_array($encounter) ? $encounter : null;
+    }
+
+    public function findOwnedActiveEncounterForUser(int $userId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT ce.*
+            FROM combat_encounters ce
+            INNER JOIN characters c ON c.id = ce.character_id
+            WHERE c.user_id = :user_id
+              AND ce.active_slot = 1
+            ORDER BY ce.id
+            LIMIT 1');
+        $stmt->execute(['user_id' => $userId]);
+        $encounter = $stmt->fetch();
+
+        return is_array($encounter) ? $encounter : null;
+    }
+
+    public function updateLockedCharacterPosition(
+        int $userId,
+        int $characterId,
+        int $mapId,
+        int $currentX,
+        int $currentY,
+        int $newX,
+        int $newY,
+    ): bool {
+        $this->requireChampionLock($characterId);
+        if (!$this->activeEncounterLockChecked) {
+            throw new LogicException('The active encounter slot must be locked before movement.');
+        }
+
+        $stmt = $this->pdo->prepare('UPDATE characters
+            SET pos_x = :pos_x,
+                pos_y = :pos_y
+            WHERE id = :character_id
+              AND user_id = :user_id
+              AND current_map_id = :current_map_id
+              AND pos_x = :current_pos_x
+              AND pos_y = :current_pos_y');
+        $stmt->execute([
+            'pos_x' => $newX,
+            'pos_y' => $newY,
+            'character_id' => $characterId,
+            'user_id' => $userId,
+            'current_map_id' => $mapId,
+            'current_pos_x' => $currentX,
+            'current_pos_y' => $currentY,
+        ]);
+
+        return $stmt->rowCount() === 1;
     }
 
     public function createEncounter(int $characterId, array $encounter): array
@@ -128,6 +258,9 @@ final class CombatRepository
             throw new LogicException('Active encounter slot must be locked before encounter creation.');
         }
         if ($this->lockedEncounterId !== null) {
+            if ((int) $this->lockedEncounter['character_id'] !== $characterId) {
+                throw new DomainException('Another Champion is already in combat.');
+            }
             $existing = $this->lockActiveEncounter($characterId);
             if ($existing !== null) {
                 return $existing;
@@ -187,8 +320,9 @@ final class CombatRepository
 
         $id = (int) $this->pdo->lastInsertId();
         $this->lockedEncounterId = $id;
+        $this->lockedEncounter = ['id' => $id] + $params;
 
-        return ['id' => $id] + $params;
+        return $this->lockedEncounter;
     }
 
     public function updateEncounterSynchronization(
@@ -342,6 +476,17 @@ final class CombatRepository
         return $stmt->fetchAll();
     }
 
+    public function actionsForEncounter(int $encounterId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT *
+            FROM combat_actions
+            WHERE encounter_id = :encounter_id
+            ORDER BY id ASC');
+        $stmt->execute(['encounter_id' => $encounterId]);
+
+        return $stmt->fetchAll();
+    }
+
     private function requireTransaction(): void
     {
         if (!$this->pdo->inTransaction()) {
@@ -381,8 +526,10 @@ final class CombatRepository
     private function resetLockState(): void
     {
         $this->lockedCharacterId = null;
+        $this->lockedUserId = null;
         $this->activeEncounterLockChecked = false;
         $this->lockedEncounterId = null;
+        $this->lockedEncounter = null;
         $this->detailRowsTouched = false;
     }
 }

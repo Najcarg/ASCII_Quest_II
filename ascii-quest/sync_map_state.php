@@ -17,13 +17,19 @@ session_start();
 
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
+require_once __DIR__ . "/lib/CombatBootstrap.php";
 
 $pdo = getDb();
+$combatGuard = null;
 
 header("Content-Type: application/json");
 
 function sendJson(array $data): void
 {
+    global $combatGuard;
+    if ($combatGuard instanceof CombatAccessGuard && $combatGuard->isAtomicActive()) {
+        $combatGuard->rollBack();
+    }
     echo json_encode($data);
     exit();
 }
@@ -35,37 +41,29 @@ if (!isset($_SESSION["user_id"]) || !isset($_SESSION["character_id"])) {
     ]);
 }
 
+try {
+    $combatGuard = CombatBootstrap::guard($pdo);
+    $decision = $combatGuard->beginAtomic(
+        CombatAccessGuard::MAP_SYNC,
+        (int) $_SESSION["user_id"],
+        (int) $_SESSION["character_id"],
+    );
+} catch (DomainException | OutOfBoundsException $e) {
+    sendJson([
+        "success" => false,
+        "combat_locked" => true,
+        "message" => $e->getMessage(),
+        "tile_updates" => [],
+    ]);
+}
+
 /*
 |--------------------------------------------------------------------------
 | Load character and current map
 |--------------------------------------------------------------------------
 */
-$stmt = $pdo->prepare("
-    SELECT
-        c.id,
-        c.current_map_id,
-        gm.map_file
-    FROM characters c
-    INNER JOIN game_maps gm
-        ON gm.id = c.current_map_id
-    WHERE c.id = :character_id
-      AND c.user_id = :user_id
-    LIMIT 1
-");
-
-$stmt->execute([
-    "character_id" => $_SESSION["character_id"],
-    "user_id" => $_SESSION["user_id"],
-]);
-
-$character = $stmt->fetch();
-
-if (!$character) {
-    sendJson([
-        "success" => false,
-        "tile_updates" => [],
-    ]);
-}
+$character = $decision["character"];
+$character["map_file"] = (string) $character["current_map_file"];
 
 try {
     $mapData = loadMapFromFile((string) $character["map_file"]);
@@ -143,6 +141,8 @@ if (count($expiredOverrides) > 0) {
         "map_id" => $character["current_map_id"],
     ]);
 }
+
+$combatGuard->commit();
 
 sendJson([
     "success" => true,

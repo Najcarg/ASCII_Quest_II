@@ -2,17 +2,18 @@
 
 ## Status
 
-ACTIVE — COMBAT MILESTONE 1: FOUNDATION
+TASK 3 IMPLEMENTED — AWAITING CHECKPOINT REVIEW
 
 ## Current Phase
 
-Tasks 1–2 are implemented and have passed checkpoint review. The centralized
-combat definitions, pure encounter/Turn/Action domain, reviewed Migration 003,
-and `CombatRepository` foundation now exist.
+Tasks 1–2 have passed checkpoint review. Task 3 now implements atomic
+movement-triggered combat entry, the shared exploration access guard, durable
+combat-mode recognition, selection CSRF, the configured Cave Brute overlay,
+and exploration input locking. Task 3 awaits user/checkpoint review.
 
-Task 3 has NOT started. Migration 003 has been created and reviewed but HAS NOT
-BEEN APPLIED. No live combat integration exists yet: exploration movement,
-runtime endpoints, maps, HUD JavaScript, and CSS do not start or render combat.
+Migration 003 has been created and reviewed but HAS NOT BEEN APPLIED. No live
+database or browser verification has been performed. Task 4 authoritative
+timeline synchronization has NOT started.
 
 ## Authoritative Documents
 
@@ -26,7 +27,7 @@ Action as multiple independent concurrent action bars.
 
 ## Next Review Gate
 
-Do not begin Task 3 without explicit approval. Do not apply Migration 003
+Do not begin Task 4 without explicit approval. Do not apply Migration 003
 without separate explicit approval and the required live schema/backup
 preflight.
 
@@ -39,10 +40,17 @@ recorded in the specification. Their future interface/tab contracts must be
 preserved without inventing those backends in Combat Milestone 1.
 
 Disconnected catch-up is capped by one authoritative configuration value at
-five seconds. Relevant transactions lock Champion, then active encounter,
-then action/event rows. Character creation remains available during combat,
-but another Champion cannot Enter Dungeon until the unresolved encounter
-closes; Resume Battle remains available for the fighting Champion.
+five seconds. Account-wide combat exclusion transactions lock Champion, then
+the owning Account row (`users.id`) as a narrow combat mutex, then the active
+encounter, then action/event rows. This is not a general application locking
+policy. Character creation remains available during combat, but another
+Champion cannot Enter Dungeon until the unresolved encounter closes; Resume
+Battle remains available for the fighting Champion.
+
+`game.php` makes a read-only combat-mode decision and does not hold the Account
+mutex while rendering HTML. If that rendered exploration view becomes stale,
+every later state-changing request reacquires the atomic Champion → Account →
+Encounter guard before mutation, so stale UI cannot change exploration state.
 
 ## Last Accepted Milestone
 

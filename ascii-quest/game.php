@@ -23,6 +23,7 @@ require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
 require_once __DIR__ . "/lib/WarpBootstrap.php";
+require_once __DIR__ . "/lib/CombatBootstrap.php";
 
 $pdo = getDb();
 
@@ -92,6 +93,7 @@ $stmt = $pdo->prepare("
         c.current_map_id,
         c.pos_x,
         c.pos_y,
+        c.life_state,
 
         cc.class_name,
         cc.glyph,
@@ -136,6 +138,38 @@ try {
     exit("Unable to load Champion statistics.");
 }
 
+try {
+    $combatGuard = CombatBootstrap::guard($pdo);
+    $combatGuard->assertAllowed(
+        CombatAccessGuard::GAME_LOAD,
+        (int) $_SESSION["user_id"],
+        (int) $character["id"],
+    );
+    $combatState = CombatBootstrap::service($pdo)->state(
+        (int) $_SESSION["user_id"],
+        (int) $character["id"],
+    );
+} catch (DomainException | OutOfBoundsException $e) {
+    unset($_SESSION["character_id"]);
+    $_SESSION["flash_message"] = $e->getMessage();
+    $_SESSION["flash_type"] = "error";
+    header("Location: character_select.php");
+    exit();
+}
+
+$isCombatMode = $combatState !== [];
+$tileTypes = [];
+$mapData = [];
+$mapWidth = 0;
+$mapHeight = 0;
+$mapRows = [];
+$mapName = "Battle";
+$currentWarp = null;
+$warpDestinations = [];
+$encounterEnemy = null;
+
+if (!$isCombatMode) {
+
 /*
 |--------------------------------------------------------------------------
 | Load tile type definitions
@@ -151,8 +185,6 @@ $tileStmt = $pdo->query("
         name
     FROM tile_types
 ");
-
-$tileTypes = [];
 
 foreach ($tileStmt->fetchAll() as $tileType) {
     $tileTypes[$tileType["glyph"]] = [
@@ -188,6 +220,16 @@ $mapWidth = (int) $mapData["width"];
 $mapHeight = (int) $mapData["height"];
 $mapRows = $mapData["layout"];
 $mapName = (string) $mapData["map_name"];
+$encounterEnemy = CombatBootstrap::validatedEncounterForMap(
+    (string) $character["map_file"],
+    $mapData,
+);
+if ($encounterEnemy !== null) {
+    $enemyDefinition = CombatDefinitionRegistry::fromDefaultConfig()->enemy(
+        (string) $encounterEnemy["enemy_key"],
+    );
+    $encounterEnemy["name"] = (string) ($enemyDefinition["name"] ?? "Enemy");
+}
 
 try {
     $warpDefinitions = WarpBootstrap::definitions();
@@ -204,31 +246,6 @@ try {
     http_response_code(500);
     exit("Unable to load Warp destinations.");
 }
-
-/*
-|--------------------------------------------------------------------------
-| Clean expired temporary map overrides
-|--------------------------------------------------------------------------
-| Server/database time is used here through MariaDB NOW().
-|
-| Example:
-|   triggered trap v expires after 5 minutes
-|
-| Permanent changes like doors/chests have expires_at = NULL,
-| so they are not deleted.
-*/
-$cleanupStmt = $pdo->prepare("
-    DELETE FROM character_map_overrides
-    WHERE character_id = :character_id
-      AND map_id = :map_id
-      AND expires_at IS NOT NULL
-      AND expires_at <= NOW()
-");
-
-$cleanupStmt->execute([
-    "character_id" => $_SESSION["character_id"],
-    "map_id" => $character["current_map_id"],
-]);
 
 /*
 |--------------------------------------------------------------------------
@@ -270,6 +287,7 @@ foreach ($mapOverrides as $override) {
     ) {
         $mapRows[$overrideY][$overrideX] = $overrideGlyph;
     }
+}
 }
 
 /*
@@ -538,7 +556,7 @@ $detailStatGroups = [
                                     class="hud-stat-plus"
                                     data-stat-allocate="<?= e($statKey) ?>"
                                     aria-label="Add one point to <?= e($statLabel["label"]) ?>"
-                                    <?= (int) $character["stat_points"] > 0 ? "" : "disabled" ?>
+                                    <?= !$isCombatMode && (int) $character["stat_points"] > 0 ? "" : "disabled" ?>
                                 >+</button>
                             </div>
                         <?php endforeach; ?>
@@ -610,6 +628,24 @@ $detailStatGroups = [
             </aside>
 
             <section class="map-area hud-center-panel">
+                <?php if ($isCombatMode): ?>
+                    <section class="combat-placeholder" aria-label="Active combat">
+                        <div class="map-title">Battle</div>
+                        <h2><?= e($combatState["enemy"]["name"]) ?></h2>
+                        <pre aria-hidden="true"><?= e($combatState["enemy"]["glyph"]) ?></pre>
+                        <p>
+                            Enemy HP:
+                            <strong><?= e($combatState["enemy"]["current_hp"]) ?>/<?= e($combatState["enemy"]["maximum_hp"]) ?></strong>
+                        </p>
+                        <p>Combat is active and safely stored. Battle controls arrive in the next combat task.</p>
+                        <section class="hud-bottom-panel">
+                            <div class="game-log-title">Battle Info</div>
+                            <div class="game-log-messages">
+                                <div class="game-log-entry game-log-warning">The Cave Brute engages.</div>
+                            </div>
+                        </section>
+                    </section>
+                <?php else: ?>
                 <div class="map-title">
                     <?= e($mapName) ?>
                 </div>
@@ -704,6 +740,7 @@ $detailStatGroups = [
                         <p>Chat will be implemented in a later milestone.</p>
                     </section>
                 </section>
+                <?php endif; ?>
             </section>
 
             <aside class="hud-panel hud-right-panel" data-tab-group>
@@ -859,6 +896,7 @@ $detailStatGroups = [
 | JavaScript file uses this object to render and control the game.
 */
 window.ASCII_QUEST_STATE = {
+    mode: <?= json_encode($isCombatMode ? "combat" : "exploration") ?>,
     mapRows: <?= json_encode($mapRows, JSON_UNESCAPED_UNICODE) ?>,
 
     mapWidth: <?= (int) $mapWidth ?>,
@@ -886,13 +924,19 @@ window.ASCII_QUEST_STATE = {
         JSON_UNESCAPED_UNICODE,
     ) ?>,
     currentWarp: <?= json_encode($currentWarp, JSON_UNESCAPED_UNICODE) ?>,
+    encounterEnemy: <?= json_encode($encounterEnemy, JSON_UNESCAPED_UNICODE) ?>,
+    combat: <?= json_encode($combatState, JSON_UNESCAPED_UNICODE) ?>,
 
     initialMessages: [
-        <?= json_encode(
-            "You enter " . $mapName . ".",
-            JSON_UNESCAPED_UNICODE,
-        ) ?>,
-        "Use Arrow Keys, W A S D, mouse click, or E to interact."
+        <?php if ($isCombatMode): ?>
+            "Combat is active. Exploration controls are locked."
+        <?php else: ?>
+            <?= json_encode(
+                "You enter " . $mapName . ".",
+                JSON_UNESCAPED_UNICODE,
+            ) ?>,
+            "Use Arrow Keys, W A S D, mouse click, or E to interact."
+        <?php endif; ?>
     ]
 };
 </script>

@@ -104,73 +104,91 @@ final class WarpService
 
         try {
             $character = $this->ownedCharacter($userId, $characterId, true);
-            if (!$this->repository->hasUnlocked($characterId, $warpId)) {
-                throw new DomainException('That Warp has not been unlocked.');
-            }
-
-            $warp = $this->definitions->byId($warpId);
-            if ($warp === null) {
-                throw new DomainException('That Warp destination is unavailable.');
-            }
-
-            if ((string) $character['current_map_file'] === $warp['map_file']) {
-                $this->repository->commit();
-
-                return [
-                    'current_location' => true,
-                    'reload' => false,
-                    'message' => $warp['name'] . ' is your current location.',
-                    'destination' => $warp,
-                    'character_updates' => [
-                        'gold' => (int) $character['gold'],
-                        'current_hp' => (int) $character['current_hp'],
-                        'current_mana' => (int) $character['current_mana'],
-                    ],
-                ];
-            }
-
-            $cost = (int) $warp['cost'];
-            if ((int) $character['gold'] < $cost) {
-                throw new DomainException('Not enough Gold to use that Warp.');
-            }
-
-            $targetMap = $this->repository->findMapByKey((string) $warp['map_key']);
-            if (
-                $targetMap === null ||
-                (string) $targetMap['map_file'] !== $warp['map_file']
-            ) {
-                throw new DomainException('That Warp destination is unavailable.');
-            }
-
-            $updated = $this->repository->updateTravel(
+            $result = $this->travelInTransaction(
                 $userId,
                 $characterId,
-                (int) $targetMap['id'],
-                (int) $warp['arrival_x'],
-                (int) $warp['arrival_y'],
-                $cost,
+                $warpId,
+                $character,
             );
-            if (!$updated) {
-                throw new RuntimeException('Warp travel update failed.');
-            }
-
             $this->repository->commit();
-
-            return [
-                'current_location' => false,
-                'reload' => true,
-                'message' => 'Warped to ' . $warp['name'] . '.',
-                'destination' => $warp,
-                'character_updates' => [
-                    'gold' => (int) $character['gold'] - $cost,
-                    'current_hp' => (int) $character['current_hp'],
-                    'current_mana' => (int) $character['current_mana'],
-                ],
-            ];
+            return $result;
         } catch (Throwable $e) {
             $this->repository->rollBack();
             throw $e;
         }
+    }
+
+    public function travelInTransaction(
+        int $userId,
+        int $characterId,
+        string $warpId,
+        array $lockedCharacter,
+    ): array {
+        if (
+            (int) ($lockedCharacter['id'] ?? 0) !== $characterId ||
+            (int) ($lockedCharacter['user_id'] ?? 0) !== $userId
+        ) {
+            throw new OutOfBoundsException('Champion not found.');
+        }
+        if (!$this->repository->hasUnlocked($characterId, $warpId)) {
+            throw new DomainException('That Warp has not been unlocked.');
+        }
+
+        $warp = $this->definitions->byId($warpId);
+        if ($warp === null) {
+            throw new DomainException('That Warp destination is unavailable.');
+        }
+
+        if ((string) $lockedCharacter['current_map_file'] === $warp['map_file']) {
+            return [
+                'current_location' => true,
+                'reload' => false,
+                'message' => $warp['name'] . ' is your current location.',
+                'destination' => $warp,
+                'character_updates' => [
+                    'gold' => (int) $lockedCharacter['gold'],
+                    'current_hp' => (int) $lockedCharacter['current_hp'],
+                    'current_mana' => (int) $lockedCharacter['current_mana'],
+                ],
+            ];
+        }
+
+        $cost = (int) $warp['cost'];
+        if ((int) $lockedCharacter['gold'] < $cost) {
+            throw new DomainException('Not enough Gold to use that Warp.');
+        }
+
+        $targetMap = $this->repository->findMapByKey((string) $warp['map_key']);
+        if (
+            $targetMap === null ||
+            (string) $targetMap['map_file'] !== $warp['map_file']
+        ) {
+            throw new DomainException('That Warp destination is unavailable.');
+        }
+
+        $updated = $this->repository->updateTravel(
+            $userId,
+            $characterId,
+            (int) $targetMap['id'],
+            (int) $warp['arrival_x'],
+            (int) $warp['arrival_y'],
+            $cost,
+        );
+        if (!$updated) {
+            throw new RuntimeException('Warp travel update failed.');
+        }
+
+        return [
+            'current_location' => false,
+            'reload' => true,
+            'message' => 'Warped to ' . $warp['name'] . '.',
+            'destination' => $warp,
+            'character_updates' => [
+                'gold' => (int) $lockedCharacter['gold'] - $cost,
+                'current_hp' => (int) $lockedCharacter['current_hp'],
+                'current_mana' => (int) $lockedCharacter['current_mana'],
+            ],
+        ];
     }
 
     private function ownedCharacter(

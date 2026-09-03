@@ -35,7 +35,7 @@
 4. **Adjacent-click exploration movement:** preserve it outside combat. Because it uses `move_character.php`, it follows the same range/contact trigger. Disable every movement input path after combat starts.
 5. **Chat:** keep the existing tab visible/selectable/non-pausing. Do not create a Chat backend.
 6. **Disconnected catch-up:** persist a logical combat timeline and wall-clock `last_synchronized_at`. Advance by the actual gap up to five seconds, set the wall-clock anchor to the real current time, and never process the skipped remainder on later polls.
-7. **Lock order:** every relevant transaction locks the selected/owned Champion first, active encounter second if present, and action/event rows third as needed.
+7. **Lock order:** every account-wide combat exclusion transaction locks the selected/owned Champion first, the owning Account row (`users.id`) second as a narrow combat mutex, the active encounter third if present, and action/event rows afterward as needed. This Account mutex is not a general application locking policy. Focused same-Champion repository operations that make no account-wide exclusion decision may retain Champion → Encounter → Action/Event.
 8. **Character creation:** allow it during unresolved combat. Keep other Champions unselectable for gameplay, protect the fighter/encounter, and restore ordinary selection after encounter closure.
 
 ---
@@ -166,7 +166,7 @@ final class CombatEncounterTrigger
 }
 ```
 
-`startOrResumeForLockedMovement()` is an internal transaction participant, not a public browser endpoint. It requires the caller to hold the selected Champion lock and active PDO transaction. `move_character.php` commits the final movement position and encounter transition together.
+`startOrResumeForLockedMovement()` is an internal transaction participant, not a public browser endpoint. It requires the caller to hold the selected Champion lock, the owning Account combat mutex, and the active PDO transaction. `move_character.php` commits the final movement position and encounter transition together.
 
 The endpoints obtain `userId` and `characterId` only from the session. Request bodies contain intended action/token fields, never a trusted Champion ID or calculated result.
 
@@ -283,7 +283,7 @@ combat_events:
 - [ ] Write a failing structural test that requires migration ID `003_combat_foundation`, dependency/preflight checks for 001/002, `characters.id` exact `INT UNSIGNED` verification, matching combat foreign keys, all three tables, unique active/request/actor/event guards, lifecycle columns, and no destructive delete/reset.
 - [ ] Prove the structural test fails because migration 003 is absent.
 - [ ] Write migration 003 and read-only verification using the existing stored-procedure convention. Add `CHECK` constraints for enumerated foundation states and numeric invariants where MariaDB supports them.
-- [ ] Add failing repository contract tests requiring the exact lock order: selected/owned Champion first, active encounter second if present, then action/event rows as needed. Cover both an existing encounter mutation and movement-triggered creation where no encounter row exists yet. Also test owned lookup, active uniqueness, request-token replay, append-only event sequence, and atomic commit/rollback.
+- [ ] Add failing repository contract tests for focused same-Champion operations requiring selected/owned Champion first, active encounter second if present, then action/event rows as needed. Cover both an existing encounter mutation and movement-triggered creation where no encounter row exists yet. Also test owned lookup, active uniqueness, request-token replay, append-only event sequence, and atomic commit/rollback. Task 3 adds the Account mutex coverage required for account-wide exclusion.
 - [ ] Implement only the repository methods required by the contracts; use prepared statements and `FOR UPDATE` on mutations. No method may acquire an encounter/action lock before its Champion lock.
 - [ ] Run `php tests/run.php`, PHP lint, and `git diff --check`.
 - [ ] Review checkpoint: inspect the SQL manually; do not connect to or modify the live database.
@@ -313,6 +313,8 @@ combat_events:
 - [ ] Write failing refresh tests: load returns the same encounter ID, current enemy HP, action state, and potion state rather than recreating Cave Brute.
 - [ ] Write failure tests for dead/other-user Champions and for every movement request after encounter start.
 - [ ] Write failing guard tests for movement, interaction/transition, map sync mutation, Warp unlock/travel, stat allocation, Champion switching, fighting-Champion deletion, and duplicate entry. Verify ordinary exploration remains allowed with no encounter.
+- [ ] Add a real `CombatRepository` regression for account-wide exclusion: lock owned Champion 43 first, lock `users.id = 7` second, discover and lock Champion 42's active encounter afterward, reject Champion 43 exploration without mutation, and reject Account locking before the owned Champion lock.
+- [ ] Add a Warp unlock caller-transaction regression proving the existing unlock executes under the caller's Champion lock, opens no nested transaction, and rolls back with the caller. Add `unlockInTransaction()` only if the existing `WarpService::unlock()` cannot satisfy that contract.
 - [ ] Write failing character-management tests proving an account can create another Champion during combat, the new Champion cannot be selected/entered while the encounter remains unresolved, the active Champion/encounter is unchanged, Resume Battle remains available, and normal selection returns after closure.
 - [ ] Prove failures before implementation.
 - [ ] Implement `CombatAccessGuard` as one shared query/service decision, not copied SQL predicates. Add it server-side to every listed route before mutation.
@@ -322,6 +324,7 @@ combat_events:
 - [ ] Refactor `move_character.php` only as needed to lock the selected/owned Champion first before resolving the request. Lock an existing encounter second; for a normal in-range move, persist the final floor position; for direct contact, retain the previous position. Invoke `startOrResumeForLockedMovement()` and commit position/encounter together.
 - [ ] Return `combat_started: true` plus the sanitized combat state. Update the existing movement consumer to stop accepting exploration input immediately and reload/switch `game.php` into the durable combat center. Preserve keyboard and adjacent-click movement when no encounter starts.
 - [ ] Make `game.php` choose a combat state when a non-closed encounter exists; do not build full UI yet.
+- [ ] Keep `game.php` combat-mode detection read-only and do not hold the Account/combat mutex while rendering HTML. Treat rendered exploration as a potentially stale view; every subsequent mutation endpoint must reacquire the atomic Champion → Account → Encounter guard before changing state.
 - [ ] Run focused tests, all PHP tests, existing HUD tests, and changed-file lint.
 - [ ] Review checkpoint: prove no `E` path starts combat, no player/enemy coordinate overlap is possible, controls are not merely hidden, and exploration works unchanged outside combat.
 
@@ -511,7 +514,7 @@ combat_events:
 - [ ] Add Main Menu/logout/login/create/select/delete regressions proving creation is allowed without touching combat, another Champion cannot enter, the fighter cannot be deleted, Resume Battle remains, closure restores selection, and navigation is not a free escape.
 - [ ] Run failures first and make only targeted corrections.
 - [ ] Run all PHP/Node tests and static checks.
-- [ ] Independent review checkpoint: inspect transaction boundaries; exact Champion → encounter → action/event lock ordering; catch-up cap/anchor behavior; request-token handling; terminal-state ordering; no-free-healing; and every server lock independently from the implementer pass.
+- [ ] Independent review checkpoint: inspect transaction boundaries; exact Champion → Account mutex → encounter → action/event ordering wherever account-wide exclusion is required; the focused same-Champion exception; catch-up cap/anchor behavior; request-token handling; terminal-state ordering; no-free-healing; and every server lock independently from the implementer pass.
 
 ### Task 15: Full verification and manual browser checklist
 
@@ -541,7 +544,7 @@ combat_events:
 | Refresh preserves encounter ID and Cave Brute HP/state | Tasks 3, 4, and 14 / service refresh tests |
 | Offline gaps advance 2/5/max-5 seconds without repeated replay | Tasks 4 and 14 / fake-clock reconnect tests |
 | Death within the allowed catch-up window remains permanent | Tasks 4, 13, and 14 / service death tests |
-| Champion → encounter → action/event lock order | Tasks 2, 3, and 14 / repository/service order tests |
+| Champion → Account mutex → encounter → action/event order for account-wide exclusion | Tasks 2, 3, and 14 / repository/service order tests |
 | Creation allowed; switching blocked until encounter closes | Tasks 3, 13, and 14 / character-management tests |
 | No auto attack, manual weapon, cooldown at start, no overlap | Task 5 / `CombatServiceTest.php` |
 | Offensive snapshot and current defense | Task 5 / provider/service tests |

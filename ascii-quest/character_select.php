@@ -5,6 +5,7 @@ session_start();
 
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
+require_once __DIR__ . "/lib/CombatBootstrap.php";
 
 $pdo = getDb();
 /*
@@ -54,6 +55,7 @@ $stmt = $pdo->prepare("
         c.gold,
         c.pos_x,
         c.pos_y,
+        c.life_state,
 
         cc.class_name,
         cc.glyph,
@@ -70,6 +72,8 @@ $stmt->execute([
 ]);
 
 $characters = $stmt->fetchAll();
+$combatGuard = CombatBootstrap::guard($pdo);
+$activeCombat = $combatGuard->accountCombatState((int) $_SESSION["user_id"]);
 ?>
 
 <!DOCTYPE html>
@@ -115,6 +119,11 @@ $characters = $stmt->fetchAll();
                         );
                         $stats = null;
                     }
+                    $isFightingChampion = $activeCombat !== null &&
+                        (int) $activeCombat["character_id"] === (int) $character["id"];
+                    $selectionBlocked =
+                        (string) $character["life_state"] !== "alive" ||
+                        ($activeCombat !== null && !$isFightingChampion);
                     ?>
                     <article class="character-card">
                         <div class="character-glyph-frame">
@@ -173,11 +182,18 @@ $characters = $stmt->fetchAll();
                             <form method="post" action="select_character.php">
                                 <input
                                     type="hidden"
+                                    name="csrf_token"
+                                    value="<?= e($_SESSION["csrf_token"]) ?>"
+                                >
+                                <input
+                                    type="hidden"
                                     name="character_id"
                                     value="<?= e($character["id"]) ?>"
                                 >
 
-                                <button type="submit">Enter Dungeon</button>
+                                <button type="submit" <?= $selectionBlocked ? "disabled" : "" ?>>
+                                    <?= $isFightingChampion ? "Resume Battle" : "Enter Dungeon" ?>
+                                </button>
                                 <!--
                                 |--------------------------------------------------------------------------
                                 | Delete Character Button
@@ -194,6 +210,7 @@ $characters = $stmt->fetchAll();
                                     data-character-name="<?= e(
                                         $character["character_name"],
                                     ) ?>"
+                                    <?= $isFightingChampion ? "disabled" : "" ?>
                                 >
                                     Delete Character
                                 </button>

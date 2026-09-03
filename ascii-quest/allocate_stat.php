@@ -31,6 +31,7 @@ if (!isset($_SESSION['user_id'])) {
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/lib/CharacterStatAllocator.php';
 require_once __DIR__ . '/lib/CharacterStats.php';
+require_once __DIR__ . '/lib/CombatBootstrap.php';
 
 function redirectToStatPage(?int $characterId = null): never
 {
@@ -122,39 +123,17 @@ if (!is_string($stat)) {
 
 $userId = (int) $_SESSION['user_id'];
 $pdo = null;
+$combatGuard = null;
 
 try {
     $pdo = getDb();
-    $pdo->beginTransaction();
-
-    $stmt = $pdo->prepare('
-        SELECT
-            id,
-            user_id,
-            stat_points,
-            strength,
-            dexterity,
-            vitality,
-            energy,
-            fate,
-            current_hp,
-            current_mana
-        FROM characters
-        WHERE id = :character_id
-          AND user_id = :user_id
-        LIMIT 1
-        FOR UPDATE
-    ');
-
-    $stmt->execute([
-        'character_id' => (int) $characterId,
-        'user_id' => $userId,
-    ]);
-
-    $character = $stmt->fetch();
-    if (!$character) {
-        throw new OutOfBoundsException('Champion not found.');
-    }
+    $combatGuard = CombatBootstrap::guard($pdo);
+    $decision = $combatGuard->beginAtomic(
+        CombatAccessGuard::STAT_ALLOCATE,
+        $userId,
+        (int) $characterId,
+    );
+    $character = $decision['character'];
 
     $allocated = CharacterStatAllocator::allocate($character, $userId, $stat);
     $calculatedStats = CharacterStats::calculate($allocated);
@@ -188,11 +167,9 @@ try {
         throw new RuntimeException('Champion allocation update failed.');
     }
 
-    $pdo->commit();
+    $combatGuard->commit();
 } catch (InvalidArgumentException | DomainException | OutOfBoundsException $e) {
-    if ($pdo !== null && $pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
+    $combatGuard?->rollBack();
 
     respondAllocationError(
         $wantsJson,
@@ -201,9 +178,7 @@ try {
         (int) $characterId,
     );
 } catch (Throwable $e) {
-    if ($pdo !== null && $pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
+    $combatGuard?->rollBack();
 
     error_log(
         'Stat allocation failed for character ' .

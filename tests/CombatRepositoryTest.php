@@ -5,9 +5,14 @@ $combatRepositoryPath = __DIR__ . '/../ascii-quest/lib/CombatRepository.php';
 if (is_file($combatRepositoryPath)) {
     require_once $combatRepositoryPath;
 }
+$combatAccessGuardPath = __DIR__ . '/../ascii-quest/lib/CombatAccessGuard.php';
+if (is_file($combatAccessGuardPath)) {
+    require_once $combatAccessGuardPath;
+}
 
 final class FakeCombatPdo extends PDO
 {
+    public array $users = [];
     public array $characters = [];
     public array $encounters = [];
     public array $actions = [];
@@ -25,6 +30,7 @@ final class FakeCombatPdo extends PDO
 
     public function __construct()
     {
+        $this->users = [7 => ['id' => 7], 8 => ['id' => 8]];
         $this->characters = [
             42 => [
                 'id' => 42,
@@ -34,6 +40,16 @@ final class FakeCombatPdo extends PDO
                 'pos_y' => 12,
                 'current_hp' => 145,
                 'current_mana' => 80,
+                'life_state' => 'alive',
+            ],
+            43 => [
+                'id' => 43,
+                'user_id' => 7,
+                'current_map_id' => 2,
+                'pos_x' => 18,
+                'pos_y' => 12,
+                'current_hp' => 110,
+                'current_mana' => 70,
                 'life_state' => 'alive',
             ],
             84 => [
@@ -121,6 +137,18 @@ final class FakeCombatPdo extends PDO
     {
         $normalized = strtolower(preg_replace('/\s+/', ' ', trim($sql)) ?? $sql);
 
+        if (str_starts_with($normalized, 'select') && str_contains($normalized, 'from users')) {
+            if (str_contains($normalized, 'for update')) {
+                $this->lockOrder[] = 'account';
+            }
+            $user = $this->users[(int) $params['user_id']] ?? null;
+
+            return [
+                'rows' => $user !== null ? [$user] : [],
+                'row_count' => $user !== null ? 1 : 0,
+            ];
+        }
+
         if (str_starts_with($normalized, 'select') && str_contains($normalized, 'from characters')) {
             if (str_contains($normalized, 'for update')) {
                 $this->lockOrder[] = 'champion';
@@ -128,6 +156,49 @@ final class FakeCombatPdo extends PDO
             $character = $this->characters[(int) $params['character_id']] ?? null;
             $rows = $character !== null && $character['user_id'] === (int) $params['user_id']
                 ? [$character]
+                : [];
+
+            return ['rows' => $rows, 'row_count' => count($rows)];
+        }
+
+        if (
+            str_starts_with($normalized, 'select ce.id') &&
+            str_contains($normalized, 'from combat_encounters ce')
+        ) {
+            $ownedCharacterIds = array_map(
+                static fn (array $character): int => (int) $character['id'],
+                array_filter(
+                    $this->characters,
+                    static fn (array $character): bool =>
+                        (int) $character['user_id'] === (int) $params['user_id'],
+                ),
+            );
+            $rows = array_values(array_filter(
+                $this->encounters,
+                static fn (array $row): bool =>
+                    in_array((int) $row['character_id'], $ownedCharacterIds, true) &&
+                    $row['active_slot'] === 1,
+            ));
+            usort($rows, static fn (array $a, array $b): int => $a['id'] <=> $b['id']);
+            $rows = array_map(
+                static fn (array $row): array => ['id' => $row['id']],
+                array_slice($rows, 0, 1),
+            );
+
+            return ['rows' => $rows, 'row_count' => count($rows)];
+        }
+
+        if (
+            str_starts_with($normalized, 'select') &&
+            str_contains($normalized, 'from combat_encounters') &&
+            array_key_exists('encounter_id', $params)
+        ) {
+            if (str_contains($normalized, 'for update')) {
+                $this->lockOrder[] = 'encounter';
+            }
+            $encounter = $this->encounters[(int) $params['encounter_id']] ?? null;
+            $rows = $encounter !== null && $encounter['active_slot'] === 1
+                ? [$encounter]
                 : [];
 
             return ['rows' => $rows, 'row_count' => count($rows)];
@@ -494,6 +565,44 @@ return [
         assertCombatRepositoryRejected(
             fn (): ?array => $repository->lockActiveEncounter(42),
             'Encounter lock before Champion in transaction.',
+        );
+        $repository->rollBack();
+    },
+
+    'Real combat repository locks Champion account mutex then another Champion encounter' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        seedActiveCombat($pdo);
+        $beforeCharacters = $pdo->characters;
+        $beforeEncounters = $pdo->encounters;
+
+        $repository->beginTransaction();
+        $character = $repository->lockOwnedCharacter(7, 43);
+        $encounter = $repository->lockOwnedAccountActiveEncounter(7, 43);
+
+        assertSameValue(['champion', 'account', 'encounter'], $pdo->lockOrder, 'Account combat lock order.');
+        assertSameValue(42, $encounter['character_id'] ?? null, 'Another owned Champion encounter.');
+
+        $guard = new CombatAccessGuard($repository);
+        $rejected = false;
+        try {
+            $guard->assertLockedAllowed(
+                CombatAccessGuard::MOVE,
+                7,
+                $character,
+                $encounter,
+            );
+        } catch (DomainException) {
+            $rejected = true;
+        }
+        assertSameValue(true, $rejected, 'Other Champion exploration rejection.');
+        assertSameValue($beforeCharacters, $pdo->characters, 'No Champion mutation after rejection.');
+        assertSameValue($beforeEncounters, $pdo->encounters, 'No encounter mutation after rejection.');
+        $repository->rollBack();
+
+        $repository->beginTransaction();
+        assertCombatRepositoryRejected(
+            fn (): ?array => $repository->lockOwnedAccountActiveEncounter(7, 43),
+            'Account mutex before Champion lock.',
         );
         $repository->rollBack();
     },
