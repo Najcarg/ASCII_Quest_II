@@ -16,6 +16,7 @@ declare(strict_types=1);
 session_start();
 
 require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/lib/CombatBootstrap.php";
 
 $pdo = getDb();
 
@@ -121,6 +122,21 @@ if ($confirmName !== $character["character_name"]) {
     backToCharacterSelect();
 }
 
+$combatGuard = null;
+try {
+    $combatGuard = CombatBootstrap::guard($pdo);
+    $decision = $combatGuard->beginAtomic(
+        CombatAccessGuard::DELETE_CHARACTER,
+        (int) $_SESSION["user_id"],
+        $characterId,
+    );
+    $character = $decision["character"];
+    if ($confirmName !== $character["character_name"]) {
+        throw new DomainException(
+            "Character name did not match. Character was not deleted.",
+        );
+    }
+
 /*
 |--------------------------------------------------------------------------
 | Delete character
@@ -136,6 +152,19 @@ $deleteStmt->execute([
     "character_id" => $characterId,
     "user_id" => $_SESSION["user_id"],
 ]);
+$combatGuard->commit();
+} catch (DomainException | OutOfBoundsException $e) {
+    $combatGuard?->rollBack();
+    $_SESSION["flash_message"] = $e->getMessage();
+    $_SESSION["flash_type"] = "error";
+    backToCharacterSelect();
+} catch (Throwable $e) {
+    $combatGuard?->rollBack();
+    error_log("Character deletion failed: " . $e->getMessage());
+    $_SESSION["flash_message"] = "Unable to delete that Champion. Please try again.";
+    $_SESSION["flash_type"] = "error";
+    backToCharacterSelect();
+}
 
 /*
 |--------------------------------------------------------------------------

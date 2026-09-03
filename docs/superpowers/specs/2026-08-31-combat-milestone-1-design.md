@@ -162,7 +162,7 @@ abs(champion_x - enemy_x) + abs(champion_y - enemy_y) == 1
 When a movement request would place the Champion on a valid floor tile in fighting range, the server performs one coordinated operation:
 
 1. authenticate the session and selected Champion;
-2. lock/check the Champion and any existing active encounter;
+2. lock the Champion, then the owning Account combat mutex, then check any existing active encounter;
 3. validate the requested movement using the existing collision rules;
 4. resolve and persist the Champion's final valid floor position;
 5. evaluate the authoritative Cave Brute position/range;
@@ -280,15 +280,16 @@ target_timeline = timeline_elapsed_ms + processed_elapsed
 It then uses this order:
 
 1. lock the selected/owned Champion row;
-2. lock the active Combat Encounter row if one exists;
-3. calculate the capped target logical timeline;
-4. process due Combat Action resolutions and Combat Events in logical-timeline order;
-5. process victory or death immediately when HP reaches zero;
-6. process crossed turn boundaries, discarding unused Actions;
-7. run due Cave Brute decisions only through the capped target timeline;
-8. persist the resulting logical timeline and state;
-9. set `last_synchronized_at` to the actual current server wall time, even when part of a long absence was intentionally skipped;
-10. commit and return a sanitized client projection.
+2. lock the owning Account row as the narrow combat mutex;
+3. lock the active Combat Encounter row if one exists;
+4. calculate the capped target logical timeline;
+5. process due Combat Action resolutions and Combat Events in logical-timeline order;
+6. process victory or death immediately when HP reaches zero;
+7. process crossed turn boundaries, discarding unused Actions;
+8. run due Cave Brute decisions only through the capped target timeline;
+9. persist the resulting logical timeline and state;
+10. set `last_synchronized_at` to the actual current server wall time, even when part of a long absence was intentionally skipped;
+11. commit and return a sanitized client projection.
 
 Consequences:
 
@@ -557,13 +558,14 @@ Migration 003 must:
 
 ## 16. Transaction, concurrency, and idempotency rules
 
-Every combat transaction and combat-aware exploration transaction uses this authoritative lock order wherever the rows exist:
+Every combat transaction and combat-aware exploration transaction that enforces account-wide combat exclusion uses this authoritative lock order wherever the rows exist:
 
 1. selected/owned Champion row;
-2. active Combat Encounter row, if one exists;
-3. Combat Action and Combat Event rows as needed.
+2. owning Account row (`users.id`) as a combat mutex;
+3. active Combat Encounter row, if one exists;
+4. Combat Action and Combat Event rows as needed.
 
-Champion is always first because movement can begin combat before an encounter row exists. No repository or service may use encounter-first locking or choose a different order for convenience. After acquiring the locks, the service synchronizes due state before validating a new combat command.
+Champion is always first because movement can begin combat before an encounter row exists. The Account row is a narrow mutex only for combat entry, combat mutation, and account/Champion management decisions that must exclude another owned Champion's unresolved encounter; it is not a general application locking policy. Focused same-Champion repository operations that do not make an account-wide exclusion decision may retain the simpler Champion then Encounter then Action/Event order. No repository or service may use encounter-first locking or choose a different order for convenience. After acquiring the required locks, the service synchronizes due state before validating a new combat command.
 
 Protections include:
 
@@ -624,6 +626,8 @@ The completed encounter plus killer key is the explicit future Slayer hook. A fu
 ### 19.1 Refresh and login
 
 Refreshing `game.php` discovers the selected Champion's non-closed encounter and renders combat/loot/death state instead of the map. Enemy HP, player HP/Mana, turn state, actions, cooldowns, potion charges, effects, Block state, rewards, and Battle Info come from MariaDB.
+
+`game.php` makes a read-only combat-mode decision and must not hold the Account/combat mutex while rendering HTML. An already-rendered exploration page can therefore become stale if another request starts combat. This is safe because every subsequent state-changing exploration or account-management request acquires the atomic Champion, Account, and Encounter guard before mutation; stale UI cannot successfully mutate exploration state.
 
 Refresh, a short network interruption, a browser crash, closing/reopening the browser, and logout/login all resume through the same durable encounter and capped synchronization path. None recreates the encounter or restores resources.
 
@@ -688,7 +692,7 @@ Character-management tests prove creation remains available, a newly created/oth
 
 Dependency-free fakes and migration-structure checks cover ownership, transactions, lock order, idempotency keys, sanitized projections, active encounter uniqueness, route locks, and exact SQL migration constraints. No live database is required in the unit suite.
 
-Lock-order tests require Champion first, active encounter second, and action/event rows third for combat commands and combat-aware movement. Tests must reject or detect encounter-first repository/service sequences.
+Lock-order tests require Champion first, the owning Account combat mutex second when account-wide exclusion is required, active encounter afterward, and action/event rows last. Real `CombatRepository` coverage must include selecting one owned Champion while another owned Champion holds the active encounter. Focused same-Champion repository tests may omit the Account mutex only when they do not enforce an account-wide decision. Tests must reject or detect Account/Encounter locking before the owned Champion lock.
 
 ### 22.3 JavaScript tests
 
@@ -737,7 +741,7 @@ Combat Milestone 1 is ready for live testing only when:
 - direct enemy-tile contact never overlaps Champion and enemy coordinates;
 - active combat survives refresh and login without reset or pause exploits;
 - disconnected catch-up uses the centralized five-second cap and preserves all encounter state;
-- every relevant transaction locks Champion, then encounter, then action/event rows;
+- every account-wide combat transaction locks Champion, then Account mutex, then encounter, then action/event rows;
 - Champion creation remains available without enabling Champion switching or altering the active encounter;
 - player actions are pointer-only, manual, sequential, server-accepted, and Action-limited;
 - Cave Brute follows the approved hidden-cooldown, skill-first logic;

@@ -30,8 +30,11 @@ require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
 require_once __DIR__ . "/lib/WarpBootstrap.php";
+require_once __DIR__ . "/lib/CombatBootstrap.php";
 
 $pdo = getDb();
+$combatRepository = null;
+$movementTransactionOpen = false;
 
 header("Content-Type: application/json");
 
@@ -40,10 +43,27 @@ header("Content-Type: application/json");
 | Helper: return JSON and stop script
 |--------------------------------------------------------------------------
 */
-function sendJson(array $data): void
+function sendJson(array $data): never
 {
+    global $combatRepository, $movementTransactionOpen;
+    if ($movementTransactionOpen && $combatRepository instanceof CombatRepository) {
+        $combatRepository->rollBack();
+        $movementTransactionOpen = false;
+    }
+
     echo json_encode($data);
     exit();
+}
+
+function commitMovementTransaction(): void
+{
+    global $combatRepository, $movementTransactionOpen;
+    if (!$movementTransactionOpen || !$combatRepository instanceof CombatRepository) {
+        throw new LogicException('Movement transaction is unavailable.');
+    }
+
+    $combatRepository->commit();
+    $movementTransactionOpen = false;
 }
 
 /*
@@ -127,40 +147,67 @@ if ($direction === "up") {
 | Load selected character + current map file
 |--------------------------------------------------------------------------
 */
-$stmt = $pdo->prepare("
-    SELECT
-        c.id,
-        c.pos_x,
-        c.pos_y,
-        c.current_map_id,
-        c.current_hp,
-        c.strength,
-        c.dexterity,
-        c.vitality,
-        c.energy,
-        c.fate,
-
-        gm.map_file
-    FROM characters c
-    INNER JOIN game_maps gm
-        ON gm.id = c.current_map_id
-    WHERE c.id = :character_id
-      AND c.user_id = :user_id
-    LIMIT 1
-");
-
-$stmt->execute([
-    "character_id" => $_SESSION["character_id"],
-    "user_id" => $_SESSION["user_id"],
-]);
-
-$character = $stmt->fetch();
+$combatRepository = CombatBootstrap::repository($pdo);
+$combatService = CombatBootstrap::serviceForRepository($combatRepository);
+$combatGuard = CombatBootstrap::guardForRepository($combatRepository);
+$combatRepository->beginTransaction();
+$movementTransactionOpen = true;
+$character = $combatRepository->lockOwnedCharacter(
+    (int) $_SESSION["user_id"],
+    (int) $_SESSION["character_id"],
+);
 
 if (!$character) {
     sendJson([
         "success" => false,
         "message" => "Character not found.",
         "messages" => ["Character not found."],
+    ]);
+}
+
+$character["map_file"] = (string) $character["current_map_file"];
+$lockedEncounter = $combatRepository->lockOwnedAccountActiveEncounter(
+    (int) $_SESSION["user_id"],
+    (int) $character["id"],
+);
+try {
+    $combatGuard->assertLockedAllowed(
+        CombatAccessGuard::MOVE,
+        (int) $_SESSION["user_id"],
+        $character,
+        $lockedEncounter,
+    );
+} catch (DomainException $e) {
+    if (
+        $lockedEncounter === null ||
+        (int) $lockedEncounter["character_id"] !== (int) $character["id"]
+    ) {
+        sendJson([
+            "success" => false,
+            "message" => $e->getMessage(),
+            "messages" => [$e->getMessage()],
+        ]);
+    }
+
+    $encounterDefinition = CombatBootstrap::validatedEncounterForMap(
+        (string) $character["map_file"],
+        loadMapFromFile((string) $character["map_file"]),
+    );
+    if ($encounterDefinition === null) {
+        throw new RuntimeException('Stored combat map has no encounter definition.');
+    }
+    $combatState = $combatService->startOrResumeForLockedMovement(
+        (int) $_SESSION["user_id"],
+        $character,
+        $encounterDefinition,
+    );
+
+    sendJson([
+        "success" => false,
+        "combat_started" => true,
+        "combat" => $combatState,
+        "message" => "Combat is active. Resume the battle.",
+        "messages" => ["Combat is active. Resume the battle."],
     ]);
 }
 
@@ -209,6 +256,20 @@ try {
     ]);
 }
 
+try {
+    $encounterDefinition = CombatBootstrap::validatedEncounterForMap(
+        (string) $character["map_file"],
+        $mapData,
+    );
+} catch (RuntimeException $e) {
+    error_log("Combat map validation error: " . $e->getMessage());
+    sendJson([
+        "success" => false,
+        "message" => "Map loading failed.",
+        "messages" => ["Map loading failed."],
+    ]);
+}
+
 $mapWidth = (int) $mapData["width"];
 $mapHeight = (int) $mapData["height"];
 
@@ -223,6 +284,36 @@ if ($newX < 0 || $newY < 0 || $newX >= $mapWidth || $newY >= $mapHeight) {
         "message" => "You cannot leave the map.",
         "messages" => ["You cannot leave the map."],
     ]);
+}
+
+if ($encounterDefinition !== null) {
+    $contactDecision = $combatService->movementDecision(
+        $character,
+        $newX,
+        $newY,
+        false,
+        $encounterDefinition,
+    );
+    if ($contactDecision["direct_contact"] && $contactDecision["start_combat"]) {
+        $combatState = $combatService->startOrResumeForLockedMovement(
+            (int) $_SESSION["user_id"],
+            $character,
+            $encounterDefinition,
+        );
+        commitMovementTransaction();
+
+        sendJson([
+            "success" => true,
+            "combat_started" => true,
+            "combat" => $combatState,
+            "message" => "The Cave Brute engages.",
+            "messages" => ["The Cave Brute engages."],
+            "pos_x" => $currentX,
+            "pos_y" => $currentY,
+            "tile_updates" => [],
+            "character_updates" => [],
+        ]);
+    }
 }
 
 /*
@@ -448,6 +539,7 @@ if ($targetGlyph === "+") {
     ]);
 
     $doorMessage = $targetTile["interact_message"] ?: "You open the door.";
+    commitMovementTransaction();
 
     sendJson([
         "success" => true,
@@ -499,28 +591,15 @@ if ((int) $targetTile["is_walkable"] !== 1) {
 | Save new position
 |--------------------------------------------------------------------------
 */
-$updateStmt = $pdo->prepare("
-    UPDATE characters
-    SET pos_x = :pos_x,
-        pos_y = :pos_y
-    WHERE id = :character_id
-      AND user_id = :user_id
-      AND current_map_id = :current_map_id
-      AND pos_x = :current_pos_x
-      AND pos_y = :current_pos_y
-");
-
-$updateStmt->execute([
-    "pos_x" => $newX,
-    "pos_y" => $newY,
-    "character_id" => $characterId,
-    "user_id" => $_SESSION["user_id"],
-    "current_map_id" => $currentMapId,
-    "current_pos_x" => $currentX,
-    "current_pos_y" => $currentY,
-]);
-
-if ($updateStmt->rowCount() !== 1) {
+if (!$combatRepository->updateLockedCharacterPosition(
+    (int) $_SESSION["user_id"],
+    $characterId,
+    $currentMapId,
+    $currentX,
+    $currentY,
+    $newX,
+    $newY,
+)) {
     sendJson([
         "success" => false,
         "message" => "Your position changed. Please move again.",
@@ -667,6 +746,29 @@ foreach ($mapData["objects"] ?? [] as $object) {
     break;
 }
 
+$combatState = null;
+if ($encounterDefinition !== null) {
+    $movementDecision = $combatService->movementDecision(
+        $character,
+        $newX,
+        $newY,
+        true,
+        $encounterDefinition,
+    );
+    if ($movementDecision["start_combat"]) {
+        $character["pos_x"] = $newX;
+        $character["pos_y"] = $newY;
+        $combatState = $combatService->startOrResumeForLockedMovement(
+            (int) $_SESSION["user_id"],
+            $character,
+            $encounterDefinition,
+        );
+        $messages[] = "The Cave Brute engages.";
+    }
+}
+
+commitMovementTransaction();
+
 /*
 |--------------------------------------------------------------------------
 | Send successful movement response
@@ -683,4 +785,6 @@ sendJson([
     "tile_name" => $targetTile["name"],
     "tile_updates" => $tileUpdates,
     "character_updates" => $characterUpdates,
+    "combat_started" => $combatState !== null,
+    "combat" => $combatState,
 ]);

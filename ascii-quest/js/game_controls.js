@@ -12,7 +12,14 @@
 |   window.ASCII_QUEST_STATE
 */
 
+(function () {
+"use strict";
+
 const gameState = window.ASCII_QUEST_STATE;
+
+if (!gameState || gameState.mode !== "exploration") {
+    return;
+}
 
 const gameMap = document.getElementById("gameMap");
 const gameLogMessages = document.getElementById("gameLogMessages");
@@ -22,11 +29,12 @@ const playerHp = document.getElementById("playerHp");
 const playerMana = document.getElementById("playerMana");
 
 let isMoving = false;
+let explorationLocked = false;
 
 function isExplorationActionPending() {
     const warpPanel = document.getElementById("left-warp");
 
-    return isMoving || warpPanel?.dataset.warpPending === "true";
+    return explorationLocked || isMoving || warpPanel?.dataset.warpPending === "true";
 }
 /*
 |--------------------------------------------------------------------------
@@ -159,8 +167,18 @@ function createMapCell(mapX, mapY) {
         gameState.currentWarp &&
         mapX === Number(gameState.currentWarp.x) &&
         mapY === Number(gameState.currentWarp.y);
+    const isEnemy =
+        gameState.encounterEnemy &&
+        mapX === Number(gameState.encounterEnemy.x) &&
+        mapY === Number(gameState.encounterEnemy.y);
 
-    const tileInfo = isWarp
+    const tileInfo = isEnemy
+        ? {
+              display_glyph: gameState.encounterEnemy.glyph || "B",
+              css_class: "tile-enemy",
+              name: gameState.encounterEnemy.name || "Enemy",
+          }
+        : isWarp
         ? {
               display_glyph: gameState.currentWarp.glyph || "⬡",
               css_class: "tile-warp",
@@ -373,6 +391,12 @@ async function moveCharacter(direction) {
         });
 
         const result = await response.json();
+
+        if (result.combat_started) {
+            explorationLocked = true;
+            window.location.reload();
+            return;
+        }
 
         if (!result.success) {
             const messages = result.messages || [
@@ -619,3 +643,4 @@ gameState.initialMessages.forEach(function (message) {
 | Trap reset still uses server time; this only updates browser display.
 */
 setInterval(syncMapState, 15000);
+})();

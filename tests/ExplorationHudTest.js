@@ -292,11 +292,15 @@ function createWarpDocument() {
     };
 }
 
-function createGameControlsHarness(interactionResult = null) {
+function createGameControlsHarness(options = {}) {
+    const interactionResult = options.interactionResult || null;
+    const movementResult = options.movementResult || null;
     const documentListeners = {};
     const elementListeners = {};
     const requests = [];
     const unlockStates = [];
+    let reloads = 0;
+    let intervals = 0;
 
     function createElement() {
         return {
@@ -345,6 +349,7 @@ function createGameControlsHarness(interactionResult = null) {
         },
     };
     const state = {
+        mode: options.mode || "exploration",
         mapRows: [".....", ".....", "....."],
         mapWidth: 5,
         mapHeight: 3,
@@ -366,6 +371,13 @@ function createGameControlsHarness(interactionResult = null) {
             glyph: "⬡",
         },
         initialMessages: [],
+        encounterEnemy: options.encounterEnemy || {
+            id: "deep_cave_01_cave_brute",
+            name: "Cave Brute",
+            x: 4,
+            y: 1,
+            glyph: "B",
+        },
     };
     const windowRoot = {
         ASCII_QUEST_STATE: state,
@@ -376,7 +388,11 @@ function createGameControlsHarness(interactionResult = null) {
             },
             updateWarpDestinations() {},
         },
-        location: { reload() {} },
+        location: {
+            reload() {
+                reloads++;
+            },
+        },
     };
 
     async function fetchImplementation(url, options = {}) {
@@ -391,6 +407,10 @@ function createGameControlsHarness(interactionResult = null) {
                         message: "There is nothing to interact with here.",
                         messages: ["There is nothing to interact with here."],
                     };
+                }
+
+                if (url === "move_character.php" && movementResult) {
+                    return movementResult;
                 }
 
                 return {
@@ -408,7 +428,9 @@ function createGameControlsHarness(interactionResult = null) {
         fetch: fetchImplementation,
         FormData,
         URLSearchParams,
-        setInterval() {},
+        setInterval() {
+            intervals++;
+        },
         setTimeout(callback) {
             callback();
         },
@@ -418,8 +440,14 @@ function createGameControlsHarness(interactionResult = null) {
     return {
         requests,
         unlockStates,
+        get intervals() {
+            return intervals;
+        },
+        get reloads() {
+            return reloads;
+        },
         clickMap(x, y) {
-            elementListeners.click({
+            elementListeners.click?.({
                 target: {
                     closest(selector) {
                         return selector === ".map-cell"
@@ -430,8 +458,14 @@ function createGameControlsHarness(interactionResult = null) {
             });
         },
         pressE() {
-            documentListeners.keydown({
+            documentListeners.keydown?.({
                 key: "e",
+                preventDefault() {},
+            });
+        },
+        pressKey(key) {
+            documentListeners.keydown?.({
+                key,
                 preventDefault() {},
             });
         },
@@ -558,7 +592,7 @@ const tests = {
             ],
             character_updates: { gold: 20 },
         };
-        const controls = createGameControlsHarness(warpResult);
+        const controls = createGameControlsHarness({ interactionResult: warpResult });
 
         controls.pressE();
         await waitForGameControlRequest();
@@ -572,13 +606,15 @@ const tests = {
 
     async "E still dispatches chest interaction through the existing endpoint"() {
         const controls = createGameControlsHarness({
-            success: true,
-            action: "open_chest",
-            reload: false,
-            message: "You open the chest.",
-            messages: ["You open the chest."],
-            tile_updates: [{ x: 1, y: 1, glyph: "o" }],
-            character_updates: { gold: 25 },
+            interactionResult: {
+                success: true,
+                action: "open_chest",
+                reload: false,
+                message: "You open the chest.",
+                messages: ["You open the chest."],
+                tile_updates: [{ x: 1, y: 1, glyph: "o" }],
+                character_updates: { gold: 25 },
+            },
         });
 
         controls.pressE();
@@ -587,6 +623,52 @@ const tests = {
         assert.equal(controls.requests.length, 1);
         assert.equal(controls.requests[0].url, "interact.php");
         assert.equal(controls.unlockStates.length, 0);
+    },
+
+    async "combat mode attaches no movement E click or map-sync behavior"() {
+        const controls = createGameControlsHarness({ mode: "combat" });
+
+        controls.pressKey("ArrowRight");
+        controls.pressKey("w");
+        controls.pressE();
+        controls.clickMap(4, 2);
+        await waitForGameControlRequest();
+
+        assert.equal(controls.requests.length, 0);
+        assert.equal(controls.intervals, 0);
+    },
+
+    async "combat-start movement response locks exploration and reloads immediately"() {
+        const controls = createGameControlsHarness({
+            movementResult: {
+                success: true,
+                combat_started: true,
+                pos_x: 3,
+                pos_y: 2,
+                combat: { encounter_id: 10, status: "active" },
+                messages: ["The Cave Brute engages."],
+            },
+        });
+
+        controls.clickMap(4, 2);
+        await waitForGameControlRequest();
+        controls.pressE();
+        controls.pressKey("ArrowLeft");
+        await waitForGameControlRequest();
+
+        assert.equal(controls.requests.length, 1);
+        assert.equal(controls.requests[0].url, "move_character.php");
+        assert.equal(controls.reloads, 1);
+    },
+
+    "configured enemy is a visual occupied overlay without changing map JSON"() {
+        const controls = createGameControlsHarness();
+
+        assert.ok(gameControlsSource.includes("encounterEnemy"));
+        assert.equal(gameControlsSource.includes('interactWithCurrentTile("combat"'), false);
+        assert.ok(gameMarkup.includes("encounterEnemy"));
+        assert.ok(gameMarkup.includes("combat-placeholder"));
+        assert.equal(controls.requests.length, 0);
     },
 
     "Warp destinations expose current, disabled, and travel actions"() {

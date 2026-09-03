@@ -4,6 +4,7 @@ declare(strict_types=1);
 session_start();
 
 require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/lib/CombatBootstrap.php";
 
 $pdo = getDb();
 
@@ -17,6 +18,21 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit();
 }
 
+$postedToken = $_POST["csrf_token"] ?? "";
+$sessionToken = $_SESSION["csrf_token"] ?? "";
+if (
+    !is_string($postedToken) ||
+    !is_string($sessionToken) ||
+    $postedToken === "" ||
+    $sessionToken === "" ||
+    !hash_equals($sessionToken, $postedToken)
+) {
+    $_SESSION["flash_message"] = "Security check failed. Please try again.";
+    $_SESSION["flash_type"] = "error";
+    header("Location: character_select.php");
+    exit();
+}
+
 $characterId = (int) ($_POST["character_id"] ?? 0);
 
 if ($characterId <= 0) {
@@ -24,27 +40,42 @@ if ($characterId <= 0) {
     exit();
 }
 
-$stmt = $pdo->prepare("
-    SELECT id
-    FROM characters
-    WHERE id = :character_id
-      AND user_id = :user_id
-    LIMIT 1
-");
-
-$stmt->execute([
-    "character_id" => $characterId,
-    "user_id" => $_SESSION["user_id"],
-]);
-
-$character = $stmt->fetch();
-
-if (!$character) {
+$combatGuard = null;
+$previousCharacterId = $_SESSION["character_id"] ?? null;
+try {
+    $combatGuard = CombatBootstrap::guard($pdo);
+    $decision = $combatGuard->beginAtomic(
+        CombatAccessGuard::SELECT_CHARACTER,
+        (int) $_SESSION["user_id"],
+        $characterId,
+    );
+    $character = $decision["character"];
+    $_SESSION["character_id"] = $character["id"];
+    $combatGuard->commit();
+} catch (DomainException | OutOfBoundsException $e) {
+    $combatGuard?->rollBack();
+    if ($previousCharacterId === null) {
+        unset($_SESSION["character_id"]);
+    } else {
+        $_SESSION["character_id"] = $previousCharacterId;
+    }
+    $_SESSION["flash_message"] = $e->getMessage();
+    $_SESSION["flash_type"] = "error";
+    header("Location: character_select.php");
+    exit();
+} catch (Throwable $e) {
+    $combatGuard?->rollBack();
+    if ($previousCharacterId === null) {
+        unset($_SESSION["character_id"]);
+    } else {
+        $_SESSION["character_id"] = $previousCharacterId;
+    }
+    error_log("Character selection failed: " . $e->getMessage());
+    $_SESSION["flash_message"] = "Unable to select that Champion. Please try again.";
+    $_SESSION["flash_type"] = "error";
     header("Location: character_select.php");
     exit();
 }
-
-$_SESSION["character_id"] = $character["id"];
 
 header("Location: game.php");
 exit();

@@ -5,6 +5,7 @@ session_start();
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/lib/WarpBootstrap.php';
+require_once __DIR__ . '/lib/CombatBootstrap.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -52,26 +53,39 @@ if (!is_string($warpId) || trim($warpId) === '') {
     ], 400);
 }
 
+$combatGuard = null;
 try {
-    $service = WarpBootstrap::service(getDb());
-    $result = $service->travel(
+    $pdo = getDb();
+    $combatGuard = CombatBootstrap::guard($pdo);
+    $decision = $combatGuard->beginAtomic(
+        CombatAccessGuard::WARP_TRAVEL,
+        (int) $_SESSION['user_id'],
+        (int) $_SESSION['character_id'],
+    );
+    $service = WarpBootstrap::service($pdo);
+    $result = $service->travelInTransaction(
         (int) $_SESSION['user_id'],
         (int) $_SESSION['character_id'],
         trim($warpId),
+        $decision['character'],
     );
+    $combatGuard->commit();
 
     sendWarpTravelJson(['success' => true] + $result);
 } catch (DomainException $e) {
+    $combatGuard?->rollBack();
     sendWarpTravelJson([
         'success' => false,
         'message' => $e->getMessage(),
     ], 422);
 } catch (OutOfBoundsException) {
+    $combatGuard?->rollBack();
     sendWarpTravelJson([
         'success' => false,
         'message' => 'Champion unavailable.',
     ], 404);
 } catch (Throwable $e) {
+    $combatGuard?->rollBack();
     error_log('Warp travel failed: ' . $e->getMessage());
     sendWarpTravelJson([
         'success' => false,
