@@ -20,6 +20,8 @@ final class FakeCombatPdo extends PDO
     public array $preparedSql = [];
     public array $lockOrder = [];
     public bool $duplicateEncounterOnNextInsert = false;
+    public bool $failActionsRead = false;
+    public bool $failSynchronizationUpdate = false;
 
     private bool $transactionActive = false;
     private ?array $snapshot = null;
@@ -41,6 +43,11 @@ final class FakeCombatPdo extends PDO
                 'current_hp' => 145,
                 'current_mana' => 80,
                 'life_state' => 'alive',
+                'strength' => 10,
+                'dexterity' => 5,
+                'vitality' => 10,
+                'energy' => 5,
+                'fate' => 5,
             ],
             43 => [
                 'id' => 43,
@@ -51,6 +58,11 @@ final class FakeCombatPdo extends PDO
                 'current_hp' => 110,
                 'current_mana' => 70,
                 'life_state' => 'alive',
+                'strength' => 10,
+                'dexterity' => 5,
+                'vitality' => 10,
+                'energy' => 5,
+                'fate' => 5,
             ],
             84 => [
                 'id' => 84,
@@ -61,6 +73,11 @@ final class FakeCombatPdo extends PDO
                 'current_hp' => 100,
                 'current_mana' => 60,
                 'life_state' => 'alive',
+                'strength' => 10,
+                'dexterity' => 5,
+                'vitality' => 10,
+                'energy' => 5,
+                'fate' => 5,
             ],
         ];
     }
@@ -236,29 +253,52 @@ final class FakeCombatPdo extends PDO
         if (str_starts_with($normalized, 'update combat_encounters')) {
             $id = (int) $params['encounter_id'];
             $encounter = $this->encounters[$id] ?? null;
-            if ($encounter === null || $encounter['version'] !== (int) $params['expected_version']) {
+            if (
+                $this->failSynchronizationUpdate ||
+                $encounter === null ||
+                $encounter['version'] !== (int) $params['expected_version']
+            ) {
                 return ['rows' => [], 'row_count' => 0];
             }
 
             $this->encounters[$id]['timeline_elapsed_ms'] = (int) $params['timeline_elapsed_ms'];
             $this->encounters[$id]['last_synchronized_at'] = $params['last_synchronized_at'];
+            foreach ([
+                'turn_number',
+                'turn_started_timeline_ms',
+                'next_enemy_decision_timeline_ms',
+                'player_actions_remaining',
+                'enemy_actions_remaining',
+            ] as $key) {
+                if (array_key_exists($key, $params)) {
+                    $this->encounters[$id][$key] = (int) $params[$key];
+                }
+            }
             $this->encounters[$id]['version']++;
 
             return ['rows' => [], 'row_count' => 1];
         }
 
         if (str_starts_with($normalized, 'select') && str_contains($normalized, 'from combat_actions')) {
+            if ($this->failActionsRead && !str_contains($normalized, 'for update')) {
+                throw new RuntimeException('Injected action projection failure.');
+            }
             if (str_contains($normalized, 'for update')) {
                 $this->lockOrder[] = 'action';
             }
             $rows = array_values(array_filter(
                 $this->actions,
                 static fn (array $row): bool =>
-                    $row['encounter_id'] === (int) $params['encounter_id']
-                    && $row['request_token'] === $params['request_token'],
+                    $row['encounter_id'] === (int) $params['encounter_id'] &&
+                    (!array_key_exists('request_token', $params) ||
+                        $row['request_token'] === $params['request_token']),
             ));
 
-            return ['rows' => array_slice($rows, 0, 1), 'row_count' => count($rows) > 0 ? 1 : 0];
+            if (array_key_exists('request_token', $params)) {
+                $rows = array_slice($rows, 0, 1);
+            }
+
+            return ['rows' => $rows, 'row_count' => count($rows)];
         }
 
         if (str_starts_with($normalized, 'insert into combat_actions')) {

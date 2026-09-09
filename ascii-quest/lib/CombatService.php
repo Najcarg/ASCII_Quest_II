@@ -2,17 +2,28 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CharacterStats.php';
+require_once __DIR__ . '/CombatAccessGuard.php';
 require_once __DIR__ . '/CombatClock.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatEncounterTrigger.php';
+require_once __DIR__ . '/CombatSynchronizer.php';
+require_once __DIR__ . '/CombatTurnEngine.php';
 
 final class CombatService
 {
+    private CombatSynchronizer $synchronizer;
+
     public function __construct(
         private object $repository,
         private CombatDefinitionRegistry $definitions,
         private CombatClock $clock,
+        ?CombatSynchronizer $synchronizer = null,
     ) {
+        $this->synchronizer = $synchronizer ?? new CombatSynchronizer(
+            $clock,
+            new CombatTurnEngine($definitions->turnDurationSeconds()),
+            $definitions->maxDisconnectedCatchupSeconds(),
+        );
     }
 
     public function movementDecision(
@@ -132,17 +143,52 @@ final class CombatService
 
     public function state(int $userId, int $characterId): array
     {
-        $character = $this->repository->findOwnedCharacter($userId, $characterId);
-        if ($character === null) {
-            throw new OutOfBoundsException('Champion not found.');
-        }
+        $guard = new CombatAccessGuard($this->repository);
 
-        $encounter = $this->repository->findActiveEncounter($characterId);
-        if ($encounter === null) {
-            return [];
-        }
+        try {
+            $decision = $guard->beginAtomic(
+                CombatAccessGuard::GAME_LOAD,
+                $userId,
+                $characterId,
+            );
+            $character = $decision['character'];
+            $encounter = $decision['active_encounter'];
+            if ($encounter === null) {
+                $guard->commit();
 
-        return $this->project($character, $encounter);
+                return [];
+            }
+
+            $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
+            if ($enemy === null) {
+                throw new RuntimeException('Stored combat enemy is unavailable.');
+            }
+            $stats = CharacterStats::calculate($character);
+            $synchronized = $this->synchronizer->synchronize(
+                $encounter,
+                (int) $stats['rates']['action'],
+                (int) $enemy['action'],
+            );
+            $encounterId = self::integer($encounter, 'id');
+            $expectedVersion = self::integer($encounter, 'version');
+            $synchronizationSaved = $this->repository->updateLockedEncounterSynchronization(
+                $encounterId,
+                $synchronized,
+                $expectedVersion,
+            );
+            if (!$synchronizationSaved) {
+                throw new RuntimeException('Combat state changed concurrently. Please retry.');
+            }
+            $synchronized['version'] = $expectedVersion + 1;
+
+            $state = $this->project($character, $synchronized);
+            $guard->commit();
+
+            return $state;
+        } catch (Throwable $exception) {
+            $guard->rollBack();
+            throw $exception;
+        }
     }
 
     private function project(array $character, array $encounter): array
@@ -183,7 +229,10 @@ final class CombatService
         return [
             'encounter_id' => $encounterId,
             'status' => (string) $encounter['status'],
-            'server_observed_at' => $this->clock->now()->format(DATE_ATOM),
+            'server_observed_at' => (new DateTimeImmutable(
+                (string) ($encounter['last_synchronized_at'] ?? ''),
+                new DateTimeZone('UTC'),
+            ))->format(DATE_ATOM),
             'timeline' => [
                 'elapsed_ms' => self::integer($encounter, 'timeline_elapsed_ms'),
             ],
