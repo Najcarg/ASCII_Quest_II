@@ -123,7 +123,287 @@ function assertTask3GuardRejected(callable $operation, string $message): void
     throw new RuntimeException($message . ' Expected rejection.');
 }
 
+function task4RunCombatStateEndpoint(
+    array $session,
+    string $method = 'GET',
+    array $get = [],
+    array $post = [],
+    bool $failBootstrapInitialization = false,
+    ?string $serviceDomainExceptionMessage = null,
+): array {
+    $endpoint = __DIR__ . '/../ascii-quest/combat_state.php';
+    if (!is_file($endpoint)) {
+        throw new RuntimeException('combat_state.php must exist.');
+    }
+
+    $fixtureDirectory = sys_get_temp_dir() . '/ascii-quest-task4-' . bin2hex(random_bytes(8));
+    $libraryDirectory = $fixtureDirectory . '/lib';
+    $sessionDirectory = $fixtureDirectory . '/sessions';
+    if (!mkdir($libraryDirectory, 0700, true) || !mkdir($sessionDirectory, 0700, true)) {
+        throw new RuntimeException('Unable to create combat endpoint fixture.');
+    }
+
+    $endpointCopy = $fixtureDirectory . '/combat_state.php';
+    $callFile = $fixtureDirectory . '/service-call.json';
+    $runner = $fixtureDirectory . '/run.php';
+    copy($endpoint, $endpointCopy);
+    file_put_contents($fixtureDirectory . '/db.php', <<<'PHP'
+<?php
+declare(strict_types=1);
+
+function getDb(): PDO
+{
+    return new class extends PDO {
+        public function __construct()
+        {
+        }
+    };
+}
+PHP);
+    file_put_contents($libraryDirectory . '/CombatBootstrap.php', <<<'PHP'
+<?php
+declare(strict_types=1);
+
+final class Task4EndpointService
+{
+    public function state(int $userId, int $characterId): array
+    {
+        $allowed = $userId === 7 && $characterId === 42;
+        file_put_contents((string) getenv('ASCII_QUEST_TASK4_CALL_FILE'), json_encode([
+            'user_id' => $userId,
+            'character_id' => $characterId,
+            'advanced' => $allowed,
+            'exploration_mutations' => 0,
+        ]));
+        if (!$allowed) {
+            throw new OutOfBoundsException('Champion not found.');
+        }
+        $domainMessage = getenv('ASCII_QUEST_TASK4_DOMAIN_MESSAGE');
+        if (is_string($domainMessage) && $domainMessage !== '') {
+            throw new DomainException($domainMessage);
+        }
+
+        return [
+            'encounter_id' => 91,
+            'status' => 'active',
+            'server_observed_at' => '2026-09-01T12:00:30+00:00',
+            'timeline' => ['elapsed_ms' => 8000],
+            'version' => 5,
+            'turn' => [
+                'number' => 1,
+                'started_timeline_ms' => 0,
+                'player_actions_remaining' => 0,
+                'enemy_actions_remaining' => 1,
+            ],
+            'champion' => ['id' => 42, 'current_hp' => 145, 'current_mana' => 80],
+            'enemy' => [
+                'key' => 'cave_brute',
+                'name' => 'Cave Brute',
+                'glyph' => 'B',
+                'current_hp' => 73,
+                'maximum_hp' => 120,
+            ],
+            'player_actions' => [],
+            'active_effects' => [],
+            'reaction_prompt' => null,
+            'potion' => [
+                'key' => 'prototype_health_potion',
+                'charge_allowance' => 1,
+                'charges_remaining' => 0,
+            ],
+            'battle_events' => [],
+            'loot_phase' => null,
+        ];
+    }
+}
+
+final class CombatBootstrap
+{
+    public static function service(PDO $pdo): Task4EndpointService
+    {
+        return new Task4EndpointService();
+    }
+}
+PHP);
+    if ($failBootstrapInitialization) {
+        file_put_contents($libraryDirectory . '/CombatBootstrap.php', <<<'PHP'
+<?php
+declare(strict_types=1);
+
+throw new RuntimeException('private bootstrap initialization detail');
+PHP);
+    }
+
+    $sessionId = 'task4' . bin2hex(random_bytes(8));
+    $runnerSource = '<?php' . "\n" .
+        'ini_set(\'session.save_path\', ' . var_export($sessionDirectory, true) . ');' . "\n" .
+        'session_id(' . var_export($sessionId, true) . ');' . "\n" .
+        'session_start();' . "\n" .
+        '$_SESSION = ' . var_export($session, true) . ';' . "\n" .
+        'session_write_close();' . "\n" .
+        '$_SERVER[\'REQUEST_METHOD\'] = ' . var_export($method, true) . ';' . "\n" .
+        '$_GET = ' . var_export($get, true) . ';' . "\n" .
+        '$_POST = ' . var_export($post, true) . ';' . "\n" .
+        'register_shutdown_function(static function (): void {' . "\n" .
+        '    echo "\\n__TASK4_STATUS__" . http_response_code();' . "\n" .
+        '});' . "\n" .
+        'require ' . var_export($endpointCopy, true) . ';' . "\n";
+    file_put_contents($runner, $runnerSource);
+
+    $process = proc_open(
+        [PHP_BINARY, $runner],
+        [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ],
+        $pipes,
+        null,
+        array_replace(getenv(), [
+            'ASCII_QUEST_TASK4_CALL_FILE' => $callFile,
+            'ASCII_QUEST_TASK4_DOMAIN_MESSAGE' => $serviceDomainExceptionMessage ?? '',
+        ]),
+    );
+    if (!is_resource($process)) {
+        throw new RuntimeException('Unable to execute combat endpoint fixture.');
+    }
+    fclose($pipes[0]);
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    $exitCode = proc_close($process);
+
+    $status = 0;
+    $body = $stdout;
+    if (preg_match('/\n__TASK4_STATUS__(\d+)\z/', $stdout, $matches) === 1) {
+        $status = (int) $matches[1];
+        $body = substr($stdout, 0, -strlen($matches[0]));
+    }
+    $payload = json_decode($body, true);
+    $call = is_file($callFile)
+        ? json_decode((string) file_get_contents($callFile), true)
+        : null;
+
+    foreach (glob($sessionDirectory . '/*') ?: [] as $sessionFile) {
+        unlink($sessionFile);
+    }
+    foreach ([$runner, $callFile, $endpointCopy, $libraryDirectory . '/CombatBootstrap.php', $fixtureDirectory . '/db.php'] as $file) {
+        if (is_file($file)) {
+            unlink($file);
+        }
+    }
+    rmdir($sessionDirectory);
+    rmdir($libraryDirectory);
+    rmdir($fixtureDirectory);
+
+    return [$status, $payload, $call, $exitCode, $body, $stderr];
+}
+
 return [
+    'Combat state endpoint requires an authenticated selected Champion session' => function (): void {
+        [$status, $payload, $call] = task4RunCombatStateEndpoint([]);
+
+        assertSameValue(401, $status, 'Unauthenticated status.');
+        assertSameValue(false, $payload['success'] ?? null, 'Unauthenticated response.');
+        assertSameValue(null, $call, 'Unauthenticated request never reaches state synchronization.');
+
+        [$status, $payload, $call] = task4RunCombatStateEndpoint(['user_id' => 7]);
+        assertSameValue(401, $status, 'Missing selected Champion status.');
+        assertSameValue(false, $payload['success'] ?? null, 'Missing selected Champion response.');
+        assertSameValue(null, $call, 'Missing selection never reaches state synchronization.');
+    },
+
+    'Combat state endpoint accepts GET only' => function (): void {
+        [$status, $payload, $call] = task4RunCombatStateEndpoint(
+            ['user_id' => 7, 'character_id' => 42],
+            'POST',
+        );
+
+        assertSameValue(405, $status, 'Wrong-method status.');
+        assertSameValue(false, $payload['success'] ?? null, 'Wrong-method response.');
+        assertSameValue(null, $call, 'Wrong method never reaches state synchronization.');
+    },
+
+    'Combat state endpoint trusts only session identity and server synchronization time' => function (): void {
+        [$status, $payload, $call] = task4RunCombatStateEndpoint(
+            ['user_id' => 7, 'character_id' => 42],
+            'GET',
+            ['character_id' => '84', 'server_now' => '2099-01-01T00:00:00Z'],
+            ['character_id' => '84', 'timestamp' => '2099-01-01T00:00:00Z'],
+        );
+
+        assertSameValue(200, $status, 'Owned state status.');
+        assertSameValue(7, $call['user_id'] ?? null, 'Session user identity.');
+        assertSameValue(42, $call['character_id'] ?? null, 'Session Champion identity.');
+        assertSameValue(true, $call['advanced'] ?? null, 'Owned state invokes synchronization.');
+        assertSameValue(0, $call['exploration_mutations'] ?? null, 'State request does not mutate exploration.');
+        assertSameValue(42, $payload['champion']['id'] ?? null, 'Selected Champion projection.');
+        assertSameValue(8000, $payload['timeline']['elapsed_ms'] ?? null, 'Server-produced timeline.');
+        assertSameValue('2026-09-01T12:00:30+00:00', $payload['server_observed_at'] ?? null, 'Approved public server time name.');
+        assertSameValue(false, array_key_exists('server_now', $payload), 'No alternate public server time field.');
+        assertSameValue(false, array_key_exists('next_enemy_decision_timeline_ms', $payload), 'Enemy decision cursor hidden.');
+        assertSameValue(false, array_key_exists('cooldowns', $payload['enemy']), 'Enemy cooldowns hidden.');
+    },
+
+    'Another users Champion cannot be read or synchronized by combat state endpoint' => function (): void {
+        [$status, $payload, $call] = task4RunCombatStateEndpoint([
+            'user_id' => 7,
+            'character_id' => 84,
+        ]);
+
+        assertSameValue(404, $status, 'Wrong-owner status.');
+        assertSameValue(false, $payload['success'] ?? null, 'Wrong-owner response.');
+        assertSameValue(false, $call['advanced'] ?? null, 'Failed ownership cannot advance encounter time.');
+        assertSameValue(84, $call['character_id'] ?? null, 'Only the selected identity was attempted.');
+        assertSameValue(false, array_key_exists('timeline', $payload), 'Failed ownership exposes no state.');
+    },
+
+    'Combat state dependency initialization failure returns only safe JSON' => function (): void {
+        [$status, $payload, $call, $exitCode, $body] = task4RunCombatStateEndpoint(
+            ['user_id' => 7, 'character_id' => 42],
+            'GET',
+            [],
+            [],
+            true,
+        );
+
+        assertSameValue(0, $exitCode, 'Initialization failure is handled by the endpoint.');
+        assertSameValue(500, $status, 'Initialization failure HTTP status.');
+        assertSameValue(false, $payload['success'] ?? null, 'Initialization failure response.');
+        assertSameValue(
+            'Unable to synchronize combat. Please try again.',
+            $payload['message'] ?? null,
+            'Generic initialization failure message.',
+        );
+        assertSameValue(false, str_contains($body, 'private bootstrap'), 'Private exception detail is not exposed.');
+        assertSameValue(null, $call, 'Failed initialization never invokes state synchronization.');
+    },
+
+    'Combat state endpoint logs but never exposes internal domain failures' => function (): void {
+        $privateMessage = 'Stored combat Turn is behind private logical timeline state.';
+        [$status, $payload, $call, $exitCode, $body, $stderr] = task4RunCombatStateEndpoint(
+            ['user_id' => 7, 'character_id' => 42],
+            'GET',
+            [],
+            [],
+            false,
+            $privateMessage,
+        );
+
+        assertSameValue(0, $exitCode, 'Domain failure is handled by the endpoint.');
+        assertSameValue(422, $status, 'Domain failure HTTP status.');
+        assertSameValue(false, $payload['success'] ?? null, 'Domain failure response.');
+        assertSameValue(
+            'Combat state is unavailable.',
+            $payload['message'] ?? null,
+            'Domain failure uses a generic public message.',
+        );
+        assertSameValue(false, str_contains($body, $privateMessage), 'Private domain detail is not exposed.');
+        assertSameValue(true, str_contains($stderr, $privateMessage), 'Private domain detail is logged server-side.');
+        assertSameValue(true, $call['advanced'] ?? null, 'Owned state reached authoritative synchronization.');
+    },
+
     'Shared guard blocks every exploration mutation during unresolved combat' => function (): void {
         [$guard, $repository] = task3CombatGuard();
         $repository->encounters[] = [

@@ -2,18 +2,17 @@
 
 ## Status
 
-TASK 3 IMPLEMENTED — AWAITING CHECKPOINT REVIEW
+TASK 4 IMPLEMENTED — AWAITING CHECKPOINT REVIEW
 
 ## Current Phase
 
-Tasks 1–2 have passed checkpoint review. Task 3 now implements atomic
-movement-triggered combat entry, the shared exploration access guard, durable
-combat-mode recognition, selection CSRF, the configured Cave Brute overlay,
-and exploration input locking. Task 3 awaits user/checkpoint review.
+Tasks 1–3 are implemented and reviewed. Task 3 was deployed live and passed
+browser testing. Migration 003 was backed up, applied, and verified on the live
+database as part of that approved integration.
 
-Migration 003 has been created and reviewed but HAS NOT BEEN APPLIED. No live
-database or browser verification has been performed. Task 4 authoritative
-timeline synchronization has NOT started.
+Task 4 authoritative combat synchronization is implemented locally and is
+awaiting checkpoint review and approval. Its changes remain uncommitted and
+have not been deployed. Task 5 has NOT started.
 
 ## Authoritative Documents
 
@@ -27,9 +26,8 @@ Action as multiple independent concurrent action bars.
 
 ## Next Review Gate
 
-Do not begin Task 4 without explicit approval. Do not apply Migration 003
-without separate explicit approval and the required live schema/backup
-preflight.
+Review and approve the local Task 4 checkpoint. Do not begin Task 5 without
+explicit approval.
 
 Combat entry is automatic when authoritative movement enters the stationary
 Cave Brute's one-tile orthogonal fighting range; pressing E is not involved.

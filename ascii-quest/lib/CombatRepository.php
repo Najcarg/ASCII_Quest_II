@@ -349,6 +349,41 @@ final class CombatRepository
         return $stmt->rowCount() === 1;
     }
 
+    public function updateLockedEncounterSynchronization(
+        int $encounterId,
+        array $encounter,
+        int $expectedVersion,
+    ): bool {
+        $this->requireEncounterLock($encounterId);
+        $values = $this->requireKeys($encounter, [
+            'timeline_elapsed_ms',
+            'last_synchronized_at',
+            'turn_number',
+            'turn_started_timeline_ms',
+            'next_enemy_decision_timeline_ms',
+            'player_actions_remaining',
+            'enemy_actions_remaining',
+        ]);
+
+        $stmt = $this->pdo->prepare('UPDATE combat_encounters
+            SET timeline_elapsed_ms = :timeline_elapsed_ms,
+                last_synchronized_at = :last_synchronized_at,
+                turn_number = :turn_number,
+                turn_started_timeline_ms = :turn_started_timeline_ms,
+                next_enemy_decision_timeline_ms = :next_enemy_decision_timeline_ms,
+                player_actions_remaining = :player_actions_remaining,
+                enemy_actions_remaining = :enemy_actions_remaining,
+                version = version + 1
+            WHERE id = :encounter_id
+              AND version = :expected_version');
+        $stmt->execute($values + [
+            'encounter_id' => $encounterId,
+            'expected_version' => $expectedVersion,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
     public function createAction(int $encounterId, array $action): array
     {
         $this->requireEncounterLock($encounterId);
