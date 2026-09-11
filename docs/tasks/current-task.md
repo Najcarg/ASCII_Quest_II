@@ -2,15 +2,15 @@
 
 ## Status
 
-TASK 5 IMPLEMENTED — AWAITING LIVE INTEGRATION
+TASK 5 LIVE-INTEGRATED — TASK 6 NOT STARTED
 
 ## Current Phase
 
-Tasks 1–4 are live-integrated. Migration 003 is applied and verified.
+Tasks 1–5 are live-integrated. Migration 003 is applied and verified.
 
-Task 5 manual weapon action foundation has passed local implementation,
-verification, and checkpoint review. It has not been deployed. Task 6 has
-NOT started.
+Task 5 manual weapon action foundation passed local implementation,
+verification, checkpoint review, deployment, and live browser/database
+acceptance testing. Task 6 has NOT started.
 
 ## Authoritative Documents
 
@@ -24,7 +24,8 @@ Action as multiple independent concurrent action bars.
 
 ## Next Review Gate
 
-Commit and integrate the approved Task 5 implementation. Do not begin Task 6 without
+Design Task 6: Cave Brute normal attack, Fire Slam, simple AI, and player-hit
+damage/defense resolution. Do not implement Task 6 until its design receives
 explicit approval.
 
 Combat entry is automatic when authoritative movement enters the stationary
@@ -50,4 +51,6 @@ Encounter guard before mutation, so stale UI cannot change exploration state.
 
 ## Last Accepted Milestone
 
-Warp Milestone 1 was accepted after live browser testing.
+Combat Milestone 1 Task 5 was accepted after live API and database testing.
+Manual weapon start, offensive snapshots, cooldown timing, resolution,
+idempotent replay, and the no-damage Task 5 boundary were verified live.
