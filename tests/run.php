@@ -8,6 +8,7 @@ $tests = array_merge(
     require __DIR__ . '/CombatDefinitionTest.php',
     require __DIR__ . '/CombatTurnEngineTest.php',
     require __DIR__ . '/CombatMigrationTest.php',
+    require __DIR__ . '/CombatMigration004Test.php',
     require __DIR__ . '/CombatRepositoryTest.php',
     require __DIR__ . '/CombatServiceTest.php',
     require __DIR__ . '/CombatSecurityTest.php',
