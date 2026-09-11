@@ -2,7 +2,7 @@
 
 ## Status
 
-TASK 5 LIVE-INTEGRATED — TASK 6 NOT STARTED
+TASK 6 DESIGN APPROVED — IMPLEMENTATION NOT STARTED
 
 ## Current Phase
 
@@ -24,9 +24,10 @@ Action as multiple independent concurrent action bars.
 
 ## Next Review Gate
 
-Design Task 6: Cave Brute normal attack, Fire Slam, simple AI, and player-hit
-damage/defense resolution. Do not implement Task 6 until its design receives
-explicit approval.
+Create and review the focused Task 6 implementation plan, including approved
+Migration 004 for the durable enemy-AI initialization marker. Do not modify
+production combat code or create/apply the migration until plan execution is
+explicitly approved.
 
 Combat entry is automatic when authoritative movement enters the stationary
 Cave Brute's one-tile orthogonal fighting range; pressing E is not involved.
