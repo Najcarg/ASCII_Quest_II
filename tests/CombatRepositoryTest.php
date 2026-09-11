@@ -19,9 +19,14 @@ final class FakeCombatPdo extends PDO
     public array $events = [];
     public array $preparedSql = [];
     public array $lockOrder = [];
+    public array $writeOrder = [];
+    public array $resolutionObservations = [];
     public bool $duplicateEncounterOnNextInsert = false;
     public bool $failActionsRead = false;
     public bool $failSynchronizationUpdate = false;
+    public ?int $failSynchronizationUpdateOnAttempt = null;
+    public int $synchronizationUpdateAttempts = 0;
+    public bool $failActionInsert = false;
 
     private bool $transactionActive = false;
     private ?array $snapshot = null;
@@ -251,10 +256,17 @@ final class FakeCombatPdo extends PDO
         }
 
         if (str_starts_with($normalized, 'update combat_encounters')) {
+            $this->synchronizationUpdateAttempts++;
+            $this->writeOrder[] = [
+                'kind' => 'encounter',
+                'expected_version' => (int) $params['expected_version'],
+                'player_actions_remaining' => (int) ($params['player_actions_remaining'] ?? -1),
+            ];
             $id = (int) $params['encounter_id'];
             $encounter = $this->encounters[$id] ?? null;
             if (
                 $this->failSynchronizationUpdate ||
+                $this->failSynchronizationUpdateOnAttempt === $this->synchronizationUpdateAttempts ||
                 $encounter === null ||
                 $encounter['version'] !== (int) $params['expected_version']
             ) {
@@ -302,6 +314,9 @@ final class FakeCombatPdo extends PDO
         }
 
         if (str_starts_with($normalized, 'insert into combat_actions')) {
+            if ($this->failActionInsert) {
+                throw new RuntimeException('Injected action insert failure.');
+            }
             foreach ($this->actions as $existing) {
                 if (
                     $params['request_token'] !== null
@@ -314,7 +329,34 @@ final class FakeCombatPdo extends PDO
 
             $id = $this->nextActionId++;
             $this->actions[$id] = array_merge($params, ['id' => $id]);
+            $this->writeOrder[] = ['kind' => 'action'];
             $this->lastInsertIdValue = (string) $id;
+
+            return ['rows' => [], 'row_count' => 1];
+        }
+
+        if (str_starts_with($normalized, 'update combat_actions')) {
+            $setClause = trim((string) preg_replace('/^update combat_actions set (.*?) where .*$/', '$1', $normalized));
+            if ($setClause !== "state = 'resolved', active_slot = null, completed_timeline_ms = :completed_timeline_ms") {
+                throw new RuntimeException('Unexpected combat action resolution SET clause.');
+            }
+            $id = (int) $params['action_id'];
+            $action = $this->actions[$id] ?? null;
+            if (
+                $action === null ||
+                $action['encounter_id'] !== (int) $params['encounter_id'] ||
+                $action['state'] !== 'pending'
+            ) {
+                return ['rows' => [], 'row_count' => 0];
+            }
+
+            $this->actions[$id]['state'] = 'resolved';
+            $this->actions[$id]['active_slot'] = null;
+            $this->actions[$id]['completed_timeline_ms'] = (int) $params['completed_timeline_ms'];
+            $this->resolutionObservations[] = [
+                'turn_number' => (int) $this->encounters[(int) $params['encounter_id']]['turn_number'],
+                'player_actions_remaining' => (int) $this->encounters[(int) $params['encounter_id']]['player_actions_remaining'],
+            ];
 
             return ['rows' => [], 'row_count' => 1];
         }
@@ -441,6 +483,12 @@ function combatActionFixture(string $requestToken): array
         'started_timeline_ms' => 100,
         'resolves_timeline_ms' => 1100,
         'cooldown_ready_timeline_ms' => 2100,
+        'snapshot_weapon_key' => 'prototype_weapon_attack',
+        'snapshot_damage_type' => 'physical',
+        'snapshot_base_damage' => 20,
+        'snapshot_accuracy' => 15.0,
+        'snapshot_critical_chance' => 15.0,
+        'snapshot_critical_damage' => 20,
     ];
 }
 
@@ -538,6 +586,44 @@ return [
         assertSameValue($first['id'], $replay['id'], 'Replay action identity.');
         assertSameValue(1, count($pdo->actions), 'One persisted action.');
         assertSameValue(['champion', 'encounter', 'action', 'action'], $pdo->lockOrder, 'Action lock order.');
+    },
+
+    'Weapon action snapshots persist and due resolution clears only the active slot' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        seedActiveCombat($pdo);
+        $token = '33333333-3333-4333-8333-333333333333';
+
+        $repository->beginTransaction();
+        $repository->lockOwnedCharacter(7, 42);
+        $repository->lockActiveEncounter(42);
+        $created = $repository->createAction(10, combatActionFixture($token));
+        $locked = $repository->lockActionsForEncounter(10);
+        $resolved = $repository->resolveLockedAction(10, (int) $created['id'], 1100);
+        $repository->commit();
+
+        assertSameValue(20, $created['snapshot_base_damage'] ?? null, 'Server snapshot is persisted.');
+        assertSameValue($token, $locked[0]['request_token'] ?? null, 'Relevant action rows are locked after the encounter.');
+        assertSameValue(true, $resolved, 'Pending action resolves once.');
+        assertSameValue('resolved', $pdo->actions[1]['state'], 'Resolved lifecycle state.');
+        assertSameValue(null, $pdo->actions[1]['active_slot'], 'Resolved action releases its active slot.');
+        assertSameValue(1100, $pdo->actions[1]['completed_timeline_ms'], 'Exact logical completion position.');
+        assertSameValue(2100, $pdo->actions[1]['cooldown_ready_timeline_ms'], 'Cooldown position is immutable.');
+        assertSameValue(20, $pdo->actions[1]['snapshot_base_damage'], 'Offensive snapshot is immutable.');
+        assertSameValue(['champion', 'encounter', 'action', 'action'], $pdo->lockOrder, 'Action locks follow the encounter.');
+
+        $resolutionSql = '';
+        foreach ($pdo->preparedSql as $sql) {
+            if (str_starts_with(strtolower(trim($sql)), 'update combat_actions')) {
+                $resolutionSql = strtolower((string) preg_replace('/\s+/', ' ', trim($sql)));
+            }
+        }
+        assertSameValue(true, preg_match(
+            "~^update combat_actions set state = 'resolved', active_slot = null, completed_timeline_ms = :completed_timeline_ms where id = :action_id and encounter_id = :encounter_id and state = 'pending'$~",
+            $resolutionSql,
+        ) === 1, 'Resolution SQL changes only lifecycle fields with pending scoped predicates.');
+        $setClause = (string) preg_replace('/^update combat_actions set (.*?) where .*$/', '$1', $resolutionSql);
+        assertSameValue(false, str_contains($setClause, 'cooldown'), 'Resolution SQL does not rewrite cooldown state.');
+        assertSameValue(false, str_contains($setClause, 'snapshot'), 'Resolution SQL does not rewrite snapshots.');
     },
 
     'Battle Info events append immutable ordered sequences' => function (): void {

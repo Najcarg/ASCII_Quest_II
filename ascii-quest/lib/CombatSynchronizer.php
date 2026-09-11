@@ -14,6 +14,7 @@ final class CombatSynchronizer
         private CombatTurnEngine $turnEngine,
         float $maxCatchupSeconds,
         ?Closure $dueEventProcessor = null,
+        ?object $repository = null,
     ) {
         if (!is_finite($maxCatchupSeconds) || $maxCatchupSeconds <= 0) {
             throw new InvalidArgumentException('Combat catch-up limit must be positive.');
@@ -24,8 +25,33 @@ final class CombatSynchronizer
             throw new InvalidArgumentException('Combat catch-up limit is too short.');
         }
 
-        $this->dueEventProcessor = $dueEventProcessor ??
-            static fn (array $encounter, int $throughTimelineMs): array => $encounter;
+        $this->dueEventProcessor = $dueEventProcessor ?? ($repository === null
+            ? static fn (array $encounter, int $throughTimelineMs): array => $encounter
+            : static function (array $encounter, int $throughTimelineMs) use ($repository): array {
+                $encounterId = self::integer($encounter, 'id');
+                foreach ($repository->lockActionsForEncounter($encounterId) as $action) {
+                    if (
+                        ($action['actor'] ?? null) !== 'player' ||
+                        ($action['action_kind'] ?? null) !== 'weapon' ||
+                        ($action['state'] ?? null) !== 'pending'
+                    ) {
+                        continue;
+                    }
+                    $resolvesAt = self::integer($action, 'resolves_timeline_ms');
+                    if ($resolvesAt > $throughTimelineMs) {
+                        continue;
+                    }
+                    if (!$repository->resolveLockedAction(
+                        $encounterId,
+                        self::positiveInteger($action, 'id'),
+                        $resolvesAt,
+                    )) {
+                        throw new RuntimeException('Combat action resolution changed concurrently.');
+                    }
+                }
+
+                return $encounter;
+            });
     }
 
     public function synchronize(

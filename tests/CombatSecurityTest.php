@@ -300,7 +300,322 @@ PHP);
     return [$status, $payload, $call, $exitCode, $body, $stderr];
 }
 
+function task5RunCombatActionEndpoint(
+    array $session,
+    string $method = 'POST',
+    string $rawBody = '{}',
+    bool $failBootstrapInitialization = false,
+    ?string $serviceFailure = null,
+): array {
+    $endpoint = __DIR__ . '/../ascii-quest/combat_action.php';
+    if (!is_file($endpoint)) {
+        return [0, null, null, 0, '', 'combat_action.php must exist.'];
+    }
+
+    $fixtureDirectory = sys_get_temp_dir() . '/ascii-quest-task5-' . bin2hex(random_bytes(8));
+    $libraryDirectory = $fixtureDirectory . '/lib';
+    $sessionDirectory = $fixtureDirectory . '/sessions';
+    if (!mkdir($libraryDirectory, 0700, true) || !mkdir($sessionDirectory, 0700, true)) {
+        throw new RuntimeException('Unable to create combat action endpoint fixture.');
+    }
+
+    $endpointCopy = $fixtureDirectory . '/combat_action.php';
+    $callFile = $fixtureDirectory . '/service-call.json';
+    $runner = $fixtureDirectory . '/run.php';
+    copy($endpoint, $endpointCopy);
+    file_put_contents($fixtureDirectory . '/db.php', <<<'PHP'
+<?php
+declare(strict_types=1);
+
+function getDb(): PDO
+{
+    return new class extends PDO {
+        public function __construct()
+        {
+        }
+    };
+}
+PHP);
+    file_put_contents($libraryDirectory . '/CombatBootstrap.php', <<<'PHP'
+<?php
+declare(strict_types=1);
+
+final class Task5EndpointService
+{
+    public function startPlayerAction(
+        int $userId,
+        int $characterId,
+        string $actionKey,
+        string $requestToken,
+    ): array {
+        file_put_contents((string) getenv('ASCII_QUEST_TASK5_CALL_FILE'), json_encode([
+            'user_id' => $userId,
+            'character_id' => $characterId,
+            'action_key' => $actionKey,
+            'request_token' => $requestToken,
+        ]));
+        if ($userId !== 7 || $characterId !== 42) {
+            throw new OutOfBoundsException('Private ownership detail.');
+        }
+        if ($actionKey !== 'prototype_weapon_attack') {
+            throw new DomainException('Private action definition detail.');
+        }
+        $failure = getenv('ASCII_QUEST_TASK5_FAILURE');
+        if ($failure === 'domain') {
+            throw new DomainException('Private cooldown detail.');
+        }
+        if ($failure === 'runtime') {
+            throw new RuntimeException('Private database detail.');
+        }
+
+        return [
+            'encounter_id' => 91,
+            'status' => 'active',
+            'server_observed_at' => '2026-09-01T12:00:00+00:00',
+            'timeline' => ['elapsed_ms' => 3000],
+            'version' => 5,
+            'turn' => [
+                'number' => 1,
+                'started_timeline_ms' => 0,
+                'player_actions_remaining' => 0,
+                'enemy_actions_remaining' => 2,
+            ],
+            'champion' => ['id' => 42, 'current_hp' => 145, 'current_mana' => 80],
+            'enemy' => ['key' => 'cave_brute', 'name' => 'Cave Brute', 'glyph' => 'B', 'current_hp' => 73, 'maximum_hp' => 120],
+            'player_actions' => [[
+                'id' => 501,
+                'action_kind' => 'weapon',
+                'definition_key' => 'prototype_weapon_attack',
+                'state' => 'pending',
+                'started_timeline_ms' => 3000,
+                'resolves_timeline_ms' => 4000,
+                'cooldown_ready_timeline_ms' => 5500,
+                'completed_timeline_ms' => null,
+            ]],
+            'active_effects' => [],
+            'reaction_prompt' => null,
+            'potion' => ['key' => 'prototype_health_potion', 'charge_allowance' => 1, 'charges_remaining' => 1],
+            'battle_events' => [],
+            'loot_phase' => null,
+        ];
+    }
+}
+
+final class CombatBootstrap
+{
+    public static function service(PDO $pdo): Task5EndpointService
+    {
+        return new Task5EndpointService();
+    }
+}
+PHP);
+    if ($failBootstrapInitialization) {
+        file_put_contents($libraryDirectory . '/CombatBootstrap.php', <<<'PHP'
+<?php
+declare(strict_types=1);
+
+throw new RuntimeException('Private bootstrap detail.');
+PHP);
+    }
+
+    $sessionId = 'task5' . bin2hex(random_bytes(8));
+    $runnerSource = '<?php' . "\n" .
+        'ini_set(\'session.save_path\', ' . var_export($sessionDirectory, true) . ');' . "\n" .
+        'session_id(' . var_export($sessionId, true) . ');' . "\n" .
+        'session_start();' . "\n" .
+        '$_SESSION = ' . var_export($session, true) . ';' . "\n" .
+        'session_write_close();' . "\n" .
+        '$_SERVER[\'REQUEST_METHOD\'] = ' . var_export($method, true) . ';' . "\n" .
+        'register_shutdown_function(static function (): void {' . "\n" .
+        '    echo "\n__TASK5_STATUS__" . http_response_code();' . "\n" .
+        '});' . "\n" .
+        'require ' . var_export($endpointCopy, true) . ';' . "\n";
+    file_put_contents($runner, $runnerSource);
+
+    $process = proc_open(
+        [PHP_BINARY, $runner],
+        [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ],
+        $pipes,
+        null,
+        array_replace(getenv(), [
+            'ASCII_QUEST_TASK5_CALL_FILE' => $callFile,
+            'ASCII_QUEST_TASK5_FAILURE' => $serviceFailure ?? '',
+        ]),
+    );
+    if (!is_resource($process)) {
+        throw new RuntimeException('Unable to execute combat action endpoint fixture.');
+    }
+    fwrite($pipes[0], $rawBody);
+    fclose($pipes[0]);
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    $exitCode = proc_close($process);
+
+    $status = 0;
+    $body = $stdout;
+    if (preg_match('/\n__TASK5_STATUS__(\d+)\z/', $stdout, $matches) === 1) {
+        $status = (int) $matches[1];
+        $body = substr($stdout, 0, -strlen($matches[0]));
+    }
+    $payload = json_decode($body, true);
+    $call = is_file($callFile)
+        ? json_decode((string) file_get_contents($callFile), true)
+        : null;
+
+    foreach (glob($sessionDirectory . '/*') ?: [] as $sessionFile) {
+        unlink($sessionFile);
+    }
+    foreach ([$runner, $callFile, $endpointCopy, $libraryDirectory . '/CombatBootstrap.php', $fixtureDirectory . '/db.php'] as $file) {
+        if (is_file($file)) {
+            unlink($file);
+        }
+    }
+    rmdir($sessionDirectory);
+    rmdir($libraryDirectory);
+    rmdir($fixtureDirectory);
+
+    return [$status, $payload, $call, $exitCode, $body, $stderr];
+}
+
 return [
+    'Combat action endpoint requires session POST valid JSON and CSRF' => function (): void {
+        $validBody = json_encode([
+            'csrf_token' => 'session-token',
+            'action_key' => 'prototype_weapon_attack',
+            'request_token' => 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+        ]);
+
+        foreach ([
+            'authentication' => [[], 'POST', $validBody, 401],
+            'method' => [['user_id' => 7, 'character_id' => 42, 'csrf_token' => 'session-token'], 'GET', $validBody, 405],
+            'json' => [['user_id' => 7, 'character_id' => 42, 'csrf_token' => 'session-token'], 'POST', '{', 400],
+            'csrf' => [['user_id' => 7, 'character_id' => 42, 'csrf_token' => 'session-token'], 'POST', json_encode([
+                'csrf_token' => 'wrong-token',
+                'action_key' => 'prototype_weapon_attack',
+                'request_token' => 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+            ]), 403],
+        ] as $label => [$session, $method, $body, $expectedStatus]) {
+            [$status, $payload, $call] = task5RunCombatActionEndpoint($session, $method, (string) $body);
+            assertSameValue($expectedStatus, $status, $label . ' status.');
+            assertSameValue(false, $payload['success'] ?? null, $label . ' safe response.');
+            assertSameValue(null, $call, $label . ' does not reach the service.');
+        }
+    },
+
+    'Combat action endpoint accepts only strict weapon intent fields and canonical UUIDs' => function (): void {
+        $session = ['user_id' => 7, 'character_id' => 42, 'csrf_token' => 'session-token'];
+        $base = [
+            'csrf_token' => 'session-token',
+            'action_key' => 'prototype_weapon_attack',
+            'request_token' => 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+        ];
+        foreach ([
+            ['user_id', 8],
+            ['character_id', 84],
+            ['damage', 9999],
+            ['current_hp', 9999],
+            ['accuracy', 100],
+            ['duration_ms', 0],
+            ['cooldown_ready_timeline_ms', 0],
+            ['actions_remaining', 99],
+        ] as [$field, $value]) {
+            [$status, , $call] = task5RunCombatActionEndpoint(
+                $session,
+                'POST',
+                (string) json_encode($base + [$field => $value]),
+            );
+            assertSameValue(400, $status, $field . ' strict-field status.');
+            assertSameValue(null, $call, $field . ' is rejected before service authority.');
+        }
+
+        foreach ([
+            ['request_token' => 'not-a-uuid'],
+            ['request_token' => 'EEEEEEEE-EEEE-4EEE-8EEE-EEEEEEEEEEEE'],
+            ['action_key' => 'Prototype_Weapon_Attack'],
+            ['action_key' => 'prototype weapon attack'],
+        ] as $invalid) {
+            [$status, , $call] = task5RunCombatActionEndpoint(
+                $session,
+                'POST',
+                (string) json_encode(array_replace($base, $invalid)),
+            );
+            assertSameValue(422, $status, 'Invalid canonical intent status.');
+            assertSameValue(null, $call, 'Invalid canonical intent does not reach service.');
+        }
+
+        [$status, $payload, $call] = task5RunCombatActionEndpoint(
+            $session,
+            'POST',
+            (string) json_encode(array_replace($base, ['action_key' => 'prototype_flame_strike'])),
+        );
+        assertSameValue(422, $status, 'A canonical but unavailable key is rejected by service authority.');
+        assertSameValue(false, $payload['success'] ?? null, 'Unavailable key has a safe response.');
+        assertSameValue('prototype_flame_strike', $call['action_key'] ?? null, 'Endpoint passes canonical intent to service authority.');
+
+        [$status, $payload, $call] = task5RunCombatActionEndpoint(
+            $session,
+            'POST',
+            (string) json_encode([
+                'request_token' => $base['request_token'],
+                'action_key' => $base['action_key'],
+                'csrf_token' => $base['csrf_token'],
+            ]),
+        );
+        assertSameValue(200, $status, 'Allowed intent fields are order-independent.');
+        assertSameValue('pending', $payload['player_actions'][0]['state'] ?? null, 'Ordered intent reaches service.');
+        assertSameValue(7, $call['user_id'] ?? null, 'Ordered intent keeps session ownership.');
+    },
+
+    'Combat action endpoint uses selected ownership and returns safe service errors' => function (): void {
+        $body = (string) json_encode([
+            'csrf_token' => 'session-token',
+            'action_key' => 'prototype_weapon_attack',
+            'request_token' => 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+        ]);
+        [$status, $payload, $call] = task5RunCombatActionEndpoint(
+            ['user_id' => 7, 'character_id' => 42, 'csrf_token' => 'session-token'],
+            'POST',
+            $body,
+        );
+        assertSameValue(200, $status, 'Accepted intent status.');
+        assertSameValue(7, $call['user_id'] ?? null, 'Session user identity.');
+        assertSameValue(42, $call['character_id'] ?? null, 'Selected session Champion identity.');
+        assertSameValue('prototype_weapon_attack', $call['action_key'] ?? null, 'Weapon intent.');
+        assertSameValue('pending', $payload['player_actions'][0]['state'] ?? null, 'Server state response.');
+
+        [$status, $payload, $call] = task5RunCombatActionEndpoint(
+            ['user_id' => 7, 'character_id' => 84, 'csrf_token' => 'session-token'],
+            'POST',
+            $body,
+        );
+        assertSameValue(404, $status, 'Wrong-owner status.');
+        assertSameValue(false, $payload['success'] ?? null, 'Wrong-owner safe response.');
+        assertSameValue(84, $call['character_id'] ?? null, 'Only selected identity reaches ownership check.');
+
+        foreach ([
+            ['domain', 422, 'Private cooldown detail.'],
+            ['runtime', 500, 'Private database detail.'],
+        ] as [$failure, $expectedStatus, $privateMessage]) {
+            [$status, $payload, , , $responseBody, $stderr] = task5RunCombatActionEndpoint(
+                ['user_id' => 7, 'character_id' => 42, 'csrf_token' => 'session-token'],
+                'POST',
+                $body,
+                false,
+                $failure,
+            );
+            assertSameValue($expectedStatus, $status, $failure . ' status.');
+            assertSameValue(false, $payload['success'] ?? null, $failure . ' safe response.');
+            assertSameValue(false, str_contains($responseBody, $privateMessage), $failure . ' private detail hidden.');
+            assertSameValue(true, str_contains($stderr, $privateMessage), $failure . ' private detail logged.');
+        }
+    },
+
     'Combat state endpoint requires an authenticated selected Champion session' => function (): void {
         [$status, $payload, $call] = task4RunCombatStateEndpoint([]);
 
