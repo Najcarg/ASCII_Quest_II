@@ -397,6 +397,12 @@ final class CombatRepository
             'started_timeline_ms',
             'resolves_timeline_ms',
             'cooldown_ready_timeline_ms',
+            'snapshot_weapon_key',
+            'snapshot_damage_type',
+            'snapshot_base_damage',
+            'snapshot_accuracy',
+            'snapshot_critical_chance',
+            'snapshot_critical_damage',
         ]);
 
         if ($values['request_token'] !== null) {
@@ -411,11 +417,15 @@ final class CombatRepository
             $stmt = $this->pdo->prepare('INSERT INTO combat_actions (
                     encounter_id, actor, action_kind, definition_key, request_token,
                     active_slot, state, started_timeline_ms, resolves_timeline_ms,
-                    cooldown_ready_timeline_ms
+                    cooldown_ready_timeline_ms, snapshot_weapon_key,
+                    snapshot_damage_type, snapshot_base_damage, snapshot_accuracy,
+                    snapshot_critical_chance, snapshot_critical_damage
                 ) VALUES (
                     :encounter_id, :actor, :action_kind, :definition_key, :request_token,
                     :active_slot, :state, :started_timeline_ms, :resolves_timeline_ms,
-                    :cooldown_ready_timeline_ms
+                    :cooldown_ready_timeline_ms, :snapshot_weapon_key,
+                    :snapshot_damage_type, :snapshot_base_damage, :snapshot_accuracy,
+                    :snapshot_critical_chance, :snapshot_critical_damage
                 )');
             $stmt->execute($params);
         } catch (PDOException $exception) {
@@ -454,6 +464,47 @@ final class CombatRepository
         $action = $stmt->fetch();
 
         return is_array($action) ? $action : null;
+    }
+
+    public function lockActionsForEncounter(int $encounterId): array
+    {
+        $this->requireEncounterLock($encounterId);
+        $this->detailRowsTouched = true;
+
+        $stmt = $this->pdo->prepare('SELECT *
+            FROM combat_actions
+            WHERE encounter_id = :encounter_id
+            ORDER BY id ASC
+            FOR UPDATE');
+        $stmt->execute(['encounter_id' => $encounterId]);
+
+        return $stmt->fetchAll();
+    }
+
+    public function resolveLockedAction(
+        int $encounterId,
+        int $actionId,
+        int $completedTimelineMs,
+    ): bool {
+        $this->requireEncounterLock($encounterId);
+        if (!$this->detailRowsTouched) {
+            throw new LogicException('Combat action rows must be locked before resolution.');
+        }
+
+        $stmt = $this->pdo->prepare("UPDATE combat_actions
+            SET state = 'resolved',
+                active_slot = NULL,
+                completed_timeline_ms = :completed_timeline_ms
+            WHERE id = :action_id
+              AND encounter_id = :encounter_id
+              AND state = 'pending'");
+        $stmt->execute([
+            'completed_timeline_ms' => $completedTimelineMs,
+            'action_id' => $actionId,
+            'encounter_id' => $encounterId,
+        ]);
+
+        return $stmt->rowCount() === 1;
     }
 
     public function appendEvent(

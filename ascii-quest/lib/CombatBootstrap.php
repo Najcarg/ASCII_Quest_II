@@ -2,9 +2,15 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CombatAccessGuard.php';
+require_once __DIR__ . '/CombatClock.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
+require_once __DIR__ . '/CombatEquipmentProvider.php';
 require_once __DIR__ . '/CombatRepository.php';
 require_once __DIR__ . '/CombatService.php';
+require_once __DIR__ . '/CombatStateProjector.php';
+require_once __DIR__ . '/CombatSynchronizer.php';
+require_once __DIR__ . '/CombatTurnEngine.php';
+require_once __DIR__ . '/PrototypeCombatEquipmentProvider.php';
 require_once __DIR__ . '/SystemCombatClock.php';
 
 final class CombatBootstrap
@@ -29,12 +35,29 @@ final class CombatBootstrap
         return self::serviceForRepository(self::repository($pdo));
     }
 
-    public static function serviceForRepository(object $repository): CombatService
+    public static function serviceForRepository(
+        object $repository,
+        ?CombatClock $clock = null,
+        ?CombatEquipmentProvider $equipmentProvider = null,
+    ): CombatService
     {
+        $definitions = CombatDefinitionRegistry::fromDefaultConfig();
+        $clock ??= new SystemCombatClock();
+        $turnEngine = new CombatTurnEngine($definitions->turnDurationSeconds());
+
         return new CombatService(
             $repository,
-            CombatDefinitionRegistry::fromDefaultConfig(),
-            new SystemCombatClock(),
+            $definitions,
+            $clock,
+            new CombatSynchronizer(
+                $clock,
+                $turnEngine,
+                $definitions->maxDisconnectedCatchupSeconds(),
+                null,
+                $repository,
+            ),
+            $equipmentProvider ?? new PrototypeCombatEquipmentProvider($definitions),
+            new CombatStateProjector($repository, $definitions),
         );
     }
 

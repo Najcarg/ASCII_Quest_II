@@ -2,17 +2,15 @@
 
 ## Status
 
-TASK 4 IMPLEMENTED — AWAITING CHECKPOINT REVIEW
+TASK 5 IMPLEMENTED — AWAITING LIVE INTEGRATION
 
 ## Current Phase
 
-Tasks 1–3 are implemented and reviewed. Task 3 was deployed live and passed
-browser testing. Migration 003 was backed up, applied, and verified on the live
-database as part of that approved integration.
+Tasks 1–4 are live-integrated. Migration 003 is applied and verified.
 
-Task 4 authoritative combat synchronization is implemented locally and is
-awaiting checkpoint review and approval. Its changes remain uncommitted and
-have not been deployed. Task 5 has NOT started.
+Task 5 manual weapon action foundation has passed local implementation,
+verification, and checkpoint review. It has not been deployed. Task 6 has
+NOT started.
 
 ## Authoritative Documents
 
@@ -26,7 +24,7 @@ Action as multiple independent concurrent action bars.
 
 ## Next Review Gate
 
-Review and approve the local Task 4 checkpoint. Do not begin Task 5 without
+Commit and integrate the approved Task 5 implementation. Do not begin Task 6 without
 explicit approval.
 
 Combat entry is automatic when authoritative movement enters the stationary

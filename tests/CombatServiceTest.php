@@ -5,6 +5,23 @@ require_once __DIR__ . '/../ascii-quest/lib/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/../ascii-quest/lib/CombatClock.php';
 require_once __DIR__ . '/../ascii-quest/lib/CombatTurnEngine.php';
 
+$combatEquipmentProviderPath = __DIR__ . '/../ascii-quest/lib/CombatEquipmentProvider.php';
+$prototypeCombatEquipmentProviderPath = __DIR__ . '/../ascii-quest/lib/PrototypeCombatEquipmentProvider.php';
+$combatStateProjectorPath = __DIR__ . '/../ascii-quest/lib/CombatStateProjector.php';
+foreach ([$combatEquipmentProviderPath, $prototypeCombatEquipmentProviderPath, $combatStateProjectorPath] as $path) {
+    if (is_file($path)) {
+        require_once $path;
+    }
+}
+if (!interface_exists('CombatEquipmentProvider')) {
+    interface CombatEquipmentProvider
+    {
+        public function offensiveSnapshot(array $lockedCharacter, string $attackKey): array;
+
+        public function currentDefense(array $lockedCharacter): array;
+    }
+}
+
 $combatSynchronizerPath = __DIR__ . '/../ascii-quest/lib/CombatSynchronizer.php';
 if (is_file($combatSynchronizerPath)) {
     require_once $combatSynchronizerPath;
@@ -13,6 +30,10 @@ if (is_file($combatSynchronizerPath)) {
 $combatServicePath = __DIR__ . '/../ascii-quest/lib/CombatService.php';
 if (is_file($combatServicePath)) {
     require_once $combatServicePath;
+}
+$combatBootstrapPath = __DIR__ . '/../ascii-quest/lib/CombatBootstrap.php';
+if (is_file($combatBootstrapPath)) {
+    require_once $combatBootstrapPath;
 }
 
 final class Task3FixedCombatClock implements CombatClock
@@ -58,6 +79,34 @@ final class Task4SequenceCombatClock implements CombatClock
         $this->observations++;
 
         return $observation;
+    }
+}
+
+final class Task5MutableEquipmentProvider implements CombatEquipmentProvider
+{
+    public int $baseDamage = 20;
+    public int $offensiveReads = 0;
+    public int $defensiveReads = 0;
+
+    public function offensiveSnapshot(array $lockedCharacter, string $attackKey): array
+    {
+        $this->offensiveReads++;
+
+        return [
+            'snapshot_weapon_key' => $attackKey,
+            'snapshot_damage_type' => 'physical',
+            'snapshot_base_damage' => $this->baseDamage,
+            'snapshot_accuracy' => 15.0,
+            'snapshot_critical_chance' => 15.0,
+            'snapshot_critical_damage' => 20,
+        ];
+    }
+
+    public function currentDefense(array $lockedCharacter): array
+    {
+        $this->defensiveReads++;
+
+        return ['toughness' => (int) ($lockedCharacter['strength'] ?? 0)];
     }
 }
 
@@ -398,7 +447,511 @@ function task4RepositoryService(
     );
 }
 
+function task5RepositoryService(
+    FakeCombatPdo $pdo,
+    Task4MutableCombatClock $clock,
+    ?CombatEquipmentProvider $equipmentProvider = null,
+): CombatService {
+    $definitions = new CombatDefinitionRegistry(require __DIR__ . '/../ascii-quest/config/combat.php');
+
+    return new CombatService(
+        new CombatRepository($pdo),
+        $definitions,
+        $clock,
+        null,
+        $equipmentProvider ?? new PrototypeCombatEquipmentProvider($definitions),
+    );
+}
+
 return [
+    'Prototype equipment provider derives weapon offense and current defense from authorities' => function (): void {
+        if (!class_exists('PrototypeCombatEquipmentProvider')) {
+            throw new RuntimeException('PrototypeCombatEquipmentProvider must exist.');
+        }
+
+        $provider = new PrototypeCombatEquipmentProvider(
+            new CombatDefinitionRegistry(require __DIR__ . '/../ascii-quest/config/combat.php'),
+        );
+        $character = (new Task3MovementRepository())->characters[42];
+
+        assertSameValue([
+            'snapshot_weapon_key' => 'prototype_weapon_attack',
+            'snapshot_damage_type' => 'physical',
+            'snapshot_base_damage' => 20,
+            'snapshot_accuracy' => 15.0,
+            'snapshot_critical_chance' => 15.0,
+            'snapshot_critical_damage' => 20,
+        ], $provider->offensiveSnapshot($character, 'prototype_weapon_attack'), 'Configured weapon snapshot.');
+        assertSameValue([
+            'toughness' => 22,
+            'dodging' => 12.0,
+            'resistances' => [
+                'fire' => 10.0,
+                'lightning' => 5.0,
+                'poison' => 10.0,
+                'cold' => 5.0,
+            ],
+        ], $provider->currentDefense($character), 'Fresh CharacterStats defense view.');
+
+        $changed = $character;
+        $changed['strength'] = 11;
+        assertSameValue(24, $provider->currentDefense($changed)['toughness'], 'Defense is recalculated for the current Champion.');
+        assertTask3CombatRejected(
+            fn (): array => $provider->offensiveSnapshot($character, 'prototype_flame_strike'),
+            'Prototype provider rejects non-weapon action.',
+        );
+    },
+
+    'Combat state projector preserves the public contract and hides server-only action state' => function (): void {
+        if (!class_exists('CombatStateProjector')) {
+            throw new RuntimeException('CombatStateProjector must exist.');
+        }
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter();
+        $pdo->actions[501] = [
+            'id' => 501,
+            'encounter_id' => 91,
+            'actor' => 'player',
+            'action_kind' => 'weapon',
+            'definition_key' => 'prototype_weapon_attack',
+            'request_token' => '44444444-4444-4444-8444-444444444444',
+            'active_slot' => 1,
+            'state' => 'pending',
+            'started_timeline_ms' => 3000,
+            'resolves_timeline_ms' => 4000,
+            'cooldown_ready_timeline_ms' => 5500,
+            'completed_timeline_ms' => null,
+            'snapshot_weapon_key' => 'private_weapon',
+            'snapshot_damage_type' => 'private_type',
+            'snapshot_base_damage' => 999,
+            'snapshot_accuracy' => 99.0,
+            'snapshot_critical_chance' => 99.0,
+            'snapshot_critical_damage' => 999,
+            'block_token' => 'private-block-token',
+            'hidden_roll' => 0.5,
+        ];
+        $pdo->actions[502] = array_replace($pdo->actions[501], ['id' => 502, 'actor' => 'enemy']);
+        $projector = new CombatStateProjector(
+            new CombatRepository($pdo),
+            new CombatDefinitionRegistry(require __DIR__ . '/../ascii-quest/config/combat.php'),
+        );
+
+        $state = $projector->project($pdo->characters[42], $pdo->encounters[91]);
+
+        assertSameValue('2026-09-01T12:00:00+00:00', $state['server_observed_at'], 'Stored anchor is projected.');
+        assertSameValue(1, count($state['player_actions']), 'Enemy actions are excluded.');
+        assertSameValue([
+            'id', 'action_kind', 'definition_key', 'state', 'started_timeline_ms',
+            'resolves_timeline_ms', 'cooldown_ready_timeline_ms', 'completed_timeline_ms',
+        ], array_keys($state['player_actions'][0]), 'Only player lifecycle and cooldown timing is public.');
+        foreach ([
+            'request_token', 'active_slot', 'snapshot_weapon_key', 'snapshot_damage_type',
+            'snapshot_base_damage', 'snapshot_accuracy', 'snapshot_critical_chance',
+            'snapshot_critical_damage', 'block_token', 'hidden_roll',
+        ] as $hidden) {
+            assertSameValue(false, array_key_exists($hidden, $state['player_actions'][0]), $hidden . ' remains private.');
+        }
+        foreach ([
+            'next_enemy_decision_timeline_ms', 'reward_gold', 'reward_experience',
+            'rewards_issued_at', 'death_processed_at', 'killer_enemy_key',
+        ] as $hidden) {
+            assertSameValue(false, array_key_exists($hidden, $state), $hidden . ' encounter field remains private.');
+        }
+    },
+
+    'Explicit weapon intent starts one configured action and consumes one allowance' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 3000,
+            'player_actions_remaining' => 1,
+        ]);
+        $beforeCharacter = $pdo->characters[42];
+        $clock = new Task4MutableCombatClock(
+            new DateTimeImmutable('2026-09-01 12:00:00.000000', new DateTimeZone('UTC')),
+        );
+
+        $state = task5RepositoryService($pdo, $clock)->startPlayerAction(
+            7,
+            42,
+            'prototype_weapon_attack',
+            '55555555-5555-4555-8555-555555555555',
+        );
+
+        assertSameValue(1, count($pdo->actions), 'One explicit intent creates one action.');
+        $action = $pdo->actions[1];
+        assertSameValue('weapon', $action['action_kind'], 'Kind comes from combat configuration.');
+        assertSameValue([3000, 4000, 5500], [
+            $action['started_timeline_ms'],
+            $action['resolves_timeline_ms'],
+            $action['cooldown_ready_timeline_ms'],
+        ], 'Duration and cooldown start at the authoritative click position.');
+        assertSameValue(0, $pdo->encounters[91]['player_actions_remaining'], 'Exactly one Action is consumed.');
+        assertSameValue($beforeCharacter, $pdo->characters[42], 'Starting an action changes no Champion resource.');
+        assertSameValue(73, $pdo->encounters[91]['enemy_current_hp'], 'Starting an action changes no enemy HP.');
+        assertSameValue('pending', $state['player_actions'][0]['state'], 'Pending lifecycle is public.');
+        assertSameValue(false, array_key_exists('request_token', $state['player_actions'][0]), 'Request token remains private.');
+        assertSameValue(false, array_key_exists('snapshot_base_damage', $state['player_actions'][0]), 'Snapshot remains private.');
+        assertSameValue(['champion', 'account', 'encounter', 'action', 'action', 'action'], $pdo->lockOrder, 'Command lock order.');
+        assertSameValue(['encounter', 'action', 'encounter'], array_column($pdo->writeOrder, 'kind'), 'Synchronization is persisted before the action and allowance update.');
+        assertSameValue([4, 5], array_column(array_filter(
+            $pdo->writeOrder,
+            static fn (array $write): bool => $write['kind'] === 'encounter',
+        ), 'expected_version'), 'The action allowance write uses the synchronized version.');
+        assertSameValue(6, $pdo->encounters[91]['version'], 'Two ordered encounter writes advance the durable version twice.');
+        assertSameValue(6, $state['version'], 'The public state reports the final durable version.');
+    },
+
+    'Combat bootstrap uses explicitly injected clock and equipment dependencies' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 3000,
+            'player_actions_remaining' => 1,
+        ]);
+        $provider = new Task5MutableEquipmentProvider();
+        $provider->baseDamage = 77;
+        $clock = new Task4MutableCombatClock(
+            new DateTimeImmutable('2026-09-01 12:00:00.000000', new DateTimeZone('UTC')),
+        );
+
+        $state = CombatBootstrap::serviceForRepository(
+            new CombatRepository($pdo),
+            $clock,
+            $provider,
+        )->startPlayerAction(
+            7,
+            42,
+            'prototype_weapon_attack',
+            'abababab-abab-4bab-8bab-abababababab',
+        );
+
+        assertSameValue(77, $pdo->actions[1]['snapshot_base_damage'], 'Injected provider captured the action snapshot.');
+        assertSameValue(3000, $state['timeline']['elapsed_ms'], 'Injected clock preserves the stored click position.');
+    },
+
+    'Weapon start rejects overlap exhaustion insufficient time cooldown and disallowed keys atomically' => function (): void {
+        $cases = [
+            'overlap' => [
+                ['player_actions_remaining' => 1],
+                [array_replace(combatActionFixture('66666666-6666-4666-8666-666666666666'), [
+                    'id' => 41,
+                    'encounter_id' => 91,
+                    'started_timeline_ms' => 2000,
+                    'resolves_timeline_ms' => 4000,
+                    'cooldown_ready_timeline_ms' => 4500,
+                    'completed_timeline_ms' => null,
+                ])],
+                'prototype_weapon_attack',
+            ],
+            'zero action' => [
+                ['player_actions_remaining' => 0],
+                [],
+                'prototype_weapon_attack',
+            ],
+            'insufficient turn time' => [
+                ['timeline_elapsed_ms' => 9500, 'player_actions_remaining' => 1],
+                [],
+                'prototype_weapon_attack',
+            ],
+            'cooldown' => [
+                ['player_actions_remaining' => 1],
+                [array_replace(combatActionFixture('77777777-7777-4777-8777-777777777777'), [
+                    'id' => 42,
+                    'encounter_id' => 91,
+                    'state' => 'resolved',
+                    'active_slot' => null,
+                    'completed_timeline_ms' => 2500,
+                    'cooldown_ready_timeline_ms' => 3500,
+                ])],
+                'prototype_weapon_attack',
+            ],
+            'non-weapon key' => [
+                ['player_actions_remaining' => 1],
+                [],
+                'prototype_flame_strike',
+            ],
+        ];
+
+        foreach ($cases as $label => [$encounterOverrides, $actions, $actionKey]) {
+            $pdo = new FakeCombatPdo();
+            $pdo->encounters[91] = task4Encounter(array_replace([
+                'timeline_elapsed_ms' => 3000,
+                'player_actions_remaining' => 1,
+            ], $encounterOverrides));
+            foreach ($actions as $action) {
+                $pdo->actions[$action['id']] = $action;
+            }
+            $beforeEncounter = $pdo->encounters[91];
+            $beforeActions = $pdo->actions;
+            $clock = new Task4MutableCombatClock(
+                new DateTimeImmutable('2026-09-01 12:00:00.000000', new DateTimeZone('UTC')),
+            );
+
+            assertTask3CombatRejected(
+                fn (): array => task5RepositoryService($pdo, $clock)->startPlayerAction(
+                    7,
+                    42,
+                    $actionKey,
+                    '88888888-8888-4888-8888-888888888888',
+                ),
+                $label,
+            );
+            $expectedEncounter = $beforeEncounter;
+            $expectedEncounter['version']++;
+            assertSameValue($expectedEncounter, $pdo->encounters[91], $label . ' persists only synchronized encounter state.');
+            assertSameValue($beforeActions, $pdo->actions, $label . ' action rollback.');
+            assertSameValue('encounter', $pdo->writeOrder[0]['kind'] ?? null, $label . ' synchronizes before command validation.');
+        }
+    },
+
+    'Accepted request tokens replay immutable snapshots while later actions use new equipment' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 9000,
+            'player_actions_remaining' => 1,
+        ]);
+        $provider = new Task5MutableEquipmentProvider();
+        $clock = new Task4MutableCombatClock(
+            new DateTimeImmutable('2026-09-01 12:00:00.000000', new DateTimeZone('UTC')),
+        );
+        $service = task5RepositoryService($pdo, $clock, $provider);
+        $token = '99999999-9999-4999-8999-999999999999';
+
+        $first = $service->startPlayerAction(7, 42, 'prototype_weapon_attack', $token);
+        $provider->baseDamage = 99;
+        $replay = $service->startPlayerAction(7, 42, 'prototype_weapon_attack', $token);
+
+        assertSameValue($first['player_actions'], $replay['player_actions'], 'Same accepted token replays the persisted action.');
+        assertSameValue(1, count($pdo->actions), 'Replay creates no second action.');
+        assertSameValue(20, $pdo->actions[1]['snapshot_base_damage'], 'Replay does not replace the snapshot.');
+        assertSameValue(0, $pdo->encounters[91]['player_actions_remaining'], 'Replay consumes no second allowance.');
+        assertSameValue(1, $provider->offensiveReads, 'Replay does not recapture equipment.');
+        assertSameValue(6, $first['version'], 'Accepted action projects both synchronization and allowance writes.');
+        assertSameValue(7, $replay['version'], 'Replay retains its synchronization write without restarting the action.');
+        assertSameValue(7, $pdo->encounters[91]['version'], 'Replay leaves the persisted version at its synchronized value.');
+
+        $beforeCollisionEncounter = $pdo->encounters[91];
+        $beforeCollisionActions = $pdo->actions;
+        assertTask3CombatRejected(
+            fn (): array => $service->startPlayerAction(
+                7,
+                42,
+                'prototype_flame_strike',
+                $token,
+            ),
+            'A token collision with a different canonical action key.',
+        );
+        $expectedCollisionEncounter = $beforeCollisionEncounter;
+        $expectedCollisionEncounter['version']++;
+        assertSameValue($expectedCollisionEncounter, $pdo->encounters[91], 'Token collision commits only its authoritative synchronization state.');
+        assertSameValue($beforeCollisionActions, $pdo->actions, 'Token collision inserts no second action or snapshot.');
+        assertSameValue(1, $provider->offensiveReads, 'Token collision does not recapture equipment.');
+
+        $clock->set(new DateTimeImmutable('2026-09-01 12:00:02.500000', new DateTimeZone('UTC')));
+        $service->startPlayerAction(
+            7,
+            42,
+            'prototype_weapon_attack',
+            'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        );
+
+        assertSameValue(2, count($pdo->actions), 'A later Turn accepts a distinct action.');
+        assertSameValue(20, $pdo->actions[1]['snapshot_base_damage'], 'First action snapshot stays immutable.');
+        assertSameValue(99, $pdo->actions[2]['snapshot_base_damage'], 'Later action captures current equipment.');
+        assertSameValue(2, $provider->offensiveReads, 'Only accepted new actions capture offense.');
+    },
+
+    'Due player weapon action resolves exactly before Turn reset without HP changes' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 9500,
+            'turn_started_timeline_ms' => 0,
+            'player_actions_remaining' => 0,
+        ]);
+        $pdo->actions[51] = array_replace(combatActionFixture('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'), [
+            'id' => 51,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 9000,
+            'resolves_timeline_ms' => 10000,
+            'cooldown_ready_timeline_ms' => 11500,
+            'completed_timeline_ms' => null,
+        ]);
+        $beforeCharacter = $pdo->characters[42];
+        $clock = new Task4MutableCombatClock(
+            new DateTimeImmutable('2026-09-01 12:00:00.500000', new DateTimeZone('UTC')),
+        );
+
+        $state = task5RepositoryService($pdo, $clock)->state(7, 42);
+
+        assertSameValue('resolved', $pdo->actions[51]['state'], 'Due action resolves.');
+        assertSameValue(null, $pdo->actions[51]['active_slot'], 'Resolved action releases its slot.');
+        assertSameValue(10000, $pdo->actions[51]['completed_timeline_ms'], 'Resolution uses the exact deadline.');
+        assertSameValue(11500, $pdo->actions[51]['cooldown_ready_timeline_ms'], 'Cooldown remains unchanged.');
+        assertSameValue(20, $pdo->actions[51]['snapshot_base_damage'], 'Snapshot remains unchanged.');
+        assertSameValue([
+            ['turn_number' => 1, 'player_actions_remaining' => 0],
+        ], $pdo->resolutionObservations, 'Real action resolution observed the exhausted pre-reset Turn.');
+        assertSameValue(2, $pdo->encounters[91]['turn_number'], 'Exact-boundary resolution precedes Turn reset.');
+        assertSameValue(1, $pdo->encounters[91]['player_actions_remaining'], 'New Turn allowance follows resolution.');
+        assertSameValue($beforeCharacter, $pdo->characters[42], 'Resolution changes no Champion HP or Mana.');
+        assertSameValue(73, $pdo->encounters[91]['enemy_current_hp'], 'Resolution changes no enemy HP.');
+        assertSameValue('resolved', $state['player_actions'][0]['state'], 'Resolved lifecycle is projected.');
+    },
+
+    'Repository-backed due callback receives the pre-reset Turn at an exact boundary' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 9500,
+            'turn_started_timeline_ms' => 0,
+            'player_actions_remaining' => 0,
+        ]);
+        $pdo->actions[52] = array_replace(combatActionFixture('dededede-dede-4ede-8ede-dededededede'), [
+            'id' => 52,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 9000,
+            'resolves_timeline_ms' => 10000,
+            'cooldown_ready_timeline_ms' => 11500,
+            'completed_timeline_ms' => null,
+        ]);
+        $repository = new CombatRepository($pdo);
+        $definitions = new CombatDefinitionRegistry(require __DIR__ . '/../ascii-quest/config/combat.php');
+        $clock = new Task4MutableCombatClock(
+            new DateTimeImmutable('2026-09-01 12:00:00.500000', new DateTimeZone('UTC')),
+        );
+        $seenAtResolution = [];
+        $processor = static function (array $encounter, int $throughTimelineMs) use ($repository, &$seenAtResolution): array {
+            foreach ($repository->lockActionsForEncounter((int) $encounter['id']) as $action) {
+                if (($action['actor'] ?? null) !== 'player' || ($action['action_kind'] ?? null) !== 'weapon' ||
+                    ($action['state'] ?? null) !== 'pending' || (int) $action['resolves_timeline_ms'] > $throughTimelineMs) {
+                    continue;
+                }
+                $seenAtResolution[] = [
+                    'turn_number' => (int) $encounter['turn_number'],
+                    'player_actions_remaining' => (int) $encounter['player_actions_remaining'],
+                ];
+                if (!$repository->resolveLockedAction(
+                    (int) $encounter['id'],
+                    (int) $action['id'],
+                    (int) $action['resolves_timeline_ms'],
+                )) {
+                    throw new RuntimeException('Repository-backed action did not resolve.');
+                }
+            }
+
+            return $encounter;
+        };
+        $service = new CombatService(
+            $repository,
+            $definitions,
+            $clock,
+            new CombatSynchronizer(
+                $clock,
+                new CombatTurnEngine($definitions->turnDurationSeconds()),
+                $definitions->maxDisconnectedCatchupSeconds(),
+                $processor,
+            ),
+            new PrototypeCombatEquipmentProvider($definitions),
+        );
+
+        $state = $service->state(7, 42);
+
+        assertSameValue([
+            ['turn_number' => 1, 'player_actions_remaining' => 0],
+        ], $seenAtResolution, 'Due callback sees the pre-reset Turn, not only persisted state.');
+        assertSameValue('resolved', $pdo->actions[52]['state'], 'Actual repository resolution completed.');
+        assertSameValue(2, $state['turn']['number'], 'Turn reset follows the callback.');
+        assertSameValue(1, $state['turn']['player_actions_remaining'], 'Turn reset restores the next allowance.');
+        assertSameValue(73, $pdo->encounters[91]['enemy_current_hp'], 'Boundary resolution does not damage the enemy.');
+        assertSameValue(145, $pdo->characters[42]['current_hp'], 'Boundary resolution does not damage the Champion.');
+    },
+
+    'Rejected gameplay commands persist synchronized time without creating another action' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 0,
+            'turn_started_timeline_ms' => 0,
+            'player_actions_remaining' => 1,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+        ]);
+        $clock = new Task4MutableCombatClock(
+            new DateTimeImmutable('2026-09-01 12:00:00.000000', new DateTimeZone('UTC')),
+        );
+        $service = task5RepositoryService($pdo, $clock);
+        $service->startPlayerAction(
+            7,
+            42,
+            'prototype_weapon_attack',
+            '10101010-1010-4010-8010-101010101010',
+        );
+        $snapshot = [
+            'cooldown_ready_timeline_ms' => $pdo->actions[1]['cooldown_ready_timeline_ms'],
+            'snapshot_base_damage' => $pdo->actions[1]['snapshot_base_damage'],
+        ];
+
+        foreach ([
+            ['2026-09-01 12:00:05.000000', 5000, 1, 0, 7],
+            ['2026-09-01 12:00:10.000000', 10000, 2, 1, 8],
+            ['2026-09-01 12:00:20.000000', 15000, 2, 1, 9],
+        ] as [$now, $timeline, $turn, $actions, $version]) {
+            $clock->set(new DateTimeImmutable($now, new DateTimeZone('UTC')));
+            assertTask3CombatRejected(
+                fn (): array => $service->startPlayerAction(
+                    7,
+                    42,
+                    'prototype_flame_strike',
+                    sprintf('20202020-2020-4020-8020-%012d', $timeline),
+                ),
+                'Configured-disallowed command at timeline ' . $timeline,
+            );
+            assertSameValue($timeline, $pdo->encounters[91]['timeline_elapsed_ms'], 'Rejected command persists logical time.');
+            assertSameValue($now, $pdo->encounters[91]['last_synchronized_at'], 'Rejected command advances the wall anchor.');
+            assertSameValue($turn, $pdo->encounters[91]['turn_number'], 'Rejected command reaches the authoritative Turn boundary.');
+            assertSameValue($actions, $pdo->encounters[91]['player_actions_remaining'], 'Only synchronization may reset allowance.');
+            assertSameValue($version, $pdo->encounters[91]['version'], 'Each rejected command persists one synchronization version.');
+            assertSameValue(1, count($pdo->actions), 'Rejected command creates no second action.');
+            assertSameValue($snapshot, [
+                'cooldown_ready_timeline_ms' => $pdo->actions[1]['cooldown_ready_timeline_ms'],
+                'snapshot_base_damage' => $pdo->actions[1]['snapshot_base_damage'],
+            ], 'Rejected command does not change cooldown or snapshot.');
+        }
+        assertSameValue('resolved', $pdo->actions[1]['state'], 'Elapsed synchronization resolves the original action.');
+    },
+
+    'Action insert and final encounter update failures roll back the whole command' => function (): void {
+        foreach (['insert', 'final update'] as $failure) {
+            $pdo = new FakeCombatPdo();
+            $pdo->encounters[91] = task4Encounter([
+                'timeline_elapsed_ms' => 3000,
+                'player_actions_remaining' => 1,
+            ]);
+            $pdo->failActionInsert = $failure === 'insert';
+            if ($failure === 'final update') {
+                $pdo->failSynchronizationUpdateOnAttempt = 2;
+            }
+            $beforeEncounter = $pdo->encounters[91];
+            $clock = new Task4MutableCombatClock(
+                new DateTimeImmutable('2026-09-01 12:00:00.000000', new DateTimeZone('UTC')),
+            );
+
+            assertTask3CombatRejected(
+                fn (): array => task5RepositoryService($pdo, $clock)->startPlayerAction(
+                    7,
+                    42,
+                    'prototype_weapon_attack',
+                    'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+                ),
+                $failure . ' failure',
+            );
+
+            assertSameValue($beforeEncounter, $pdo->encounters[91], $failure . ' failure encounter rollback.');
+            assertSameValue([], $pdo->actions, $failure . ' failure action rollback.');
+            assertSameValue(false, $pdo->inTransaction(), $failure . ' failure closes transaction.');
+            if ($failure === 'final update') {
+                assertSameValue(2, $pdo->synchronizationUpdateAttempts, 'Final update failure occurs after the action insert.');
+                assertSameValue(['encounter', 'action', 'encounter'], array_column($pdo->writeOrder, 'kind'), 'Final update failure attempted the complete two-write command.');
+            }
+        }
+    },
+
     'Authoritative synchronization applies zero short and capped wall-clock gaps exactly' => function (): void {
         foreach ([
             ['2026-09-01 12:00:00.000000', 3000],
@@ -690,7 +1243,7 @@ return [
         assertSameValue(8000, $pdo->encounters[91]['timeline_elapsed_ms'], 'Capped timeline persisted.');
         assertSameValue('2026-09-01 12:00:30.000000', $pdo->encounters[91]['last_synchronized_at'], 'Actual anchor persisted.');
         assertSameValue(5, $pdo->encounters[91]['version'], 'Synchronization version persisted once.');
-        assertSameValue(['champion', 'account', 'encounter'], $pdo->lockOrder, 'Authoritative lock order.');
+        assertSameValue(['champion', 'account', 'encounter', 'action'], $pdo->lockOrder, 'Authoritative lock order.');
         assertSameValue($characterBefore, $pdo->characters[42], 'Champion HP Mana and all fields preserved.');
         assertSameValue($actionBefore, $pdo->actions[501], 'Active action cooldown Block and snapshot state preserved.');
         assertSameValue($eventBefore, $pdo->events[701], 'Battle Info history preserved.');
@@ -826,7 +1379,7 @@ return [
 
         assertSameValue($before, $pdo->encounters[91], 'Rejected save persists no timeline or anchor.');
         assertSameValue(false, $pdo->inTransaction(), 'Rejected save closes the transaction by rollback.');
-        assertSameValue(['champion', 'account', 'encounter'], $pdo->lockOrder, 'Rejected save retains approved lock order.');
+        assertSameValue(['champion', 'account', 'encounter', 'action'], $pdo->lockOrder, 'Rejected save retains approved lock order.');
     },
 
     'Movement decision persists an orthogonal floor destination and starts combat' => function (): void {
