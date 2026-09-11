@@ -12,6 +12,7 @@ $tests = array_merge(
     require __DIR__ . '/CombatRepositoryTest.php',
     require __DIR__ . '/CombatServiceTest.php',
     require __DIR__ . '/CombatSecurityTest.php',
+    require __DIR__ . '/CombatTask6Test.php',
 );
 
 $passed = 0;
