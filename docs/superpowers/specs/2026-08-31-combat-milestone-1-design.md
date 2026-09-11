@@ -780,3 +780,390 @@ Vanilla JavaScript rendering in the existing HUD shell
 ```
 
 No browser value crosses upward as an authoritative game result.
+
+---
+
+## Task 6 Approved Design Addendum — Cave Brute AI and Damage Resolution
+
+This section records the approved Task 6 rulings that refine the existing
+Combat Milestone 1 Cave Brute, timing, defense, and action-resolution
+contracts.
+
+### Task 6 scope
+
+Task 6 introduces:
+
+- Cave Brute autonomous action selection;
+- Cave Brute `fire_slam` and `smash` action starts;
+- enemy Action allowance and cooldown enforcement;
+- chronological enemy action resolution;
+- actual Cave Brute damage against the Champion;
+- actual player weapon damage against the Cave Brute;
+- automatic server-side Cave Brute Block against player weapon hits;
+- deterministic enemy scheduling inside the existing capped logical timeline.
+
+Task 6 does not introduce:
+
+- player reaction Block;
+- potion commands;
+- combat HUD JavaScript;
+- player skills/effects;
+- rewards or victory-loot processing;
+- permanent Champion death processing;
+- Slayer logic;
+- Accuracy rolls;
+- Critical rolls;
+- Dodge rolls;
+- real item/equipment persistence;
+- multiple enemies;
+- weighted/personality/boss AI;
+- any database migration other than the approved additive Migration 004
+  enemy-AI initialization marker.
+
+Task 7 remains responsible for the player Block reaction.
+Task 12 remains responsible for victory/rewards.
+Task 13 remains responsible for permanent Champion death.
+
+### Cave Brute policy
+
+`CaveBrutePolicy` is a pure decision boundary.
+
+For each due enemy decision:
+
+1. if the encounter is not active, wait;
+2. if Cave Brute HP is zero, wait;
+3. if Cave Brute already has an unresolved action, wait;
+4. if no enemy Action remains in the current Turn, wait;
+5. if `fire_slam` is off cooldown and has enough remaining Turn time to
+   finish, choose `fire_slam`;
+6. otherwise, if `smash` is off cooldown and has enough remaining Turn time
+   to finish, choose `smash`;
+7. otherwise wait until the earliest relevant resolution, cooldown-ready
+   position, or Turn boundary.
+
+The policy returns only an intended definition key or wait decision.
+`CombatSynchronizer`, under the encounter transaction/locks, remains the
+authority that actually starts the action.
+
+The Cave Brute remains Action 2.
+
+Configured prototype definitions remain authoritative:
+
+- `smash`
+  - Physical;
+  - duration: 1.5 seconds;
+  - cooldown: 3.0 seconds;
+  - prototype base damage: 18.
+- `fire_slam`
+  - Fire;
+  - duration: 2.0 seconds;
+  - cooldown: 6.0 seconds;
+  - prototype base damage: 24.
+
+Enemy cooldown begins at action start, not resolution.
+
+Enemy actions are sequential relative to the Cave Brute itself. A player
+action and an enemy action may execute concurrently.
+
+### Player weapon damage against Cave Brute
+
+Task 6 begins applying damage when a player weapon action reaches its
+authoritative resolve position.
+
+Resolution uses the immutable action snapshot created at Task 5 action start.
+
+For Task 6 the provisional pipeline is:
+
+```text
+snapshot_base_damage
+-> automatic Cave Brute defense resolution
+-> applied damage
+-> enemy_current_hp
+```
+
+Task 6 deliberately does not use:
+
+- `snapshot_accuracy`;
+- `snapshot_critical_chance`;
+- `snapshot_critical_damage`;
+
+for hit/miss or Critical resolution.
+
+Those fields remain stored as part of the immutable offensive snapshot for
+future combat work, but they do not alter Task 6 damage.
+
+There is no client-provided roll, hit result, damage value, Block result, or
+damage timing.
+
+### Automatic Cave Brute Block
+
+Cave Brute defense is resolved through `EnemyDefenseResolver`.
+
+The foundation resolver performs exactly one server-side provisional Block
+roll for a player hit reaching resolution.
+
+The configured prototype Cave Brute Block values remain centralized:
+
+- Block chance: 20%;
+- Block damage reduction: 50%.
+
+This is an automatic enemy defense.
+
+It creates:
+
+- no reaction popup;
+- no player command;
+- no Block token;
+- no client-visible roll;
+- no client-visible chance.
+
+The action stores its authoritative damage result using the existing durable
+combat-action result fields.
+
+An action that resolved before Task 6 became active is historical and is not
+reprocessed retroactively.
+
+### Cave Brute damage against Champion
+
+Incoming enemy damage uses the Champion's current defensive state at the
+enemy action's resolve position.
+
+Defense is obtained through:
+
+`CombatEquipmentProvider::currentDefense()`
+
+which delegates derived values to `CharacterStats`.
+
+Champion defense is not snapshotted when the enemy action starts.
+
+Therefore a future legitimate equipment/stat change before resolution may
+affect incoming damage, while the enemy action's own configured offensive
+definition remains authoritative.
+
+Task 6 uses these provisional foundation formulas.
+
+#### Physical damage
+
+For Physical damage:
+
+```text
+reduction_fraction = toughness / (toughness + 100)
+applied_damage = round(base_damage * (1 - reduction_fraction))
+```
+
+Applied damage is clamped to a minimum of 1 when the incoming base damage is
+positive.
+
+No duplicate Toughness formula may be added to `CharacterStats`; this
+calculation is a Task 6 combat-resolution formula using the current
+`CharacterStats` Toughness result.
+
+#### Elemental damage
+
+For elemental damage:
+
+```text
+reduction_fraction = current_resistance_percent / 100
+applied_damage = round(base_damage * (1 - reduction_fraction))
+```
+
+The current resistance value supplied by `CharacterStats` remains subject to
+its existing cap.
+
+Applied damage is clamped to a minimum of 1 when the incoming base damage is
+positive.
+
+For Cave Brute Task 6, `fire_slam` uses current Fire Resistance.
+
+#### Deferred defensive mechanics
+
+Task 6 does not use Champion Dodging for hit/miss resolution.
+
+Player active Block remains Task 7.
+
+### HP application
+
+Damage application is server-authoritative.
+
+Enemy HP:
+
+```text
+enemy_current_hp = max(0, enemy_current_hp - applied_damage)
+```
+
+Champion HP:
+
+```text
+current_hp = max(0, current_hp - applied_damage)
+```
+
+Damage must never heal an actor and HP must never become negative.
+
+Task 6 may reach zero HP, but it does not implement the later terminal
+lifecycle systems.
+
+If Cave Brute HP reaches zero:
+
+- no new Cave Brute action may start;
+- no new player offensive action may start against that zero-HP actor;
+- Task 12 later owns victory state, rewards, and loot phase.
+
+If Champion current HP reaches zero:
+
+- no new Champion or Cave Brute action may start;
+- Task 13 later owns durable `life_state = dead`, `died_at`, killer context,
+  and permanent-death presentation.
+
+Task 6 live acceptance testing must avoid deliberately driving the existing
+production test Champion to zero HP before Task 13 exists.
+
+### Chronological ordering
+
+CombatSynchronizer remains the authoritative chronological processor.
+
+Inside the permitted synchronization window, process the earliest logical
+event repeatedly using this ordering:
+
+1. resolve due actions;
+2. apply their Task 6 damage results;
+3. mark the resolved action completed and clear its active slot;
+4. stop new action starts immediately for any actor whose HP reached zero;
+5. process a Turn boundary when due;
+6. execute a due Cave Brute decision;
+7. schedule the next enemy decision from the earliest relevant logical
+   position;
+8. continue until the capped target timeline is reached.
+
+An action resolving exactly at a Turn boundary resolves before the new Turn
+allowances are reset.
+
+No skipped disconnected wall-clock interval is replayed.
+
+### Existing pre-Task-6 encounter compatibility
+
+Encounters created before Task 6 must not replay historical enemy AI.
+
+Task 6 uses this durable compatibility marker:
+
+`enemy_ai_initialized_timeline_ms BIGINT UNSIGNED NULL`
+
+Its authoritative semantics are:
+
+- `NULL` = a legacy/pre-Task-6 encounter whose enemy AI has not yet been
+  anchored;
+- `0` = a new Task-6 encounter initialized from logical timeline zero;
+- a value greater than `0` = a legacy encounter anchored at that logical
+  timeline position.
+
+The existing Task 1-5 `next_enemy_decision_timeline_ms` value must not cause
+Cave Brute actions to be generated retrospectively from the beginning of an
+old encounter.
+
+For a legacy encounter whose marker is `NULL`:
+
+1. capture the encounter's persisted starting `timeline_elapsed_ms` before
+   advancing toward the capped synchronization target;
+2. persist that starting logical position as
+   `enemy_ai_initialized_timeline_ms`;
+3. treat the enemy decision as due at exactly that anchor;
+4. process that Cave Brute decision at the anchor before advancing beyond it;
+5. never process enemy AI at any earlier logical position;
+6. continue normal chronological processing through the permitted
+   synchronization target.
+
+For example:
+
+```text
+timeline_elapsed_ms = 55603
+enemy_ai_initialized_timeline_ms = NULL
+-> enemy_ai_initialized_timeline_ms = 55603
+-> first enemy decision occurs at 55603
+-> synchronization may continue toward the capped target
+```
+
+This anchors the legacy encounter exactly once. It prevents historical attacks
+from being replayed while still starting enemy AI immediately at the approved
+compatibility anchor.
+
+New Task-6 encounters must start with:
+
+```text
+enemy_ai_initialized_timeline_ms = 0
+next_enemy_decision_timeline_ms = 0
+```
+
+They may begin enemy decision processing from timeline position zero according
+to the normal policy, so the first Cave Brute decision may occur at timeline
+zero.
+
+The compatibility mechanism must be durable and deterministic. It must not
+infer compatibility from timestamps, action history, browser state, process
+memory, or deployment dates.
+
+### Projection privacy
+
+Player-visible state may expose a Cave Brute action only after that action has
+actually started and only with information needed for later presentation and
+Task 7 reaction work.
+
+Public state must not expose:
+
+- enemy cooldown durations as readiness state;
+- enemy cooldown-ready timeline positions;
+- `next_enemy_decision_timeline_ms`;
+- future intended AI actions;
+- Block chance;
+- hidden Block rolls;
+- raw defense resolver inputs;
+- server-only AI scheduling metadata.
+
+Task 6 adds no browser authority.
+
+### Persistence and Migration 004
+
+The approved additive migration is:
+
+`database/migrations/004_combat_enemy_ai_initialization.sql`
+
+It adds exactly this nullable column to the combat encounter persistence:
+
+`enemy_ai_initialized_timeline_ms BIGINT UNSIGNED NULL`
+
+Existing rows must remain `NULL`. Do not backfill legacy rows to `0`.
+
+Where safe for the repository's MariaDB conventions, the migration should
+enforce:
+
+```text
+enemy_ai_initialized_timeline_ms IS NULL
+OR enemy_ai_initialized_timeline_ms <= timeline_elapsed_ms
+```
+
+Existing combat action result/lifecycle fields must be reused where suitable,
+including the existing damage/result and completion fields.
+
+Migration 004 must not change HP, Mana, actions, Turns, encounter status, or
+logical timeline state. No other Task 6 schema change is approved.
+
+### Task 6 live acceptance boundary
+
+Live acceptance should prove:
+
+- existing pre-Task-6 encounter does not replay historical Cave Brute attacks;
+- legacy encounter starts with a `NULL` AI marker, anchors once at its current
+  logical timeline, processes its first decision at that exact anchor, and
+  never replays historical enemy decisions;
+- Cave Brute begins making new decisions only from the approved compatibility
+  anchor;
+- Fire Slam is preferred when ready;
+- Smash is the fallback;
+- enemy Action allowance is enforced;
+- cooldowns begin at action start;
+- player weapon resolution applies automatic Cave Brute defense exactly once;
+- Cave Brute HP changes only from newly resolved Task 6 player actions;
+- enemy damage uses current Champion defense at resolution;
+- physical Toughness reduction works;
+- Fire Resistance reduction works;
+- Champion HP and enemy HP never go below zero;
+- hidden enemy cooldown/AI/Block data remains absent from public projection;
+- no Task 7+ behavior is introduced.
