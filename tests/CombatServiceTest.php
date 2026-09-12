@@ -1738,4 +1738,88 @@ return [
         assertSameValue('fire_slam', $action['definition_key'] ?? null, 'First native synchronization starts Fire Slam.');
         assertSameValue(0, $action['started_timeline_ms'] ?? null, 'First native decision occurs at timeline zero.');
     },
+
+    'Task 6 write failures roll back the complete authoritative combat transaction' => function (): void {
+        foreach (['enemy insert', 'action result', 'Champion HP', 'final encounter'] as $failure) {
+            $pdo = new FakeCombatPdo();
+            $encounter = [
+                'timeline_elapsed_ms' => 0,
+                'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+                'turn_started_timeline_ms' => 0,
+                'next_enemy_decision_timeline_ms' => 5000,
+                'enemy_ai_initialized_timeline_ms' => 0,
+                'player_actions_remaining' => 0,
+                'enemy_actions_remaining' => 2,
+                'enemy_current_hp' => 120,
+            ];
+            $serverNow = '2026-09-01 12:00:01.500000';
+            $random = new Task6SequenceRandomSource([]);
+
+            if ($failure === 'enemy insert') {
+                $encounter = array_replace($encounter, [
+                    'timeline_elapsed_ms' => 3000,
+                    'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+                    'next_enemy_decision_timeline_ms' => 0,
+                    'enemy_ai_initialized_timeline_ms' => null,
+                    'player_actions_remaining' => 1,
+                ]);
+                $serverNow = '2026-09-01 12:00:00.000000';
+                $pdo->failActionInsert = true;
+            } elseif ($failure === 'Champion HP') {
+                $pdo->actions[50] = task6EnemyAction('smash', [
+                    'id' => 50,
+                    'encounter_id' => 91,
+                    'started_timeline_ms' => 0,
+                    'resolves_timeline_ms' => 1500,
+                    'cooldown_ready_timeline_ms' => 3000,
+                ]);
+                $pdo->failCharacterHpUpdate = true;
+            } else {
+                $pdo->actions[50] = task6PendingAction([
+                    'id' => 50,
+                    'encounter_id' => 91,
+                    'started_timeline_ms' => 0,
+                    'resolves_timeline_ms' => 1000,
+                    'cooldown_ready_timeline_ms' => 2500,
+                ]);
+                $serverNow = '2026-09-01 12:00:01.000000';
+                $random = new Task6SequenceRandomSource([21]);
+                $pdo->failActionResolution = $failure === 'action result';
+                $pdo->failSynchronizationUpdate = $failure === 'final encounter';
+            }
+
+            $pdo->encounters[91] = task4Encounter($encounter);
+            $before = [
+                'characters' => $pdo->characters,
+                'encounters' => $pdo->encounters,
+                'actions' => $pdo->actions,
+                'events' => $pdo->events,
+            ];
+            $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+                $serverNow,
+                new DateTimeZone('UTC'),
+            ));
+
+            assertTask3CombatRejected(
+                fn (): array => task6ChronologicalService(
+                    $pdo,
+                    $clock,
+                    null,
+                    $random,
+                )->state(7, 42),
+                $failure . ' failure',
+            );
+
+            assertSameValue($before['characters'], $pdo->characters, $failure . ' rolls back Champion state.');
+            assertSameValue($before['encounters'], $pdo->encounters, $failure . ' rolls back timeline marker schedule HP allowances Turn and version.');
+            assertSameValue($before['actions'], $pdo->actions, $failure . ' rolls back action creation or resolution.');
+            assertSameValue($before['events'], $pdo->events, $failure . ' rolls back event history.');
+            assertSameValue(false, $pdo->inTransaction(), $failure . ' closes the failed transaction.');
+            assertSameValue(
+                ['champion', 'account', 'encounter'],
+                array_slice($pdo->lockOrder, 0, 3),
+                $failure . ' retains Champion Account Encounter lock order.',
+            );
+        }
+    },
 ];
