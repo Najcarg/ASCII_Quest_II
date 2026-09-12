@@ -342,4 +342,52 @@ return [
             );
         }
     },
+
+    'Cave Brute action persistence uses authoritative server-only definition values' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        seedActiveCombat($pdo);
+        $definition = task6CaveBruteDefinition()['actions']['fire_slam'];
+        $durationMs = (int) round($definition['duration_seconds'] * 1000);
+        $cooldownMs = (int) round($definition['server_only']['cooldown_seconds'] * 1000);
+
+        $repository->beginTransaction();
+        $repository->lockOwnedCharacter(7, 42);
+        $repository->lockActiveEncounter(42);
+        $created = $repository->createAction(10, [
+            'actor' => 'enemy',
+            'action_kind' => (string) $definition['kind'],
+            'definition_key' => 'fire_slam',
+            'request_token' => null,
+            'active_slot' => 1,
+            'state' => 'pending',
+            'started_timeline_ms' => 3000,
+            'resolves_timeline_ms' => 3000 + $durationMs,
+            'cooldown_ready_timeline_ms' => 3000 + $cooldownMs,
+            'snapshot_weapon_key' => null,
+            'snapshot_damage_type' => (string) $definition['damage_type'],
+            'snapshot_base_damage' => (int) $definition['server_only']['prototype_damage'],
+            'snapshot_accuracy' => null,
+            'snapshot_critical_chance' => null,
+            'snapshot_critical_damage' => null,
+        ]);
+        $repository->commit();
+
+        assertSameValue('enemy', $created['actor'], 'Server-created actor.');
+        assertSameValue('skill', $created['action_kind'], 'Authoritative action kind.');
+        assertSameValue('fire_slam', $created['definition_key'], 'Authoritative definition key.');
+        assertSameValue(null, $created['request_token'], 'Enemy action has no browser request token.');
+        assertSameValue([3000, 5000, 9000], [
+            $created['started_timeline_ms'],
+            $created['resolves_timeline_ms'],
+            $created['cooldown_ready_timeline_ms'],
+        ], 'Timing comes from server-owned duration and cooldown configuration.');
+        assertSameValue('fire', $created['snapshot_damage_type'], 'Stored damage type.');
+        assertSameValue(24, $created['snapshot_base_damage'], 'Stored server-only prototype damage.');
+        assertSameValue([null, null, null, null], [
+            $created['snapshot_weapon_key'],
+            $created['snapshot_accuracy'],
+            $created['snapshot_critical_chance'],
+            $created['snapshot_critical_damage'],
+        ], 'Player-only snapshots remain null.');
+    },
 ];

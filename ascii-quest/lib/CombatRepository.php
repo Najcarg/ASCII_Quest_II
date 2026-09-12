@@ -9,6 +9,7 @@ final class CombatRepository
     private ?int $lockedEncounterId = null;
     private ?array $lockedEncounter = null;
     private bool $detailRowsTouched = false;
+    private bool $actionRowsLocked = false;
 
     public function __construct(private PDO $pdo)
     {
@@ -251,6 +252,32 @@ final class CombatRepository
         return $stmt->rowCount() === 1;
     }
 
+    public function updateLockedCharacterCurrentHp(
+        int $userId,
+        int $characterId,
+        int $expectedCurrentHp,
+        int $newCurrentHp,
+    ): bool {
+        $this->requireChampionLock($characterId);
+        if ($newCurrentHp < 0) {
+            throw new InvalidArgumentException('Champion current HP cannot be negative.');
+        }
+
+        $stmt = $this->pdo->prepare('UPDATE characters
+            SET current_hp = :new_current_hp
+            WHERE id = :character_id
+              AND user_id = :user_id
+              AND current_hp = :expected_current_hp');
+        $stmt->execute([
+            'new_current_hp' => $newCurrentHp,
+            'character_id' => $characterId,
+            'user_id' => $userId,
+            'expected_current_hp' => $expectedCurrentHp,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
     public function createEncounter(int $characterId, array $encounter): array
     {
         $this->requireChampionLock($characterId);
@@ -278,6 +305,7 @@ final class CombatRepository
             'turn_number',
             'turn_started_timeline_ms',
             'next_enemy_decision_timeline_ms',
+            'enemy_ai_initialized_timeline_ms',
             'player_actions_remaining',
             'enemy_actions_remaining',
             'potion_key',
@@ -293,14 +321,16 @@ final class CombatRepository
                     character_id, enemy_key, status, active_slot,
                     enemy_max_hp, enemy_current_hp, timeline_elapsed_ms,
                     last_synchronized_at, turn_number, turn_started_timeline_ms,
-                    next_enemy_decision_timeline_ms, player_actions_remaining,
+                    next_enemy_decision_timeline_ms, enemy_ai_initialized_timeline_ms,
+                    player_actions_remaining,
                     enemy_actions_remaining, potion_key, potion_charge_allowance,
                     potion_charges_remaining, reward_gold, reward_experience, version
                 ) VALUES (
                     :character_id, :enemy_key, :status, :active_slot,
                     :enemy_max_hp, :enemy_current_hp, :timeline_elapsed_ms,
                     :last_synchronized_at, :turn_number, :turn_started_timeline_ms,
-                    :next_enemy_decision_timeline_ms, :player_actions_remaining,
+                    :next_enemy_decision_timeline_ms, :enemy_ai_initialized_timeline_ms,
+                    :player_actions_remaining,
                     :enemy_actions_remaining, :potion_key, :potion_charge_allowance,
                     :potion_charges_remaining, :reward_gold, :reward_experience, :version
                 )');
@@ -360,9 +390,11 @@ final class CombatRepository
             'last_synchronized_at',
             'turn_number',
             'turn_started_timeline_ms',
-            'next_enemy_decision_timeline_ms',
             'player_actions_remaining',
             'enemy_actions_remaining',
+            'enemy_current_hp',
+            'next_enemy_decision_timeline_ms',
+            'enemy_ai_initialized_timeline_ms',
         ]);
 
         $stmt = $this->pdo->prepare('UPDATE combat_encounters
@@ -370,9 +402,11 @@ final class CombatRepository
                 last_synchronized_at = :last_synchronized_at,
                 turn_number = :turn_number,
                 turn_started_timeline_ms = :turn_started_timeline_ms,
-                next_enemy_decision_timeline_ms = :next_enemy_decision_timeline_ms,
                 player_actions_remaining = :player_actions_remaining,
                 enemy_actions_remaining = :enemy_actions_remaining,
+                enemy_current_hp = :enemy_current_hp,
+                next_enemy_decision_timeline_ms = :next_enemy_decision_timeline_ms,
+                enemy_ai_initialized_timeline_ms = :enemy_ai_initialized_timeline_ms,
                 version = version + 1
             WHERE id = :encounter_id
               AND version = :expected_version');
@@ -470,6 +504,7 @@ final class CombatRepository
     {
         $this->requireEncounterLock($encounterId);
         $this->detailRowsTouched = true;
+        $this->actionRowsLocked = true;
 
         $stmt = $this->pdo->prepare('SELECT *
             FROM combat_actions
@@ -481,13 +516,30 @@ final class CombatRepository
         return $stmt->fetchAll();
     }
 
+    public function lockPendingActionsForEncounter(int $encounterId): array
+    {
+        $this->requireEncounterLock($encounterId);
+        $this->detailRowsTouched = true;
+        $this->actionRowsLocked = true;
+
+        $stmt = $this->pdo->prepare("SELECT *
+            FROM combat_actions
+            WHERE encounter_id = :encounter_id
+              AND state = 'pending'
+            ORDER BY resolves_timeline_ms ASC, id ASC
+            FOR UPDATE");
+        $stmt->execute(['encounter_id' => $encounterId]);
+
+        return $stmt->fetchAll();
+    }
+
     public function resolveLockedAction(
         int $encounterId,
         int $actionId,
         int $completedTimelineMs,
     ): bool {
         $this->requireEncounterLock($encounterId);
-        if (!$this->detailRowsTouched) {
+        if (!$this->actionRowsLocked) {
             throw new LogicException('Combat action rows must be locked before resolution.');
         }
 
@@ -500,6 +552,41 @@ final class CombatRepository
               AND state = 'pending'");
         $stmt->execute([
             'completed_timeline_ms' => $completedTimelineMs,
+            'action_id' => $actionId,
+            'encounter_id' => $encounterId,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    public function resolveLockedActionWithDamage(
+        int $encounterId,
+        int $actionId,
+        int $completedTimelineMs,
+        int $resolvedDamage,
+        int $preventedDamage,
+    ): bool {
+        $this->requireEncounterLock($encounterId);
+        if (!$this->actionRowsLocked) {
+            throw new LogicException('Combat action rows must be locked before resolution.');
+        }
+        if ($completedTimelineMs < 0 || $resolvedDamage < 0 || $preventedDamage < 0) {
+            throw new InvalidArgumentException('Combat action result values cannot be negative.');
+        }
+
+        $stmt = $this->pdo->prepare("UPDATE combat_actions
+            SET state = 'resolved',
+                active_slot = NULL,
+                completed_timeline_ms = :completed_timeline_ms,
+                resolved_damage = :resolved_damage,
+                prevented_damage = :prevented_damage
+            WHERE id = :action_id
+              AND encounter_id = :encounter_id
+              AND state = 'pending'");
+        $stmt->execute([
+            'completed_timeline_ms' => $completedTimelineMs,
+            'resolved_damage' => $resolvedDamage,
+            'prevented_damage' => $preventedDamage,
             'action_id' => $actionId,
             'encounter_id' => $encounterId,
         ]);
@@ -617,5 +704,6 @@ final class CombatRepository
         $this->lockedEncounterId = null;
         $this->lockedEncounter = null;
         $this->detailRowsTouched = false;
+        $this->actionRowsLocked = false;
     }
 }
