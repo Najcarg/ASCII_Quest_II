@@ -2,12 +2,17 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CombatClock.php';
+require_once __DIR__ . '/CaveBrutePolicy.php';
+require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
 
 final class CombatSynchronizer
 {
     private int $maxCatchupMilliseconds;
     private Closure $dueEventProcessor;
+    private ?object $repository;
+    private ?CombatDefinitionRegistry $definitions;
+    private ?CaveBrutePolicy $caveBrutePolicy;
 
     public function __construct(
         private CombatClock $clock,
@@ -15,6 +20,8 @@ final class CombatSynchronizer
         float $maxCatchupSeconds,
         ?Closure $dueEventProcessor = null,
         ?object $repository = null,
+        ?CombatDefinitionRegistry $definitions = null,
+        ?CaveBrutePolicy $caveBrutePolicy = null,
     ) {
         if (!is_finite($maxCatchupSeconds) || $maxCatchupSeconds <= 0) {
             throw new InvalidArgumentException('Combat catch-up limit must be positive.');
@@ -24,6 +31,10 @@ final class CombatSynchronizer
         if ($this->maxCatchupMilliseconds <= 0) {
             throw new InvalidArgumentException('Combat catch-up limit is too short.');
         }
+
+        $this->repository = $repository;
+        $this->definitions = $definitions;
+        $this->caveBrutePolicy = $caveBrutePolicy;
 
         $this->dueEventProcessor = $dueEventProcessor ?? ($repository === null
             ? static fn (array $encounter, int $throughTimelineMs): array => $encounter
@@ -58,6 +69,7 @@ final class CombatSynchronizer
         array $encounter,
         int $playerActionAllowance,
         int $enemyActionAllowance,
+        ?array $lockedCharacter = null,
     ): array {
         $timeline = self::integer($encounter, 'timeline_elapsed_ms');
         $lastSynchronizedAt = self::utcTimestamp($encounter, 'last_synchronized_at');
@@ -74,10 +86,6 @@ final class CombatSynchronizer
 
         $targetTimeline = $timeline + $appliedGapMilliseconds;
         $encounter['last_synchronized_at'] = $serverNow->format('Y-m-d H:i:s.u');
-
-        if (($encounter['status'] ?? null) !== 'active') {
-            return $encounter;
-        }
 
         $turnStart = self::integer($encounter, 'turn_started_timeline_ms');
         $turnState = $this->turnEngine->synchronizeTurn(
@@ -97,6 +105,36 @@ final class CombatSynchronizer
         );
 
         $cursor = $timeline;
+        if (
+            ($encounter['enemy_ai_initialized_timeline_ms'] ?? null) !== null &&
+            self::integer($encounter, 'next_enemy_decision_timeline_ms') <= $cursor
+        ) {
+            if (
+                $lockedCharacter === null ||
+                $this->repository === null ||
+                $this->definitions === null ||
+                $this->caveBrutePolicy === null
+            ) {
+                throw new LogicException(
+                    'Enemy decision processing requires locked combat dependencies.',
+                );
+            }
+            $decisionResult = $this->processEnemyDecisionAtCursor(
+                $encounter,
+                $lockedCharacter,
+                $turnState,
+                $cursor,
+            );
+            $encounter = $decisionResult['encounter'];
+            $turnState = $decisionResult['turn_state'];
+            // The one-shot Task 5 hook has no later enemy-decision candidate.
+            // Task 6 will reuse the returned invocation-local suppression flag.
+        }
+
+        if (($encounter['status'] ?? null) !== 'active') {
+            return $encounter;
+        }
+
         while ($cursor < $targetTimeline) {
             $nextTimeline = min(
                 $targetTimeline,
@@ -150,6 +188,152 @@ final class CombatSynchronizer
         );
 
         return $encounter;
+    }
+
+    private function processEnemyDecisionAtCursor(
+        array $encounter,
+        array $lockedCharacter,
+        array $turnState,
+        int $cursorMs,
+    ): array {
+        $encounterId = self::positiveInteger($encounter, 'id');
+        $enemyDefinition = $this->definitions?->enemy(
+            (string) ($encounter['enemy_key'] ?? ''),
+        );
+        if ($enemyDefinition === null) {
+            throw new DomainException('Combat enemy definition is unavailable.');
+        }
+
+        $history = $this->repository->lockActionsForEncounter($encounterId);
+        $decision = $this->caveBrutePolicy->decide(
+            $encounter,
+            self::integer($lockedCharacter, 'current_hp'),
+            $enemyDefinition,
+            $history,
+            $turnState,
+            $cursorMs,
+        );
+
+        return match ($decision['decision'] ?? null) {
+            'start' => $this->startEnemyActionAtCursor(
+                $encounter,
+                $turnState,
+                $enemyDefinition,
+                (string) ($decision['definition_key'] ?? ''),
+                $cursorMs,
+            ),
+            'wait' => $this->waitForEnemyDecision(
+                $encounter,
+                $turnState,
+                self::integer($decision, 'next_timeline_ms'),
+                $cursorMs,
+            ),
+            'stop' => [
+                'encounter' => $encounter,
+                'turn_state' => $turnState,
+                'started_action' => null,
+                'suppress_enemy_decisions' => true,
+            ],
+            default => throw new DomainException('Enemy decision is invalid.'),
+        };
+    }
+
+    private function startEnemyActionAtCursor(
+        array $encounter,
+        array $turnState,
+        array $enemyDefinition,
+        string $definitionKey,
+        int $cursorMs,
+    ): array {
+        $definition = $enemyDefinition['actions'][$definitionKey] ?? null;
+        if (!is_array($definition)) {
+            throw new DomainException('Enemy action definition is unavailable.');
+        }
+
+        $durationSeconds = $definition['duration_seconds'] ?? null;
+        $serverOnly = $definition['server_only'] ?? null;
+        if (
+            (!is_int($durationSeconds) && !is_float($durationSeconds)) ||
+            !is_array($serverOnly) ||
+            (!is_int($serverOnly['cooldown_seconds'] ?? null) &&
+                !is_float($serverOnly['cooldown_seconds'] ?? null)) ||
+            !is_int($serverOnly['prototype_damage'] ?? null) ||
+            !is_string($definition['damage_type'] ?? null) ||
+            !is_string($definition['kind'] ?? null)
+        ) {
+            throw new DomainException('Enemy action definition is invalid.');
+        }
+
+        $durationMs = (int) round($durationSeconds * 1000);
+        $cooldownMs = (int) round($serverOnly['cooldown_seconds'] * 1000);
+        if (!$this->turnEngine->canStartAction(
+            $turnState,
+            'enemy',
+            $cursorMs,
+            $durationMs,
+        )) {
+            throw new DomainException('Enemy combat action cannot start.');
+        }
+        if ($cooldownMs <= 0) {
+            throw new DomainException('Enemy action cooldown is invalid.');
+        }
+
+        $turnState = $this->turnEngine->consumeAction(
+            $turnState,
+            'enemy',
+            $cursorMs,
+            $durationMs,
+        );
+        $action = $this->repository->createAction(
+            self::positiveInteger($encounter, 'id'),
+            [
+                'actor' => 'enemy',
+                'action_kind' => (string) ($definition['kind'] ?? ''),
+                'definition_key' => $definitionKey,
+                'request_token' => null,
+                'active_slot' => 1,
+                'state' => 'pending',
+                'started_timeline_ms' => $cursorMs,
+                'resolves_timeline_ms' => $cursorMs + $durationMs,
+                'cooldown_ready_timeline_ms' => $cursorMs + $cooldownMs,
+                'snapshot_weapon_key' => null,
+                'snapshot_damage_type' => $definition['damage_type'],
+                'snapshot_base_damage' => $serverOnly['prototype_damage'],
+                'snapshot_accuracy' => null,
+                'snapshot_critical_chance' => null,
+                'snapshot_critical_damage' => null,
+            ],
+        );
+
+        $encounter['enemy_actions_remaining'] = $turnState['enemy_actions_remaining'];
+        $encounter['next_enemy_decision_timeline_ms'] =
+            self::integer($action, 'resolves_timeline_ms');
+
+        return [
+            'encounter' => $encounter,
+            'turn_state' => $turnState,
+            'started_action' => $action,
+            'suppress_enemy_decisions' => false,
+        ];
+    }
+
+    private function waitForEnemyDecision(
+        array $encounter,
+        array $turnState,
+        int $nextTimelineMs,
+        int $cursorMs,
+    ): array {
+        if ($nextTimelineMs <= $cursorMs) {
+            throw new DomainException('Enemy wait position must be in the future.');
+        }
+        $encounter['next_enemy_decision_timeline_ms'] = $nextTimelineMs;
+
+        return [
+            'encounter' => $encounter,
+            'turn_state' => $turnState,
+            'started_action' => null,
+            'suppress_enemy_decisions' => false,
+        ];
     }
 
     private static function epochMilliseconds(DateTimeImmutable $time): int

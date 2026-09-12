@@ -179,6 +179,33 @@ function task6AssertRejected(callable $operation, string $message): void
     throw new RuntimeException($message . ' Expected rejection.');
 }
 
+function task6SynchronizeCursor(
+    array $encounterOverrides = [],
+    array $actions = [],
+    array $characterOverrides = [],
+    string $serverNow = '2026-09-01 12:00:00.000000',
+): array {
+    $pdo = new FakeCombatPdo();
+    $pdo->encounters[91] = task4Encounter(array_replace([
+        'timeline_elapsed_ms' => 0,
+        'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+        'turn_started_timeline_ms' => 0,
+        'next_enemy_decision_timeline_ms' => 0,
+        'enemy_ai_initialized_timeline_ms' => 0,
+        'player_actions_remaining' => 1,
+        'enemy_actions_remaining' => 2,
+    ], $encounterOverrides));
+    $pdo->characters[42] = array_replace($pdo->characters[42], $characterOverrides);
+    foreach ($actions as $action) {
+        $pdo->actions[(int) $action['id']] = $action;
+    }
+    $clock = new Task4MutableCombatClock(
+        new DateTimeImmutable($serverNow, new DateTimeZone('UTC')),
+    );
+
+    return [task5RepositoryService($pdo, $clock)->state(7, 42), $pdo];
+}
+
 return [
     'Cave Brute policy prefers Fire Slam and falls back to Smash during cooldown' => function (): void {
         $policy = task6Policy();
@@ -644,5 +671,185 @@ return [
 
         assertSameValue(0, $random->integerCalls, 'Rejected shapes cannot reach Block resolution.');
         assertSameValue(0, $equipment->defensiveReads, 'Rejected shapes cannot read current defense.');
+    },
+
+    'Cave Brute cursor decision preserves enemy sequencing and player concurrency' => function (): void {
+        $enemyPending = task6EnemyAction('fire_slam', [
+            'id' => 20,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 0,
+            'resolves_timeline_ms' => 2000,
+            'cooldown_ready_timeline_ms' => 6000,
+        ]);
+        [, $busyPdo] = task6SynchronizeCursor([], [$enemyPending]);
+
+        assertSameValue(1, count($busyPdo->actions), 'A pending enemy action prevents overlap.');
+        assertSameValue(2, $busyPdo->encounters[91]['enemy_actions_remaining'], 'Waiting consumes no enemy Action.');
+        assertSameValue(2000, $busyPdo->encounters[91]['next_enemy_decision_timeline_ms'], 'Busy enemy waits for its exact resolution.');
+
+        $playerPending = task6PendingAction([
+            'id' => 21,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 0,
+            'resolves_timeline_ms' => 1000,
+            'cooldown_ready_timeline_ms' => 2500,
+        ]);
+        [, $concurrentPdo] = task6SynchronizeCursor([], [$playerPending]);
+        $enemyActions = array_values(array_filter(
+            $concurrentPdo->actions,
+            static fn (array $action): bool => $action['actor'] === 'enemy',
+        ));
+
+        assertSameValue(1, count($enemyActions), 'A pending player action permits one concurrent enemy action.');
+        assertSameValue('fire_slam', $enemyActions[0]['definition_key'], 'Concurrent enemy action remains skill-first.');
+        assertSameValue(1, $concurrentPdo->encounters[91]['enemy_actions_remaining'], 'Concurrent enemy start consumes one allowance.');
+    },
+
+    'Cave Brute cursor decision uses resolved cooldown history for skill-first selection' => function (): void {
+        $resolvedFireSlam = task6EnemyAction('fire_slam', [
+            'id' => 30,
+            'encounter_id' => 91,
+            'state' => 'resolved',
+            'active_slot' => null,
+            'started_timeline_ms' => 0,
+            'resolves_timeline_ms' => 2000,
+            'cooldown_ready_timeline_ms' => 6000,
+            'completed_timeline_ms' => 2000,
+        ]);
+
+        [, $coolingPdo] = task6SynchronizeCursor([
+            'timeline_elapsed_ms' => 2000,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'next_enemy_decision_timeline_ms' => 2000,
+        ], [$resolvedFireSlam]);
+        $coolingStarts = array_values(array_filter(
+            $coolingPdo->actions,
+            static fn (array $action): bool => $action['state'] === 'pending',
+        ));
+        assertSameValue('smash', $coolingStarts[0]['definition_key'] ?? null, 'Resolved Fire Slam remains cooling before its stored ready position.');
+        assertSameValue([2000, 3500, 5000], [
+            $coolingStarts[0]['started_timeline_ms'],
+            $coolingStarts[0]['resolves_timeline_ms'],
+            $coolingStarts[0]['cooldown_ready_timeline_ms'],
+        ], 'Smash timing starts at the authoritative cursor.');
+
+        [, $readyPdo] = task6SynchronizeCursor([
+            'timeline_elapsed_ms' => 6000,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'next_enemy_decision_timeline_ms' => 6000,
+        ], [$resolvedFireSlam]);
+        $readyStarts = array_values(array_filter(
+            $readyPdo->actions,
+            static fn (array $action): bool => $action['state'] === 'pending',
+        ));
+        assertSameValue('fire_slam', $readyStarts[0]['definition_key'] ?? null, 'Fire Slam is preferred at its stored cooldown-ready position.');
+    },
+
+    'Cave Brute cursor decision persists strictly future wait positions' => function (): void {
+        $cases = [
+            'exhausted allowance' => [
+                ['timeline_elapsed_ms' => 3000, 'next_enemy_decision_timeline_ms' => 3000, 'enemy_actions_remaining' => 0],
+                [],
+                10000,
+            ],
+            'insufficient Turn time' => [
+                ['timeline_elapsed_ms' => 9000, 'next_enemy_decision_timeline_ms' => 9000],
+                [],
+                10000,
+            ],
+            'earliest cooldown' => [
+                ['timeline_elapsed_ms' => 3000, 'next_enemy_decision_timeline_ms' => 3000],
+                [
+                    task6EnemyAction('fire_slam', [
+                        'id' => 40,
+                        'encounter_id' => 91,
+                        'state' => 'resolved',
+                        'active_slot' => null,
+                        'cooldown_ready_timeline_ms' => 6000,
+                        'completed_timeline_ms' => 2000,
+                    ]),
+                    task6EnemyAction('smash', [
+                        'id' => 41,
+                        'encounter_id' => 91,
+                        'state' => 'resolved',
+                        'active_slot' => null,
+                        'cooldown_ready_timeline_ms' => 5000,
+                        'completed_timeline_ms' => 1600,
+                    ]),
+                ],
+                5000,
+            ],
+        ];
+
+        foreach ($cases as $label => [$encounter, $actions, $expectedNext]) {
+            [, $pdo] = task6SynchronizeCursor($encounter, $actions);
+
+            assertSameValue(count($actions), count($pdo->actions), $label . ' creates no action.');
+            assertSameValue($expectedNext, $pdo->encounters[91]['next_enemy_decision_timeline_ms'], $label . ' stores the future decision position.');
+            assertSameValue($encounter['enemy_actions_remaining'] ?? 2, $pdo->encounters[91]['enemy_actions_remaining'], $label . ' consumes no Action.');
+            if ($expectedNext <= (int) $pdo->encounters[91]['timeline_elapsed_ms']) {
+                throw new RuntimeException($label . ' did not schedule a strictly future decision.');
+            }
+        }
+    },
+
+    'Cave Brute stop decision is invocation-local and cannot loop at the cursor' => function (): void {
+        $cases = [
+            'enemy zero HP' => [
+                ['enemy_current_hp' => 0],
+                [],
+                'active',
+                1000,
+            ],
+            'Champion zero HP' => [
+                [],
+                ['current_hp' => 0],
+                'active',
+                1000,
+            ],
+            'inactive encounter' => [
+                ['status' => 'victory_loot'],
+                [],
+                'victory_loot',
+                0,
+            ],
+        ];
+
+        foreach ($cases as $label => [$encounter, $character, $expectedStatus, $expectedTimeline]) {
+            [, $pdo] = task6SynchronizeCursor(
+                array_replace($encounter, [
+                    'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+                    'next_enemy_decision_timeline_ms' => 0,
+                ]),
+                [],
+                $character,
+                '2026-09-01 12:00:01.000000',
+            );
+
+            assertSameValue([], $pdo->actions, $label . ' starts no action.');
+            assertSameValue(2, $pdo->encounters[91]['enemy_actions_remaining'], $label . ' consumes no Action.');
+            assertSameValue(0, $pdo->encounters[91]['next_enemy_decision_timeline_ms'], $label . ' writes no sentinel.');
+            assertSameValue($expectedTimeline, $pdo->encounters[91]['timeline_elapsed_ms'], $label . ' completes the invocation safely.');
+            assertSameValue($expectedStatus, $pdo->encounters[91]['status'], $label . ' invents no terminal transition.');
+            $expectedActionLocks = $expectedStatus === 'active' ? 2 : 1;
+            assertSameValue($expectedActionLocks, count(array_filter(
+                $pdo->lockOrder,
+                static fn (string $lock): bool => $lock === 'action',
+            )), $label . ' performs one policy-history lock plus only the existing due-event lock when advancing.');
+        }
+    },
+
+    'Task 5 leaves legacy null enemy AI marker untouched' => function (): void {
+        [, $pdo] = task6SynchronizeCursor([
+            'enemy_ai_initialized_timeline_ms' => null,
+            'next_enemy_decision_timeline_ms' => 0,
+        ]);
+
+        assertSameValue([], $pdo->actions, 'Legacy encounter starts no historical AI action.');
+        assertSameValue(null, $pdo->encounters[91]['enemy_ai_initialized_timeline_ms'], 'Task 5 does not initialize the legacy marker.');
+        assertSameValue(0, count(array_filter(
+            $pdo->lockOrder,
+            static fn (string $lock): bool => $lock === 'action',
+        )), 'Legacy marker bypasses the Task 5 cursor operation.');
     },
 ];

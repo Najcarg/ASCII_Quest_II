@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CombatAccessGuard.php';
+require_once __DIR__ . '/CaveBrutePolicy.php';
 require_once __DIR__ . '/CombatClock.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatEquipmentProvider.php';
@@ -55,6 +56,8 @@ final class CombatBootstrap
                 $definitions->maxDisconnectedCatchupSeconds(),
                 null,
                 $repository,
+                $definitions,
+                new CaveBrutePolicy($turnEngine),
             ),
             $equipmentProvider ?? new PrototypeCombatEquipmentProvider($definitions),
             new CombatStateProjector($repository, $definitions),

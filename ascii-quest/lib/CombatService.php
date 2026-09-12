@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CharacterStats.php';
+require_once __DIR__ . '/CaveBrutePolicy.php';
 require_once __DIR__ . '/CombatAccessGuard.php';
 require_once __DIR__ . '/CombatClock.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
@@ -34,6 +35,8 @@ final class CombatService
             $definitions->maxDisconnectedCatchupSeconds(),
             null,
             $repository,
+            $definitions,
+            new CaveBrutePolicy($this->turnEngine),
         );
         $this->equipmentProvider = $equipmentProvider ?? new PrototypeCombatEquipmentProvider($definitions);
         $this->projector = $projector ?? new CombatStateProjector($repository, $definitions);
@@ -181,6 +184,7 @@ final class CombatService
                 $encounter,
                 (int) $stats['rates']['action'],
                 (int) $enemy['action'],
+                $character,
             );
             $encounterId = self::integer($encounter, 'id');
             $expectedVersion = self::integer($encounter, 'version');
@@ -234,6 +238,7 @@ final class CombatService
                 $encounter,
                 (int) $stats['rates']['action'],
                 (int) $enemy['action'],
+                $character,
             );
             $encounterId = self::integer($encounter, 'id');
             $this->persistSynchronization(
