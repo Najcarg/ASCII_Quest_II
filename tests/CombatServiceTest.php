@@ -1531,4 +1531,50 @@ return [
         );
         $repository->rollBack();
     },
+
+    'Zero-gap combat state processes the native Cave Brute decision at timeline zero' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 0,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_started_timeline_ms' => 0,
+            'next_enemy_decision_timeline_ms' => 0,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'player_actions_remaining' => 1,
+            'enemy_actions_remaining' => 2,
+        ]);
+        $clock = new Task4MutableCombatClock(
+            new DateTimeImmutable('2026-09-01 12:00:00.000000', new DateTimeZone('UTC')),
+        );
+        $definition = (new CombatDefinitionRegistry(
+            require __DIR__ . '/../ascii-quest/config/combat.php',
+        ))->enemy('cave_brute')['actions']['fire_slam'];
+
+        $state = task5RepositoryService($pdo, $clock)->state(7, 42);
+
+        assertSameValue(1, count($pdo->actions), 'Zero-gap synchronization starts one enemy action.');
+        $action = array_values($pdo->actions)[0];
+        assertSameValue('enemy', $action['actor'], 'Cave Brute owns the action.');
+        assertSameValue('fire_slam', $action['definition_key'], 'Ready skill is preferred.');
+        assertSameValue((string) $definition['kind'], $action['action_kind'], 'Action kind comes from the authoritative definition.');
+        assertSameValue([0, 2000, 6000], [
+            $action['started_timeline_ms'],
+            $action['resolves_timeline_ms'],
+            $action['cooldown_ready_timeline_ms'],
+        ], 'Enemy action timing starts at the current logical cursor.');
+        assertSameValue((string) $definition['damage_type'], $action['snapshot_damage_type'], 'Damage type comes from the authoritative definition.');
+        assertSameValue((int) $definition['server_only']['prototype_damage'], $action['snapshot_base_damage'], 'Damage comes from the server-only definition.');
+        assertSameValue(false, array_key_exists('cooldown_seconds', $definition), 'Enemy cooldown is not a public action field.');
+        assertSameValue(false, array_key_exists('prototype_damage', $definition), 'Enemy damage is not a public action field.');
+        assertSameValue(null, $action['request_token'], 'Server AI action has no client request token.');
+        assertSameValue([null, null, null, null], [
+            $action['snapshot_weapon_key'],
+            $action['snapshot_accuracy'],
+            $action['snapshot_critical_chance'],
+            $action['snapshot_critical_damage'],
+        ], 'Player-only snapshots remain null.');
+        assertSameValue(1, $pdo->encounters[91]['enemy_actions_remaining'], 'One enemy Action is consumed.');
+        assertSameValue(2000, $pdo->encounters[91]['next_enemy_decision_timeline_ms'], 'Next decision waits for enemy action resolution.');
+        assertSameValue(0, $state['timeline']['elapsed_ms'], 'The hook runs without wall-clock advancement.');
+    },
 ];
