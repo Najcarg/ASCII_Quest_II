@@ -1081,6 +1081,90 @@ return [
         assertSameValue(null, $resolvedState['enemy']['active_action'] ?? null, 'Resolved enemy history is not an active action.');
     },
 
+    'Task 6 damage remains isolated from deferred combat systems' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->characters[42]['gold'] = 77;
+        $pdo->characters[42]['experience'] = 88;
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 0,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_started_timeline_ms' => 0,
+            'next_enemy_decision_timeline_ms' => 5000,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'enemy_current_hp' => 20,
+            'player_actions_remaining' => 0,
+            'enemy_actions_remaining' => 1,
+            'potion_charges_remaining' => 1,
+            'rewards_issued_at' => null,
+            'death_processed_at' => null,
+        ]);
+        $pdo->actions[50] = task6PendingAction([
+            'id' => 50,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 0,
+            'resolves_timeline_ms' => 1000,
+            'cooldown_ready_timeline_ms' => 2500,
+            'snapshot_accuracy' => 0.0,
+            'snapshot_critical_chance' => 100.0,
+            'snapshot_critical_damage' => 999,
+        ]);
+        $pdo->actions[51] = task6EnemyAction('smash', [
+            'id' => 51,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 0,
+            'resolves_timeline_ms' => 1000,
+            'cooldown_ready_timeline_ms' => 3000,
+        ]);
+        $equipment = new Task5MutableEquipmentProvider();
+        $equipment->defense = [
+            'toughness' => 0,
+            'dodging' => 100.0,
+            'resistances' => [
+                'fire' => 0.0,
+                'lightning' => 0.0,
+                'poison' => 0.0,
+                'cold' => 0.0,
+            ],
+        ];
+        $random = new Task6SequenceRandomSource([20]);
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:01.000000',
+            new DateTimeZone('UTC'),
+        ));
+
+        $state = task6ChronologicalService(
+            $pdo,
+            $clock,
+            $equipment,
+            $random,
+        )->state(7, 42);
+
+        assertSameValue(10, $pdo->encounters[91]['enemy_current_hp'], 'Automatic Block applies stored base damage without Accuracy or Critical branches.');
+        assertSameValue(127, $pdo->characters[42]['current_hp'], 'One Smash applies despite 100 percent Dodging.');
+        assertSameValue(1, $random->integerCalls, 'The only random choice is the one automatic Cave Brute Block roll.');
+        assertSameValue(1, $equipment->defensiveReads, 'Current defense is read once at enemy-hit resolution.');
+        assertSameValue(1, $pdo->encounters[91]['potion_charges_remaining'], 'Potion charges do not mutate.');
+        assertSameValue([77, 88], [
+            $pdo->characters[42]['gold'],
+            $pdo->characters[42]['experience'],
+        ], 'Gold and EXP do not mutate.');
+        assertSameValue([null, null], [
+            $pdo->encounters[91]['rewards_issued_at'],
+            $pdo->encounters[91]['death_processed_at'],
+        ], 'Reward and death guards do not transition.');
+        assertSameValue('active', $pdo->encounters[91]['status'], 'No victory_loot or defeated status is introduced.');
+        assertSameValue('alive', $pdo->characters[42]['life_state'], 'Champion life_state is unchanged.');
+        assertSameValue(null, $pdo->characters[42]['died_at'] ?? null, 'No died_at value is introduced.');
+        assertSameValue([], $pdo->events, 'No Slayer or deferred combat event is created.');
+        assertSameValue(null, $state['reaction_prompt'], 'No player Block reaction prompt is created.');
+        assertSameValue(true, array_key_exists('cooldown_ready_timeline_ms', $state['player_actions'][0]), 'Player cooldown timing remains intentionally public.');
+        foreach (['reaction_token', 'block_token', 'slayer', 'hit_result', 'critical_result'] as $forbidden) {
+            assertSameValue(false, in_array($forbidden, task7RecursiveStateKeys($state), true), $forbidden . ' is absent from public state.');
+        }
+        $config = require __DIR__ . '/../ascii-quest/config/combat.php';
+        assertSameValue(1, count($config['prototype_balance']['enemies']), 'No second enemy definition exists.');
+    },
+
     'Configured Cave Brute validates against the authoritative map and metadata' => function (): void {
         if (!class_exists('CombatBootstrap')) {
             throw new RuntimeException('CombatBootstrap must exist.');

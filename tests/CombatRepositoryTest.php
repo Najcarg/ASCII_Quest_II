@@ -27,6 +27,8 @@ final class FakeCombatPdo extends PDO
     public ?int $failSynchronizationUpdateOnAttempt = null;
     public int $synchronizationUpdateAttempts = 0;
     public bool $failActionInsert = false;
+    public bool $failActionResolution = false;
+    public bool $failCharacterHpUpdate = false;
 
     private bool $transactionActive = false;
     private ?array $snapshot = null;
@@ -190,6 +192,9 @@ final class FakeCombatPdo extends PDO
                 throw new RuntimeException('Unexpected Champion HP update SQL.');
             }
             $id = (int) $params['character_id'];
+            if ($this->failCharacterHpUpdate) {
+                return ['rows' => [], 'row_count' => 0];
+            }
             $character = $this->characters[$id] ?? null;
             if (
                 $character === null ||
@@ -412,6 +417,9 @@ final class FakeCombatPdo extends PDO
                 throw new RuntimeException('Unexpected combat action resolution SET clause.');
             }
             $id = (int) $params['action_id'];
+            if ($this->failActionResolution) {
+                return ['rows' => [], 'row_count' => 0];
+            }
             $action = $this->actions[$id] ?? null;
             if (
                 $action === null ||
@@ -1055,5 +1063,37 @@ return [
         assertSameValue($before['actions'], $pdo->actions, 'Action lifecycle and results rollback.');
         assertSameValue($before['events'], $pdo->events, 'Event history rollback.');
         assertSameValue(['champion', 'encounter', 'action'], $pdo->lockOrder, 'Focused lock order remains Champion Encounter Action.');
+    },
+
+    'Repository write failures leave locked action and Champion rows unchanged' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        seedActiveCombat($pdo);
+        $pdo->actions[4] = ['id' => 4, 'encounter_id' => 10] + combatActionFixture(
+            '89898989-8989-4989-8989-898989898989',
+        );
+        $actionBefore = $pdo->actions[4];
+        $characterBefore = $pdo->characters[42];
+        $pdo->failActionResolution = true;
+        $pdo->failCharacterHpUpdate = true;
+
+        $repository->beginTransaction();
+        $repository->lockOwnedCharacter(7, 42);
+        $repository->lockActiveEncounter(42);
+        $repository->lockPendingActionsForEncounter(10);
+
+        assertSameValue(
+            false,
+            $repository->resolveLockedActionWithDamage(10, 4, 1100, 20, 0),
+            'Injected action-result write failure is observable.',
+        );
+        assertSameValue(
+            false,
+            $repository->updateLockedCharacterCurrentHp(7, 42, 145, 125),
+            'Injected Champion HP compare-and-swap failure is observable.',
+        );
+        $repository->rollBack();
+
+        assertSameValue($actionBefore, $pdo->actions[4], 'Failed result write changes no action fields.');
+        assertSameValue($characterBefore, $pdo->characters[42], 'Failed HP write changes no Champion fields.');
     },
 ];
