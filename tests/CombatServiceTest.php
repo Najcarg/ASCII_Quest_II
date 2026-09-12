@@ -87,6 +87,16 @@ final class Task5MutableEquipmentProvider implements CombatEquipmentProvider
     public int $baseDamage = 20;
     public int $offensiveReads = 0;
     public int $defensiveReads = 0;
+    public array $defense = [
+        'toughness' => 10,
+        'dodging' => 0.0,
+        'resistances' => [
+            'fire' => 0.0,
+            'lightning' => 0.0,
+            'poison' => 0.0,
+            'cold' => 0.0,
+        ],
+    ];
 
     public function offensiveSnapshot(array $lockedCharacter, string $attackKey): array
     {
@@ -106,7 +116,7 @@ final class Task5MutableEquipmentProvider implements CombatEquipmentProvider
     {
         $this->defensiveReads++;
 
-        return ['toughness' => (int) ($lockedCharacter['strength'] ?? 0)];
+        return $this->defense;
     }
 }
 
