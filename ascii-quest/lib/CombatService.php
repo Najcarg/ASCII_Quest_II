@@ -144,6 +144,7 @@ final class CombatService
             'turn_number' => 1,
             'turn_started_timeline_ms' => 0,
             'next_enemy_decision_timeline_ms' => 0,
+            'enemy_ai_initialized_timeline_ms' => 0,
             'player_actions_remaining' => $playerActions,
             'enemy_actions_remaining' => (int) $enemy['action'],
             'potion_key' => (string) $potion['key'],
@@ -268,6 +269,13 @@ final class CombatService
                 $guard->commit();
 
                 return $state;
+            }
+
+            if (self::integer($character, 'current_hp') <= 0) {
+                throw new DomainException('The Champion cannot begin another action.');
+            }
+            if (self::integer($synchronized, 'enemy_current_hp') <= 0) {
+                throw new DomainException('The enemy cannot receive another action.');
             }
 
             $definition = $this->definitions->playerAction($actionKey);

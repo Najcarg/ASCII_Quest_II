@@ -1157,4 +1157,88 @@ return [
         assertSameValue(5000, $pdo->encounters[91]['timeline_elapsed_ms'], 'Immediate request replays no discarded gap.');
         assertSameValue(2, count($pdo->actions), 'Later stop reevaluation remains safe.');
     },
+
+    'Player command rejects after synchronization reduces Cave Brute HP to zero' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 0,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_started_timeline_ms' => 0,
+            'next_enemy_decision_timeline_ms' => 5000,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'enemy_current_hp' => 20,
+            'player_actions_remaining' => 1,
+            'enemy_actions_remaining' => 2,
+        ]);
+        $pdo->actions[50] = task6PendingAction([
+            'id' => 50,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 0,
+            'resolves_timeline_ms' => 1000,
+            'cooldown_ready_timeline_ms' => 1000,
+        ]);
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:01.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $service = task6ChronologicalService(
+            $pdo,
+            $clock,
+            null,
+            new Task6SequenceRandomSource([21]),
+        );
+
+        assertTask3CombatRejected(
+            fn (): array => $service->startPlayerAction(
+                7,
+                42,
+                'prototype_weapon_attack',
+                '13131313-1313-4313-8313-131313131313',
+            ),
+            'A fresh player command against a zero-HP Cave Brute.',
+        );
+
+        assertSameValue(0, $pdo->encounters[91]['enemy_current_hp'], 'Authoritative synchronized damage remains committed.');
+        assertSameValue('resolved', $pdo->actions[50]['state'], 'The due action resolves exactly once.');
+        assertSameValue(1, count($pdo->actions), 'No new player action is inserted.');
+        assertSameValue(1, $pdo->encounters[91]['player_actions_remaining'], 'Rejected command consumes no Action.');
+        assertSameValue('active', $pdo->encounters[91]['status'], 'Task 7 creates no victory state.');
+        assertSameValue('alive', $pdo->characters[42]['life_state'], 'Task 7 creates no death lifecycle state.');
+    },
+
+    'Zero-HP Champion cannot start player or Cave Brute actions' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->characters[42]['current_hp'] = 0;
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 0,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_started_timeline_ms' => 0,
+            'next_enemy_decision_timeline_ms' => 0,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'player_actions_remaining' => 1,
+            'enemy_actions_remaining' => 2,
+        ]);
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:00.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $service = task6ChronologicalService($pdo, $clock);
+
+        assertTask3CombatRejected(
+            fn (): array => $service->startPlayerAction(
+                7,
+                42,
+                'prototype_weapon_attack',
+                '14141414-1414-4414-8414-141414141414',
+            ),
+            'A zero-HP Champion player command.',
+        );
+
+        assertSameValue([], $pdo->actions, 'Neither actor starts an action.');
+        assertSameValue(1, $pdo->encounters[91]['player_actions_remaining'], 'Player allowance is unchanged.');
+        assertSameValue(2, $pdo->encounters[91]['enemy_actions_remaining'], 'Enemy allowance is unchanged.');
+        assertSameValue('active', $pdo->encounters[91]['status'], 'Task 7 creates no defeated state.');
+        assertSameValue('alive', $pdo->characters[42]['life_state'], 'Task 7 does not process permanent death.');
+        assertSameValue(null, $pdo->characters[42]['died_at'] ?? null, 'Task 7 does not set died_at.');
+    },
 ];
