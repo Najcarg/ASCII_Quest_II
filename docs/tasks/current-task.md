@@ -2,15 +2,20 @@
 
 ## Status
 
-TASK 6 DESIGN APPROVED — IMPLEMENTATION NOT STARTED
+TASK 6 IMPLEMENTED — AWAITING CHECKPOINT REVIEW
 
 ## Current Phase
 
-Tasks 1–5 are live-integrated. Migration 003 is applied and verified.
+Combat Milestone 1 Tasks 1–5 are live-integrated. Migration 003 is applied and
+verified.
 
-Task 5 manual weapon action foundation passed local implementation,
-verification, checkpoint review, deployment, and live browser/database
-acceptance testing. Task 6 has NOT started.
+Focused Task 6 implementation Tasks 1–8 are locally committed. The
+implementation has not been pushed or deployed. Migration 004 has been created
+and reviewed locally but has NOT been applied. No live database or server
+access occurred during Task 9.
+
+Fresh Task 9 verification passed with 192 PHP tests and 28 Exploration HUD
+tests, both with zero failures.
 
 ## Authoritative Documents
 
@@ -18,16 +23,21 @@ acceptance testing. Task 6 has NOT started.
   `docs/superpowers/specs/2026-08-31-combat-milestone-1-design.md`
 - Implementation plan:
   `docs/superpowers/plans/2026-08-31-combat-milestone-1.md`
+- Focused Task 6 implementation plan:
+  `docs/superpowers/plans/2026-09-11-combat-task-6-ai-damage.md`
 
 The 31 August 2026 Combat Milestone 1 design supersedes older descriptions of
 Action as multiple independent concurrent action bars.
 
 ## Next Review Gate
 
-Create and review the focused Task 6 implementation plan, including approved
-Migration 004 for the durable enemy-AI initialization marker. Do not modify
-production combat code or create/apply the migration until plan execution is
-explicitly approved.
+Review and approve the locally committed focused Task 6 implementation and
+this Task 9 tracker checkpoint. Combat Milestone 1 Task 7 (player reaction
+Block) has NOT started and must not begin without explicit approval.
+
+Focused-plan Task 10 is an approval-gated live-integration runbook only. Do not
+push, access the live server/database, apply Migration 004, or deploy Task 6
+without separate explicit approval.
 
 Combat entry is automatic when authoritative movement enters the stationary
 Cave Brute's one-tile orthogonal fighting range; pressing E is not involved.
@@ -36,6 +46,9 @@ Existing adjacent-click movement remains unchanged outside combat.
 Real equipment persistence/swapping and functional Chat remain deferred as
 recorded in the specification. Their future interface/tab contracts must be
 preserved without inventing those backends in Combat Milestone 1.
+
+Potion behavior, combat HUD implementation, rewards/victory, permanent death,
+Slayer behavior, and Accuracy/Critical/Dodge resolution remain deferred.
 
 Disconnected catch-up is capped by one authoritative configuration value at
 five seconds. Account-wide combat exclusion transactions lock Champion, then
