@@ -446,6 +446,11 @@ function task4Encounter(array $overrides = []): array
     ], $overrides);
 }
 
+function task4LockedCharacter(): array
+{
+    return (new Task3MovementRepository())->characters[42];
+}
+
 function task4RepositoryService(
     FakeCombatPdo $pdo,
     Task4MutableCombatClock $clock,
@@ -972,35 +977,43 @@ return [
         ] as [$now, $expectedTimeline]) {
             [$synchronizer] = task4SynchronizerFixture($now);
 
-            $result = $synchronizer->synchronize(task4Encounter(), 1, 2);
+            $synchronized = $synchronizer->synchronize(
+                task4Encounter(),
+                task4LockedCharacter(),
+                1,
+                2,
+            );
+            $result = $synchronized['encounter'];
 
             assertSameValue($expectedTimeline, $result['timeline_elapsed_ms'], $now . ' logical timeline.');
             assertSameValue($now, $result['last_synchronized_at'], $now . ' actual wall anchor.');
+            assertSameValue(42, $synchronized['character']['id'], $now . ' resolver-null seam returns the supplied Champion.');
         }
     },
 
     'A capped disconnect is discarded rather than replayed by an immediate poll' => function (): void {
         [$synchronizer, $clock] = task4SynchronizerFixture('2026-09-01 12:00:30.000000');
 
-        $first = $synchronizer->synchronize(task4Encounter(), 1, 2);
-        $second = $synchronizer->synchronize($first, 1, 2);
+        $character = task4LockedCharacter();
+        $first = $synchronizer->synchronize(task4Encounter(), $character, 1, 2)['encounter'];
+        $second = $synchronizer->synchronize($first, $character, 1, 2)['encounter'];
 
         assertSameValue(8000, $first['timeline_elapsed_ms'], 'First poll applies only five seconds.');
         assertSameValue('2026-09-01 12:00:30.000000', $first['last_synchronized_at'], 'First poll anchors actual now.');
         assertSameValue(8000, $second['timeline_elapsed_ms'], 'Immediate poll applies no discarded time.');
 
         $clock->set(new DateTimeImmutable('2026-09-01 12:00:31.000000', new DateTimeZone('UTC')));
-        $third = $synchronizer->synchronize($second, 1, 2);
+        $third = $synchronizer->synchronize($second, $character, 1, 2)['encounter'];
         assertSameValue(9000, $third['timeline_elapsed_ms'], 'Only newly connected time advances.');
     },
 
     'Synchronization uses its configured cap and never regresses logical time' => function (): void {
         [$custom] = task4SynchronizerFixture('2026-09-01 12:00:30.000000', 2.0);
-        $capped = $custom->synchronize(task4Encounter(), 1, 2);
+        $capped = $custom->synchronize(task4Encounter(), task4LockedCharacter(), 1, 2)['encounter'];
         assertSameValue(5000, $capped['timeline_elapsed_ms'], 'Injected two-second cap.');
 
         [$regressed] = task4SynchronizerFixture('2026-09-01 11:59:55.000000');
-        $result = $regressed->synchronize(task4Encounter(), 1, 2);
+        $result = $regressed->synchronize(task4Encounter(), task4LockedCharacter(), 1, 2)['encounter'];
         assertSameValue(3000, $result['timeline_elapsed_ms'], 'Logical time remains monotonic.');
         assertSameValue('2026-09-01 11:59:55.000000', $result['last_synchronized_at'], 'Regression safely re-anchors.');
     },
@@ -1021,7 +1034,7 @@ return [
                 'completed_at' => '2026-09-01 12:00:01.500000',
             ]),
         ] as $terminal) {
-            $result = $synchronizer->synchronize($terminal, 1, 2);
+            $result = $synchronizer->synchronize($terminal, task4LockedCharacter(), 1, 2)['encounter'];
 
             $expected = $terminal;
             $expected['last_synchronized_at'] = '2026-09-01 12:00:30.000000';
@@ -1039,7 +1052,7 @@ return [
             'next_enemy_decision_timeline_ms' => 5000,
         ]);
 
-        $result = $synchronizer->synchronize($encounter, 1, 2);
+        $result = $synchronizer->synchronize($encounter, task4LockedCharacter(), 1, 2)['encounter'];
 
         assertSameValue(11000, $result['timeline_elapsed_ms'], 'Logical target.');
         assertSameValue(2, $result['turn_number'], 'One crossed boundary.');
@@ -1062,7 +1075,7 @@ return [
             'next_enemy_decision_timeline_ms' => 0,
         ]);
 
-        $result = $synchronizer->synchronize($encounter, 3, 2);
+        $result = $synchronizer->synchronize($encounter, task4LockedCharacter(), 3, 2)['encounter'];
 
         assertSameValue(6500, $result['timeline_elapsed_ms'], 'Capped target crosses three boundaries.');
         assertSameValue(4, $result['turn_number'], 'Final Turn identity.');
@@ -1107,7 +1120,7 @@ return [
             'player_actions_remaining' => 0,
         ]);
 
-        $result = $synchronizer->synchronize($encounter, 1, 2);
+        $result = $synchronizer->synchronize($encounter, task4LockedCharacter(), 1, 2)['encounter'];
 
         assertSameValue([[
             'action_id' => 501,
@@ -1132,7 +1145,7 @@ return [
             $processor,
         );
 
-        $result = $synchronizer->synchronize(task4Encounter(), 1, 2);
+        $result = $synchronizer->synchronize(task4Encounter(), task4LockedCharacter(), 1, 2)['encounter'];
 
         assertSameValue(0, $result['enemy_actions_remaining'], 'Future processor allowance mutation is not overwritten.');
     },
@@ -1157,7 +1170,7 @@ return [
             'player_actions_remaining' => 0,
         ]);
 
-        $result = $synchronizer->synchronize($encounter, 1, 2);
+        $result = $synchronizer->synchronize($encounter, task4LockedCharacter(), 1, 2)['encounter'];
 
         assertSameValue('victory_loot', $result['status'], 'Future terminal transition retained.');
         assertSameValue(9000, $result['timeline_elapsed_ms'], 'Combat stops at terminal due-event position.');
@@ -1183,7 +1196,12 @@ return [
             );
 
             assertTask3CombatRejected(
-                fn (): array => $synchronizer->synchronize(task4Encounter(), 1, 2),
+                fn (): array => $synchronizer->synchronize(
+                    task4Encounter(),
+                    task4LockedCharacter(),
+                    1,
+                    2,
+                ),
                 'Invalid processor timeline ' . $invalidTimeline . '.',
             );
         }
@@ -1192,7 +1210,7 @@ return [
     'Exhausted Actions remain exhausted while synchronization stays inside one Turn' => function (): void {
         [$synchronizer] = task4SynchronizerFixture('2026-09-01 12:00:05.000000');
 
-        $result = $synchronizer->synchronize(task4Encounter(), 1, 2);
+        $result = $synchronizer->synchronize(task4Encounter(), task4LockedCharacter(), 1, 2)['encounter'];
 
         assertSameValue(8000, $result['timeline_elapsed_ms'], 'Same-Turn target.');
         assertSameValue(1, $result['turn_number'], 'Turn does not roll early.');
