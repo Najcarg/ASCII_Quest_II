@@ -372,9 +372,20 @@ function task3CombatService(?Task3MovementRepository $repository = null): array
     $definitions = new CombatDefinitionRegistry(
         require __DIR__ . '/../ascii-quest/config/combat.php',
     );
+    $clock = new Task3FixedCombatClock();
+    $turnEngine = new CombatTurnEngine($definitions->turnDurationSeconds());
 
     return [
-        new CombatService($repository, $definitions, new Task3FixedCombatClock()),
+        new CombatService(
+            $repository,
+            $definitions,
+            $clock,
+            new CombatSynchronizer(
+                $clock,
+                $turnEngine,
+                $definitions->maxDisconnectedCatchupSeconds(),
+            ),
+        ),
         $repository,
         $definitions->encounter('deep_cave_01_cave_brute'),
     ];
@@ -545,7 +556,15 @@ return [
             'block_token' => 'private-block-token',
             'hidden_roll' => 0.5,
         ];
-        $pdo->actions[502] = array_replace($pdo->actions[501], ['id' => 502, 'actor' => 'enemy']);
+        $pdo->actions[502] = array_replace($pdo->actions[501], [
+            'id' => 502,
+            'actor' => 'enemy',
+            'action_kind' => 'skill',
+            'definition_key' => 'fire_slam',
+            'request_token' => null,
+            'snapshot_damage_type' => 'fire',
+            'snapshot_base_damage' => 24,
+        ]);
         $projector = new CombatStateProjector(
             new CombatRepository($pdo),
             new CombatDefinitionRegistry(require __DIR__ . '/../ascii-quest/config/combat.php'),
@@ -555,6 +574,16 @@ return [
 
         assertSameValue('2026-09-01T12:00:00+00:00', $state['server_observed_at'], 'Stored anchor is projected.');
         assertSameValue(1, count($state['player_actions']), 'Enemy actions are excluded.');
+        assertSameValue([
+            'id' => 502,
+            'action_kind' => 'skill',
+            'definition_key' => 'fire_slam',
+            'name' => 'Fire Slam',
+            'damage_type' => 'fire',
+            'state' => 'pending',
+            'started_timeline_ms' => 3000,
+            'resolves_timeline_ms' => 4000,
+        ], $state['enemy']['active_action'] ?? null, 'Only the safe active Cave Brute action is public.');
         assertSameValue([
             'id', 'action_kind', 'definition_key', 'state', 'started_timeline_ms',
             'resolves_timeline_ms', 'cooldown_ready_timeline_ms', 'completed_timeline_ms',
@@ -639,7 +668,11 @@ return [
             'abababab-abab-4bab-8bab-abababababab',
         );
 
-        assertSameValue(77, $pdo->actions[1]['snapshot_base_damage'], 'Injected provider captured the action snapshot.');
+        $playerAction = array_values(array_filter(
+            $pdo->actions,
+            static fn (array $action): bool => $action['actor'] === 'player',
+        ))[0] ?? null;
+        assertSameValue(77, $playerAction['snapshot_base_damage'] ?? null, 'Injected provider captured the action snapshot.');
         assertSameValue(3000, $state['timeline']['elapsed_ms'], 'Injected clock preserves the stored click position.');
     },
 
@@ -1497,6 +1530,8 @@ return [
 
         $repository->encounters[1]['enemy_current_hp'] = 73;
         $repository->encounters[1]['potion_charges_remaining'] = 0;
+        $repository->encounters[1]['next_enemy_decision_timeline_ms'] = 5000;
+        $repository->encounters[1]['enemy_ai_initialized_timeline_ms'] = 123;
         $repository->actions[] = [
             'id' => 9,
             'encounter_id' => 1,
@@ -1520,6 +1555,8 @@ return [
         assertSameValue($first['encounter_id'], $retry['encounter_id'], 'Retry encounter identity.');
         assertSameValue($first['encounter_id'], $refresh['encounter_id'], 'Refresh encounter identity.');
         assertSameValue(1, count($repository->encounters), 'One active encounter.');
+        assertSameValue(123, $repository->encounters[1]['enemy_ai_initialized_timeline_ms'], 'Resume preserves the existing AI marker.');
+        assertSameValue(5000, $repository->encounters[1]['next_enemy_decision_timeline_ms'], 'Resume preserves the existing enemy schedule.');
         assertSameValue(73, $refresh['enemy']['current_hp'], 'Stored enemy HP.');
         assertSameValue(0, $refresh['potion']['charges_remaining'], 'Stored potion state.');
         assertSameValue('pending', $refresh['player_actions'][0]['state'], 'Stored action state.');
@@ -1594,5 +1631,111 @@ return [
         assertSameValue(1, $pdo->encounters[91]['enemy_actions_remaining'], 'One enemy Action is consumed.');
         assertSameValue(2000, $pdo->encounters[91]['next_enemy_decision_timeline_ms'], 'Next decision waits for enemy action resolution.');
         assertSameValue(0, $state['timeline']['elapsed_ms'], 'The hook runs without wall-clock advancement.');
+    },
+
+    'Production combat bootstrap activates legacy Task 6 chronology' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 55603,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_number' => 6,
+            'turn_started_timeline_ms' => 50000,
+            'next_enemy_decision_timeline_ms' => 0,
+            'enemy_ai_initialized_timeline_ms' => null,
+            'enemy_actions_remaining' => 2,
+        ]);
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:00.000000',
+            new DateTimeZone('UTC'),
+        ));
+
+        CombatBootstrap::serviceForRepository(
+            new CombatRepository($pdo),
+            $clock,
+            new Task5MutableEquipmentProvider(),
+            new Task6SequenceRandomSource([]),
+        )->state(7, 42);
+
+        $actions = array_values($pdo->actions);
+        assertSameValue(55603, $pdo->encounters[91]['enemy_ai_initialized_timeline_ms'], 'Production chronology initializes the legacy AI marker.');
+        assertSameValue(55603, $actions[0]['started_timeline_ms'] ?? null, 'Production chronology processes the first decision at the legacy anchor.');
+    },
+
+    'Production bootstrap shares one equipment provider across enemy resolution and player start' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 0,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_started_timeline_ms' => 0,
+            'next_enemy_decision_timeline_ms' => 5000,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'player_actions_remaining' => 1,
+            'enemy_actions_remaining' => 1,
+        ]);
+        $pdo->actions[50] = task6EnemyAction('smash', [
+            'id' => 50,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 0,
+            'resolves_timeline_ms' => 1500,
+            'cooldown_ready_timeline_ms' => 3000,
+        ]);
+        $provider = new Task5MutableEquipmentProvider();
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:01.500000',
+            new DateTimeZone('UTC'),
+        ));
+        $service = CombatBootstrap::serviceForRepository(
+            new CombatRepository($pdo),
+            $clock,
+            $provider,
+            new Task6SequenceRandomSource([]),
+        );
+
+        $service->state(7, 42);
+        $service->startPlayerAction(
+            7,
+            42,
+            'prototype_weapon_attack',
+            '12121212-1212-4212-8212-121212121212',
+        );
+
+        assertSameValue(1, $provider->defensiveReads, 'Enemy resolution reads the injected provider.');
+        assertSameValue(1, $provider->offensiveReads, 'Player start reads that same injected provider instance.');
+    },
+
+    'New Task 6 encounter stores native AI anchors and starts at timeline zero' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $repository = new CombatRepository($pdo);
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:00.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $service = CombatBootstrap::serviceForRepository(
+            $repository,
+            $clock,
+            new Task5MutableEquipmentProvider(),
+            new Task6SequenceRandomSource([]),
+        );
+        $definitions = CombatDefinitionRegistry::fromDefaultConfig();
+
+        $repository->beginTransaction();
+        $character = $repository->lockOwnedCharacter(7, 42);
+        $repository->lockActiveEncounter(42);
+        $created = $service->startOrResumeForLockedMovement(
+            7,
+            $character,
+            $definitions->encounter('deep_cave_01_cave_brute'),
+        );
+        $repository->commit();
+
+        $encounter = array_values($pdo->encounters)[0];
+        assertSameValue(0, $encounter['enemy_ai_initialized_timeline_ms'] ?? null, 'New encounter stores the native AI marker.');
+        assertSameValue(0, $encounter['next_enemy_decision_timeline_ms'], 'New encounter decision is due at timeline zero.');
+        assertSameValue(120, $created['enemy']['current_hp'], 'Creation preserves full configured enemy HP.');
+
+        $service->state(7, 42);
+        $action = array_values($pdo->actions)[0] ?? null;
+        assertSameValue('fire_slam', $action['definition_key'] ?? null, 'First native synchronization starts Fire Slam.');
+        assertSameValue(0, $action['started_timeline_ms'] ?? null, 'First native decision occurs at timeline zero.');
     },
 ];

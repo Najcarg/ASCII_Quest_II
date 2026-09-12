@@ -19,8 +19,10 @@ final class CombatStateProjector
             throw new RuntimeException('Stored combat enemy is unavailable.');
         }
 
+        $lockedActions = $this->repository->actionsForEncounter($encounterId);
         $playerActions = [];
-        foreach ($this->repository->actionsForEncounter($encounterId) as $action) {
+        $activeEnemyAction = null;
+        foreach ($lockedActions as $action) {
             if (($action['actor'] ?? null) === 'player') {
                 $playerActions[] = self::allowlist($action, [
                     'id', 'action_kind', 'definition_key', 'state',
@@ -28,6 +30,29 @@ final class CombatStateProjector
                     'cooldown_ready_timeline_ms', 'completed_timeline_ms',
                 ]);
             }
+            if (
+                $activeEnemyAction !== null ||
+                ($action['actor'] ?? null) !== 'enemy' ||
+                ($action['state'] ?? null) !== 'pending'
+            ) {
+                continue;
+            }
+
+            $definitionKey = (string) ($action['definition_key'] ?? '');
+            $definition = $enemy['actions'][$definitionKey] ?? null;
+            if (!is_array($definition)) {
+                throw new RuntimeException('Stored enemy combat action is unavailable.');
+            }
+            $activeEnemyAction = [
+                'id' => self::integer($action, 'id'),
+                'action_kind' => (string) $action['action_kind'],
+                'definition_key' => $definitionKey,
+                'name' => (string) $definition['name'],
+                'damage_type' => (string) $definition['damage_type'],
+                'state' => 'pending',
+                'started_timeline_ms' => self::integer($action, 'started_timeline_ms'),
+                'resolves_timeline_ms' => self::integer($action, 'resolves_timeline_ms'),
+            ];
         }
 
         $events = [];
@@ -63,6 +88,7 @@ final class CombatStateProjector
                 'glyph' => (string) $enemy['glyph'],
                 'current_hp' => self::integer($encounter, 'enemy_current_hp'),
                 'maximum_hp' => self::integer($encounter, 'enemy_max_hp'),
+                'active_action' => $activeEnemyAction,
             ],
             'player_actions' => $playerActions,
             'active_effects' => [],

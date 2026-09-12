@@ -483,6 +483,22 @@ PHP);
     return [$status, $payload, $call, $exitCode, $body, $stderr];
 }
 
+/** @return list<string> */
+function task7RecursiveStateKeys(array $value): array
+{
+    $keys = [];
+    foreach ($value as $key => $nested) {
+        if (is_string($key)) {
+            $keys[] = $key;
+        }
+        if (is_array($nested)) {
+            array_push($keys, ...task7RecursiveStateKeys($nested));
+        }
+    }
+
+    return $keys;
+}
+
 return [
     'Combat action endpoint requires session POST valid JSON and CSRF' => function (): void {
         $validBody = json_encode([
@@ -979,6 +995,90 @@ return [
 
         assertSameValue(true, str_contains($endpoint, 'hash_equals'), 'Selection endpoint CSRF comparison.');
         assertSameValue(true, str_contains($markup, 'name="csrf_token"'), 'Selection form CSRF field.');
+    },
+
+    'Enemy active action projection is allowlisted and recursively hides combat internals' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'next_enemy_decision_timeline_ms' => 4000,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'future_policy_choice' => 'private-fire-slam',
+            'rewards_issued_at' => 'private-reward-guard',
+            'death_processed_at' => 'private-death-guard',
+            'database_lock_metadata' => ['private' => true],
+        ]);
+        $pdo->actions[61] = task6EnemyAction('fire_slam', [
+            'id' => 61,
+            'encounter_id' => 91,
+            'request_token' => null,
+            'started_timeline_ms' => 3000,
+            'resolves_timeline_ms' => 5000,
+            'cooldown_ready_timeline_ms' => 9000,
+            'snapshot_weapon_key' => 'private-weapon',
+            'snapshot_accuracy' => 99.0,
+            'snapshot_critical_chance' => 99.0,
+            'snapshot_critical_damage' => 999,
+            'block_roll' => 20,
+            'raw_defense' => ['toughness' => 999],
+        ]);
+        $pdo->actions[62] = task6EnemyAction('smash', [
+            'id' => 62,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 3100,
+            'resolves_timeline_ms' => 4600,
+            'cooldown_ready_timeline_ms' => 6100,
+        ]);
+        $projector = new CombatStateProjector(
+            new CombatRepository($pdo),
+            CombatDefinitionRegistry::fromDefaultConfig(),
+        );
+
+        $state = $projector->project($pdo->characters[42], $pdo->encounters[91]);
+
+        assertSameValue([
+            'id',
+            'action_kind',
+            'definition_key',
+            'name',
+            'damage_type',
+            'state',
+            'started_timeline_ms',
+            'resolves_timeline_ms',
+        ], array_keys($state['enemy']['active_action'] ?? []), 'Enemy active action has exactly the approved public fields.');
+        assertSameValue(61, $state['enemy']['active_action']['id'] ?? null, 'At most the first pending enemy action is projected.');
+
+        $publicKeys = task7RecursiveStateKeys($state);
+        foreach ([
+            'cooldown_ready_timeline_ms',
+            'next_enemy_decision_timeline_ms',
+            'enemy_ai_initialized_timeline_ms',
+            'future_policy_choice',
+            'prototype_chance_percent',
+            'prototype_reduction_percent',
+            'block_roll',
+            'raw_defense',
+            'snapshot_weapon_key',
+            'snapshot_damage_type',
+            'snapshot_base_damage',
+            'snapshot_accuracy',
+            'snapshot_critical_chance',
+            'snapshot_critical_damage',
+            'request_token',
+            'rewards_issued_at',
+            'death_processed_at',
+            'database_lock_metadata',
+        ] as $forbidden) {
+            assertSameValue(false, in_array($forbidden, $publicKeys, true), $forbidden . ' is absent recursively.');
+        }
+
+        $pdo->actions[61]['state'] = 'resolved';
+        $pdo->actions[61]['active_slot'] = null;
+        $pdo->actions[61]['completed_timeline_ms'] = 5000;
+        $pdo->actions[62]['state'] = 'resolved';
+        $pdo->actions[62]['active_slot'] = null;
+        $pdo->actions[62]['completed_timeline_ms'] = 4600;
+        $resolvedState = $projector->project($pdo->characters[42], $pdo->encounters[91]);
+        assertSameValue(null, $resolvedState['enemy']['active_action'] ?? null, 'Resolved enemy history is not an active action.');
     },
 
     'Configured Cave Brute validates against the authoritative map and metadata' => function (): void {
