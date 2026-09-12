@@ -26,6 +26,10 @@ $prototypeChampionDamageResolverPath =
 if (is_file($prototypeChampionDamageResolverPath)) {
     require_once $prototypeChampionDamageResolverPath;
 }
+$combatActionResolverPath = __DIR__ . '/../ascii-quest/lib/CombatActionResolver.php';
+if (is_file($combatActionResolverPath)) {
+    require_once $combatActionResolverPath;
+}
 
 final class Task6SequenceRandomSource implements CombatRandomSource
 {
@@ -104,6 +108,64 @@ function task6ChampionDamageResolver(): object
     }
 
     return new PrototypeChampionDamageResolver();
+}
+
+function task6ActionResolver(
+    CombatRepository $repository,
+    Task5MutableEquipmentProvider $equipment,
+    Task6SequenceRandomSource $random,
+): object {
+    if (!class_exists('CombatActionResolver')) {
+        throw new RuntimeException('CombatActionResolver must exist.');
+    }
+
+    return new CombatActionResolver(
+        $repository,
+        CombatDefinitionRegistry::fromDefaultConfig(),
+        $equipment,
+        task6EnemyDefenseResolver($random),
+        task6ChampionDamageResolver(),
+    );
+}
+
+function task6PendingAction(array $overrides = []): array
+{
+    return array_replace(
+        ['id' => 4, 'encounter_id' => 10] + combatActionFixture(
+            '12121212-1212-4212-8212-121212121212',
+        ),
+        $overrides,
+    );
+}
+
+function task6EnemyAction(string $definitionKey, array $overrides = []): array
+{
+    $definition = task6CaveBruteDefinition()['actions'][$definitionKey];
+
+    return array_replace([
+        'id' => 4,
+        'encounter_id' => 10,
+        'actor' => 'enemy',
+        'action_kind' => $definition['kind'],
+        'definition_key' => $definitionKey,
+        'request_token' => null,
+        'active_slot' => 1,
+        'state' => 'pending',
+        'started_timeline_ms' => 100,
+        'resolves_timeline_ms' => 100 + (int) round($definition['duration_seconds'] * 1000),
+        'cooldown_ready_timeline_ms' => 100 + (int) round(
+            $definition['server_only']['cooldown_seconds'] * 1000,
+        ),
+        'snapshot_weapon_key' => null,
+        'snapshot_damage_type' => $definition['damage_type'],
+        'snapshot_base_damage' => $definition['server_only']['prototype_damage'],
+        'snapshot_accuracy' => null,
+        'snapshot_critical_chance' => null,
+        'snapshot_critical_damage' => null,
+        'completed_timeline_ms' => null,
+        'resolved_damage' => null,
+        'prevented_damage' => null,
+    ], $overrides);
 }
 
 function task6AssertRejected(callable $operation, string $message): void
@@ -389,5 +451,198 @@ return [
             $created['snapshot_critical_chance'],
             $created['snapshot_critical_damage'],
         ], 'Player-only snapshots remain null.');
+    },
+
+    'Pending player weapon resolves stored damage and automatic Block exactly once' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        seedActiveCombat($pdo);
+        $pdo->encounters[10]['enemy_current_hp'] = 120;
+        $pdo->actions[4] = task6PendingAction([
+            'resolves_timeline_ms' => 1100,
+            'cooldown_ready_timeline_ms' => 2600,
+            'snapshot_base_damage' => 20,
+            'snapshot_accuracy' => 0.0,
+            'snapshot_critical_chance' => 100.0,
+            'snapshot_critical_damage' => 999,
+        ]);
+        $snapshotBefore = array_intersect_key($pdo->actions[4], array_flip([
+            'snapshot_weapon_key',
+            'snapshot_damage_type',
+            'snapshot_base_damage',
+            'snapshot_accuracy',
+            'snapshot_critical_chance',
+            'snapshot_critical_damage',
+            'cooldown_ready_timeline_ms',
+        ]));
+        $equipment = new Task5MutableEquipmentProvider();
+        $random = new Task6SequenceRandomSource([20]);
+        $resolver = task6ActionResolver($repository, $equipment, $random);
+
+        $repository->beginTransaction();
+        $character = $repository->lockOwnedCharacter(7, 42);
+        $encounter = $repository->lockActiveEncounter(42);
+        $action = $repository->lockPendingActionsForEncounter(10)[0];
+        $result = $resolver->resolvePending($encounter, $character, $action);
+        $repository->commit();
+
+        assertSameValue(110, $result['encounter']['enemy_current_hp'], 'Blocked stored damage reduces current aggregate enemy HP once.');
+        assertSameValue($character, $result['character'], 'Player resolution does not change Champion resources.');
+        assertSameValue(1, $random->integerCalls, 'Exactly one authoritative Block roll.');
+        assertSameValue('resolved', $pdo->actions[4]['state'], 'Player action resolves.');
+        assertSameValue(null, $pdo->actions[4]['active_slot'], 'Player action releases its active slot.');
+        assertSameValue(1100, $pdo->actions[4]['completed_timeline_ms'], 'Completion uses the stored resolve position.');
+        assertSameValue(10, $pdo->actions[4]['resolved_damage'], 'Applied damage is persisted.');
+        assertSameValue(10, $pdo->actions[4]['prevented_damage'], 'Prevented damage is persisted.');
+        assertSameValue($snapshotBefore, array_intersect_key($pdo->actions[4], $snapshotBefore), 'Snapshot and cooldown remain immutable.');
+        assertSameValue(120, $pdo->encounters[10]['enemy_current_hp'], 'Encounter HP persistence remains the later synchronization boundary.');
+
+        $repository->beginTransaction();
+        $repository->lockOwnedCharacter(7, 42);
+        $repository->lockActiveEncounter(42);
+        $resolvedAction = $repository->lockActionsForEncounter(10)[0];
+        task6AssertRejected(
+            fn (): array => $resolver->resolvePending(
+                $result['encounter'],
+                $result['character'],
+                $resolvedAction,
+            ),
+            'An already-resolved player action.',
+        );
+        $repository->rollBack();
+
+        assertSameValue(1, $random->integerCalls, 'A resolved action never rolls Block again.');
+        assertSameValue(110, $result['encounter']['enemy_current_hp'], 'A resolved action cannot damage again.');
+        assertSameValue(10, $pdo->actions[4]['resolved_damage'], 'Resolved result is not rewritten.');
+    },
+
+    'Historical resolved player action is never reprocessed for damage' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        seedActiveCombat($pdo);
+        $pdo->encounters[10]['enemy_current_hp'] = 87;
+        $pdo->actions[4] = task6PendingAction([
+            'state' => 'resolved',
+            'active_slot' => null,
+            'completed_timeline_ms' => 1100,
+            'resolved_damage' => null,
+            'prevented_damage' => null,
+        ]);
+        $random = new Task6SequenceRandomSource([]);
+        $resolver = task6ActionResolver(
+            $repository,
+            new Task5MutableEquipmentProvider(),
+            $random,
+        );
+
+        $repository->beginTransaction();
+        $character = $repository->lockOwnedCharacter(7, 42);
+        $encounter = $repository->lockActiveEncounter(42);
+        assertSameValue([], $repository->lockPendingActionsForEncounter(10), 'Historical action is excluded from pending chronology.');
+        $historical = $repository->lockActionsForEncounter(10)[0];
+        task6AssertRejected(
+            fn (): array => $resolver->resolvePending($encounter, $character, $historical),
+            'Historical resolved player action.',
+        );
+        $repository->rollBack();
+
+        assertSameValue(0, $random->integerCalls, 'Historical action causes no Block roll.');
+        assertSameValue(87, $pdo->encounters[10]['enemy_current_hp'], 'Historical action manufactures no enemy damage.');
+        assertSameValue(null, $pdo->actions[4]['resolved_damage'], 'Historical result remains untouched.');
+    },
+
+    'Smash resolution reads current Toughness and persists Champion HP once' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        seedActiveCombat($pdo);
+        $pdo->actions[4] = task6EnemyAction('smash');
+        $equipment = new Task5MutableEquipmentProvider();
+        $equipment->defense = [
+            'toughness' => 0,
+            'dodging' => 100.0,
+            'resistances' => ['fire' => 0.0, 'lightning' => 0.0, 'poison' => 0.0, 'cold' => 0.0],
+        ];
+        $resolver = task6ActionResolver(
+            $repository,
+            $equipment,
+            new Task6SequenceRandomSource([]),
+        );
+        $equipment->defense['toughness'] = 20;
+
+        $repository->beginTransaction();
+        $character = $repository->lockOwnedCharacter(7, 42);
+        $encounter = $repository->lockActiveEncounter(42);
+        $action = $repository->lockPendingActionsForEncounter(10)[0];
+        $result = $resolver->resolvePending($encounter, $character, $action);
+        $repository->commit();
+
+        assertSameValue(1, $equipment->defensiveReads, 'Current defense is read at hit resolution.');
+        assertSameValue(130, $result['character']['current_hp'], 'Latest Toughness reduces Smash to 15 damage.');
+        assertSameValue(130, $pdo->characters[42]['current_hp'], 'Champion HP compare-and-swap persists the result.');
+        assertSameValue(15, $pdo->actions[4]['resolved_damage'], 'Smash applied damage persists.');
+        assertSameValue(3, $pdo->actions[4]['prevented_damage'], 'Smash prevented damage persists.');
+        assertSameValue('alive', $pdo->characters[42]['life_state'], 'Task 4 does not process permanent death.');
+        assertSameValue('active', $result['encounter']['status'], 'Task 4 does not process terminal encounter status.');
+    },
+
+    'Fire Slam resolution uses current Fire Resistance and clamps Champion HP to zero' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        seedActiveCombat($pdo);
+        $pdo->characters[42]['current_hp'] = 10;
+        $pdo->actions[4] = task6EnemyAction('fire_slam');
+        $snapshotBefore = array_intersect_key($pdo->actions[4], array_flip([
+            'snapshot_damage_type',
+            'snapshot_base_damage',
+            'cooldown_ready_timeline_ms',
+        ]));
+        $equipment = new Task5MutableEquipmentProvider();
+        $equipment->defense = [
+            'toughness' => 999,
+            'dodging' => 100.0,
+            'resistances' => ['fire' => 25.0, 'lightning' => 0.0, 'poison' => 0.0, 'cold' => 0.0],
+        ];
+        $resolver = task6ActionResolver(
+            $repository,
+            $equipment,
+            new Task6SequenceRandomSource([]),
+        );
+
+        $repository->beginTransaction();
+        $character = $repository->lockOwnedCharacter(7, 42);
+        $encounter = $repository->lockActiveEncounter(42);
+        $action = $repository->lockPendingActionsForEncounter(10)[0];
+        $result = $resolver->resolvePending($encounter, $character, $action);
+        $repository->commit();
+
+        assertSameValue(0, $result['character']['current_hp'], 'Incoming damage clamps Champion HP to zero.');
+        assertSameValue(0, $pdo->characters[42]['current_hp'], 'Zero Champion HP is persisted.');
+        assertSameValue(18, $pdo->actions[4]['resolved_damage'], 'Current Fire Resistance determines applied damage.');
+        assertSameValue(6, $pdo->actions[4]['prevented_damage'], 'Fire prevention result persists.');
+        assertSameValue($snapshotBefore, array_intersect_key($pdo->actions[4], $snapshotBefore), 'Enemy snapshot and cooldown remain immutable.');
+        assertSameValue('alive', $pdo->characters[42]['life_state'], 'HP zero does not set life_state in Task 4.');
+        assertSameValue(false, array_key_exists('died_at', $pdo->characters[42]), 'Task 4 does not set died_at.');
+        assertSameValue('active', $result['encounter']['status'], 'HP zero does not create victory or defeated state.');
+    },
+
+    'Combat action resolver rejects unsupported actors actions and definition mismatches' => function (): void {
+        [$repository] = combatRepositoryFixture();
+        $equipment = new Task5MutableEquipmentProvider();
+        $random = new Task6SequenceRandomSource([]);
+        $resolver = task6ActionResolver($repository, $equipment, $random);
+        $encounter = ['id' => 10, 'enemy_key' => 'cave_brute', 'enemy_current_hp' => 120, 'status' => 'active'];
+        $character = ['id' => 42, 'user_id' => 7, 'current_hp' => 145];
+
+        foreach ([
+            [task6PendingAction(['actor' => 'spectator']), 'Unsupported actor.'],
+            [task6PendingAction(['action_kind' => 'skill']), 'Player non-weapon action.'],
+            [task6EnemyAction('smash', ['definition_key' => 'unknown']), 'Unknown enemy action.'],
+            [task6EnemyAction('smash', ['action_kind' => 'skill']), 'Enemy definition mismatch.'],
+            [task6PendingAction(['state' => 'resolved', 'active_slot' => null]), 'Non-pending action.'],
+        ] as [$action, $label]) {
+            task6AssertRejected(
+                fn (): array => $resolver->resolvePending($encounter, $character, $action),
+                $label,
+            );
+        }
+
+        assertSameValue(0, $random->integerCalls, 'Rejected shapes cannot reach Block resolution.');
+        assertSameValue(0, $equipment->defensiveReads, 'Rejected shapes cannot read current defense.');
     },
 ];
