@@ -206,6 +206,38 @@ function task6SynchronizeCursor(
     return [task5RepositoryService($pdo, $clock)->state(7, 42), $pdo];
 }
 
+function task6ChronologicalService(
+    FakeCombatPdo $pdo,
+    Task4MutableCombatClock $clock,
+    ?Task5MutableEquipmentProvider $equipment = null,
+    ?Task6SequenceRandomSource $random = null,
+): CombatService {
+    $repository = new CombatRepository($pdo);
+    $definitions = CombatDefinitionRegistry::fromDefaultConfig();
+    $equipment ??= new Task5MutableEquipmentProvider();
+    $random ??= new Task6SequenceRandomSource([]);
+    $turnEngine = new CombatTurnEngine($definitions->turnDurationSeconds());
+    $resolver = task6ActionResolver($repository, $equipment, $random);
+    $synchronizer = new CombatSynchronizer(
+        $clock,
+        $turnEngine,
+        $definitions->maxDisconnectedCatchupSeconds(),
+        null,
+        $repository,
+        $definitions,
+        new CaveBrutePolicy($turnEngine),
+        $resolver,
+    );
+
+    return new CombatService(
+        $repository,
+        $definitions,
+        $clock,
+        $synchronizer,
+        $equipment,
+    );
+}
+
 return [
     'Cave Brute policy prefers Fire Slam and falls back to Smash during cooldown' => function (): void {
         $policy = task6Policy();
@@ -851,5 +883,278 @@ return [
             $pdo->lockOrder,
             static fn (string $lock): bool => $lock === 'action',
         )), 'Legacy marker bypasses the Task 5 cursor operation.');
+    },
+
+    'Task 6 synchronization returns both current authoritative aggregates' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $repository = new CombatRepository($pdo);
+        $definitions = CombatDefinitionRegistry::fromDefaultConfig();
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:00.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $turnEngine = new CombatTurnEngine($definitions->turnDurationSeconds());
+        $synchronizer = new CombatSynchronizer(
+            $clock,
+            $turnEngine,
+            $definitions->maxDisconnectedCatchupSeconds(),
+            null,
+            $repository,
+            $definitions,
+            new CaveBrutePolicy($turnEngine),
+            task6ActionResolver(
+                $repository,
+                new Task5MutableEquipmentProvider(),
+                new Task6SequenceRandomSource([]),
+            ),
+        );
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 0,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_started_timeline_ms' => 0,
+            'next_enemy_decision_timeline_ms' => 5000,
+            'enemy_ai_initialized_timeline_ms' => 0,
+        ]);
+
+        $repository->beginTransaction();
+        $character = $repository->lockOwnedCharacter(7, 42);
+        $encounter = $repository->lockActiveEncounter(42);
+        $result = $synchronizer->synchronize($encounter, $character, 1, 2);
+        $repository->rollBack();
+
+        assertSameValue(91, $result['encounter']['id'], 'Current Encounter aggregate is returned.');
+        assertSameValue(42, $result['character']['id'], 'Current locked Champion aggregate is returned.');
+        assertSameValue(145, $result['character']['current_hp'], 'Synchronization does not heal or recreate Champion HP.');
+    },
+
+    'Legacy Cave Brute AI anchors once at 55603 without historical replay' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 55603,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_number' => 6,
+            'turn_started_timeline_ms' => 50000,
+            'next_enemy_decision_timeline_ms' => 0,
+            'enemy_ai_initialized_timeline_ms' => null,
+            'player_actions_remaining' => 1,
+            'enemy_actions_remaining' => 2,
+        ]);
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:30.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $service = task6ChronologicalService($pdo, $clock);
+
+        $service->state(7, 42);
+        $firstActions = array_values($pdo->actions);
+
+        assertSameValue(55603, $pdo->encounters[91]['enemy_ai_initialized_timeline_ms'], 'Legacy marker captures persisted starting timeline.');
+        assertSameValue(55603, $firstActions[0]['started_timeline_ms'] ?? null, 'First legacy enemy decision occurs at its anchor.');
+        foreach ($firstActions as $action) {
+            if ((int) $action['started_timeline_ms'] < 55603) {
+                throw new RuntimeException('Legacy AI replayed an action before its compatibility anchor.');
+            }
+        }
+        assertSameValue(60603, $pdo->encounters[91]['timeline_elapsed_ms'], 'Only the capped five-second window is processed.');
+        assertSameValue('2026-09-01 12:00:30.000000', $pdo->encounters[91]['last_synchronized_at'], 'Actual wall clock becomes the new anchor.');
+
+        $actionCount = count($pdo->actions);
+        $service->state(7, 42);
+        assertSameValue(55603, $pdo->encounters[91]['enemy_ai_initialized_timeline_ms'], 'Immediate refresh preserves the original marker.');
+        assertSameValue(60603, $pdo->encounters[91]['timeline_elapsed_ms'], 'Immediate refresh cannot replay discarded wall time.');
+        assertSameValue($actionCount, count($pdo->actions), 'Immediate refresh does not recreate historical enemy actions.');
+    },
+
+    'Task 6 resolves actions before same-position Turn reset and enemy decision' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 9000,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_started_timeline_ms' => 0,
+            'turn_number' => 1,
+            'next_enemy_decision_timeline_ms' => 10000,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'player_actions_remaining' => 0,
+            'enemy_actions_remaining' => 0,
+            'enemy_current_hp' => 120,
+        ]);
+        $pdo->actions[50] = task6PendingAction([
+            'id' => 50,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 9000,
+            'resolves_timeline_ms' => 10000,
+            'cooldown_ready_timeline_ms' => 11500,
+        ]);
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:01.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $random = new Task6SequenceRandomSource([21]);
+
+        task6ChronologicalService($pdo, $clock, null, $random)->state(7, 42);
+
+        assertSameValue('resolved', $pdo->actions[50]['state'], 'Boundary player action resolves.');
+        assertSameValue(10000, $pdo->actions[50]['completed_timeline_ms'], 'Resolution retains the exact boundary position.');
+        assertSameValue(100, $pdo->encounters[91]['enemy_current_hp'], 'Boundary damage is applied exactly once.');
+        assertSameValue(1, $random->integerCalls, 'Boundary hit performs exactly one Cave Brute Block roll.');
+        assertSameValue(1, $pdo->resolutionObservations[0]['turn_number'], 'Action persistence observes the old Turn before reset.');
+        assertSameValue(2, $pdo->encounters[91]['turn_number'], 'Turn resets after resolution.');
+        $enemyStarts = array_values(array_filter(
+            $pdo->actions,
+            static fn (array $action): bool => $action['actor'] === 'enemy',
+        ));
+        assertSameValue(10000, $enemyStarts[0]['started_timeline_ms'] ?? null, 'Enemy decision uses the reset allowance at the same cursor.');
+        assertSameValue(1, $pdo->encounters[91]['enemy_actions_remaining'], 'Enemy consumes one newly reset Action.');
+    },
+
+    'Task 6 processes interleaved actions decisions and Turn boundary chronologically' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 8000,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_started_timeline_ms' => 0,
+            'turn_number' => 1,
+            'next_enemy_decision_timeline_ms' => 8000,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'player_actions_remaining' => 0,
+            'enemy_actions_remaining' => 1,
+            'enemy_current_hp' => 120,
+        ]);
+        $pdo->actions[60] = task6PendingAction([
+            'id' => 60,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 8000,
+            'resolves_timeline_ms' => 9000,
+            'cooldown_ready_timeline_ms' => 10500,
+        ]);
+        $pdo->actions[61] = task6EnemyAction('fire_slam', [
+            'id' => 61,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 8000,
+            'resolves_timeline_ms' => 10000,
+            'cooldown_ready_timeline_ms' => 14000,
+        ]);
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:05.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $random = new Task6SequenceRandomSource([21]);
+
+        $state = task6ChronologicalService($pdo, $clock, null, $random)->state(7, 42);
+
+        $resolvedPositions = [];
+        foreach ($pdo->actions as $action) {
+            if (($action['state'] ?? null) === 'resolved') {
+                $resolvedPositions[] = (int) $action['completed_timeline_ms'];
+            }
+        }
+        sort($resolvedPositions);
+        assertSameValue([9000, 10000, 11500], $resolvedPositions, 'Player, Fire Slam, then Smash resolve at their chronological positions.');
+        assertSameValue(100, $pdo->encounters[91]['enemy_current_hp'], 'Player hit damages Cave Brute once.');
+        assertSameValue(105, $pdo->characters[42]['current_hp'], 'Fire Slam and Smash use current defense and damage Champion once each.');
+        assertSameValue(105, $state['champion']['current_hp'], 'CombatService projects the updated Champion aggregate rather than the stale locked row.');
+        assertSameValue(2, $pdo->encounters[91]['turn_number'], 'The intervening Turn boundary is processed.');
+        assertSameValue(13000, $pdo->encounters[91]['timeline_elapsed_ms'], 'All due work through the capped target is processed.');
+        $started = array_column(array_values($pdo->actions), 'started_timeline_ms');
+        assertSameValue([8000, 8000, 10000, 13000], $started, 'Enemy decisions occur only at their chronological cursors.');
+    },
+
+    'Connected polls and one capped reconnect produce equivalent logical combat state' => function (): void {
+        $makePdo = static function (): FakeCombatPdo {
+            $pdo = new FakeCombatPdo();
+            $pdo->encounters[91] = task4Encounter([
+                'timeline_elapsed_ms' => 0,
+                'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+                'turn_started_timeline_ms' => 0,
+                'next_enemy_decision_timeline_ms' => 0,
+                'enemy_ai_initialized_timeline_ms' => 0,
+                'player_actions_remaining' => 1,
+                'enemy_actions_remaining' => 2,
+                'version' => 1,
+            ]);
+
+            return $pdo;
+        };
+        $connectedPdo = $makePdo();
+        $reconnectPdo = $makePdo();
+        $connectedClock = new Task4MutableCombatClock(new DateTimeImmutable('2026-09-01 12:00:00.000000', new DateTimeZone('UTC')));
+        $reconnectClock = new Task4MutableCombatClock(new DateTimeImmutable('2026-09-01 12:00:05.000000', new DateTimeZone('UTC')));
+        $connected = task6ChronologicalService($connectedPdo, $connectedClock);
+        $reconnect = task6ChronologicalService($reconnectPdo, $reconnectClock);
+
+        $connected->state(7, 42);
+        $nativeAction = array_values($connectedPdo->actions)[0] ?? null;
+        assertSameValue('fire_slam', $nativeAction['definition_key'] ?? null, 'Native initialized encounter remains skill-first at zero gap.');
+        assertSameValue(0, $nativeAction['started_timeline_ms'] ?? null, 'Native initialized encounter processes its due decision at timeline zero.');
+        for ($second = 1; $second <= 5; $second++) {
+            $connectedClock->set(new DateTimeImmutable(
+                sprintf('2026-09-01 12:00:0%d.000000', $second),
+                new DateTimeZone('UTC'),
+            ));
+            $connected->state(7, 42);
+        }
+        $reconnect->state(7, 42);
+
+        foreach ([
+            'timeline_elapsed_ms',
+            'turn_number',
+            'turn_started_timeline_ms',
+            'next_enemy_decision_timeline_ms',
+            'player_actions_remaining',
+            'enemy_actions_remaining',
+            'enemy_current_hp',
+            'enemy_ai_initialized_timeline_ms',
+        ] as $field) {
+            assertSameValue($connectedPdo->encounters[91][$field], $reconnectPdo->encounters[91][$field], 'Equivalent Encounter field ' . $field . '.');
+        }
+        assertSameValue($connectedPdo->characters[42]['current_hp'], $reconnectPdo->characters[42]['current_hp'], 'Equivalent Champion HP.');
+        assertSameValue(array_values($connectedPdo->actions), array_values($reconnectPdo->actions), 'Equivalent actions and results.');
+    },
+
+    'Task 6 caps long disconnect once and invocation-local stop still advances other work' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 0,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_started_timeline_ms' => 0,
+            'next_enemy_decision_timeline_ms' => 0,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'enemy_current_hp' => 0,
+            'player_actions_remaining' => 1,
+            'enemy_actions_remaining' => 2,
+        ]);
+        $pdo->actions[70] = task6EnemyAction('smash', [
+            'id' => 70,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 0,
+            'resolves_timeline_ms' => 1500,
+            'cooldown_ready_timeline_ms' => 3000,
+        ]);
+        $pdo->actions[71] = task6EnemyAction('fire_slam', [
+            'id' => 71,
+            'encounter_id' => 91,
+            'started_timeline_ms' => 5000,
+            'resolves_timeline_ms' => 7000,
+            'cooldown_ready_timeline_ms' => 11000,
+        ]);
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:30.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $service = task6ChronologicalService($pdo, $clock);
+
+        $service->state(7, 42);
+
+        assertSameValue(5000, $pdo->encounters[91]['timeline_elapsed_ms'], 'Thirty-second gap applies only five seconds.');
+        assertSameValue('2026-09-01 12:00:30.000000', $pdo->encounters[91]['last_synchronized_at'], 'Long gap reanchors to actual server time.');
+        assertSameValue('resolved', $pdo->actions[70]['state'], 'Already-started action resolves despite local AI stop.');
+        assertSameValue('pending', $pdo->actions[71]['state'], 'Action beyond capped target is not processed.');
+        assertSameValue(129, $pdo->characters[42]['current_hp'], 'Only the due Smash damages Champion.');
+        assertSameValue(2, count($pdo->actions), 'Stop creates no new enemy action.');
+        assertSameValue('active', $pdo->encounters[91]['status'], 'Task 6 invents no terminal lifecycle state.');
+
+        $service->state(7, 42);
+        assertSameValue(5000, $pdo->encounters[91]['timeline_elapsed_ms'], 'Immediate request replays no discarded gap.');
+        assertSameValue(2, count($pdo->actions), 'Later stop reevaluation remains safe.');
     },
 ];

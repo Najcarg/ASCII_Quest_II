@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CombatClock.php';
+require_once __DIR__ . '/CombatActionResolver.php';
 require_once __DIR__ . '/CaveBrutePolicy.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
@@ -13,6 +14,7 @@ final class CombatSynchronizer
     private ?object $repository;
     private ?CombatDefinitionRegistry $definitions;
     private ?CaveBrutePolicy $caveBrutePolicy;
+    private ?CombatActionResolver $actionResolver;
 
     public function __construct(
         private CombatClock $clock,
@@ -22,6 +24,7 @@ final class CombatSynchronizer
         ?object $repository = null,
         ?CombatDefinitionRegistry $definitions = null,
         ?CaveBrutePolicy $caveBrutePolicy = null,
+        ?CombatActionResolver $actionResolver = null,
     ) {
         if (!is_finite($maxCatchupSeconds) || $maxCatchupSeconds <= 0) {
             throw new InvalidArgumentException('Combat catch-up limit must be positive.');
@@ -35,6 +38,7 @@ final class CombatSynchronizer
         $this->repository = $repository;
         $this->definitions = $definitions;
         $this->caveBrutePolicy = $caveBrutePolicy;
+        $this->actionResolver = $actionResolver;
 
         $this->dueEventProcessor = $dueEventProcessor ?? ($repository === null
             ? static fn (array $encounter, int $throughTimelineMs): array => $encounter
@@ -67,9 +71,44 @@ final class CombatSynchronizer
 
     public function synchronize(
         array $encounter,
+        array $lockedCharacter,
         int $playerActionAllowance,
         int $enemyActionAllowance,
-        ?array $lockedCharacter = null,
+    ): array {
+        if ($this->actionResolver === null) {
+            return [
+                'encounter' => $this->synchronizeWithoutActionResolver(
+                    $encounter,
+                    $lockedCharacter,
+                    $playerActionAllowance,
+                    $enemyActionAllowance,
+                ),
+                'character' => $lockedCharacter,
+            ];
+        }
+        if (
+            $this->repository === null ||
+            $this->definitions === null ||
+            $this->caveBrutePolicy === null
+        ) {
+            throw new LogicException(
+                'Chronological combat synchronization requires locked combat dependencies.',
+            );
+        }
+
+        return $this->synchronizeChronologically(
+            $encounter,
+            $lockedCharacter,
+            $playerActionAllowance,
+            $enemyActionAllowance,
+        );
+    }
+
+    private function synchronizeWithoutActionResolver(
+        array $encounter,
+        array $lockedCharacter,
+        int $playerActionAllowance,
+        int $enemyActionAllowance,
     ): array {
         $timeline = self::integer($encounter, 'timeline_elapsed_ms');
         $lastSynchronizedAt = self::utcTimestamp($encounter, 'last_synchronized_at');
@@ -188,6 +227,164 @@ final class CombatSynchronizer
         );
 
         return $encounter;
+    }
+
+    private function synchronizeChronologically(
+        array $encounter,
+        array $lockedCharacter,
+        int $playerActionAllowance,
+        int $enemyActionAllowance,
+    ): array {
+        $startTimeline = self::integer($encounter, 'timeline_elapsed_ms');
+        $lastSynchronizedAt = self::utcTimestamp($encounter, 'last_synchronized_at');
+        $serverNow = $this->clock->now()->setTimezone(new DateTimeZone('UTC'));
+        $actualGapMilliseconds = max(
+            0,
+            self::epochMilliseconds($serverNow) - self::epochMilliseconds($lastSynchronizedAt),
+        );
+        $targetTimeline = $startTimeline + min(
+            $actualGapMilliseconds,
+            $this->maxCatchupMilliseconds,
+        );
+        $encounter['last_synchronized_at'] = $serverNow->format('Y-m-d H:i:s.u');
+
+        $turnStart = self::integer($encounter, 'turn_started_timeline_ms');
+        $turnState = $this->turnEngine->synchronizeTurn(
+            [],
+            $turnStart,
+            $playerActionAllowance,
+            $enemyActionAllowance,
+        );
+        $turnState['turn_number'] = self::positiveInteger($encounter, 'turn_number');
+        $turnState['player_actions_remaining'] = self::integer(
+            $encounter,
+            'player_actions_remaining',
+        );
+        $turnState['enemy_actions_remaining'] = self::integer(
+            $encounter,
+            'enemy_actions_remaining',
+        );
+
+        if (($encounter['status'] ?? null) !== 'active') {
+            return ['encounter' => $encounter, 'character' => $lockedCharacter];
+        }
+
+        if (($encounter['enemy_ai_initialized_timeline_ms'] ?? null) === null) {
+            $encounter['enemy_ai_initialized_timeline_ms'] = $startTimeline;
+            $encounter['next_enemy_decision_timeline_ms'] = $startTimeline;
+        }
+
+        $cursorMs = $startTimeline;
+        $enemyDecisionSuppressed = false;
+        while (true) {
+            $encounter['timeline_elapsed_ms'] = $cursorMs;
+            foreach ($this->duePendingActionsAt(
+                self::positiveInteger($encounter, 'id'),
+                $cursorMs,
+            ) as $action) {
+                $resolved = $this->actionResolver->resolvePending(
+                    $encounter,
+                    $lockedCharacter,
+                    $action,
+                );
+                $encounter = $resolved['encounter'];
+                $lockedCharacter = $resolved['character'];
+            }
+
+            $turnState = $this->turnEngine->synchronizeTurn(
+                $turnState,
+                $cursorMs,
+                $playerActionAllowance,
+                $enemyActionAllowance,
+            );
+            self::copyTurnState($turnState, $encounter);
+
+            if (
+                !$enemyDecisionSuppressed &&
+                self::integer($encounter, 'next_enemy_decision_timeline_ms') <= $cursorMs
+            ) {
+                $decisionResult = $this->processEnemyDecisionAtCursor(
+                    $encounter,
+                    $lockedCharacter,
+                    $turnState,
+                    $cursorMs,
+                );
+                $encounter = $decisionResult['encounter'];
+                $turnState = $decisionResult['turn_state'];
+                $enemyDecisionSuppressed =
+                    (bool) $decisionResult['suppress_enemy_decisions'];
+            }
+            self::copyTurnState($turnState, $encounter);
+
+            if ($cursorMs === $targetTimeline) {
+                break;
+            }
+
+            $candidates = $this->strictlyFutureCandidates(
+                $encounter,
+                $turnState,
+                $enemyDecisionSuppressed,
+                $cursorMs,
+                $targetTimeline,
+            );
+            if ($candidates === []) {
+                throw new DomainException('Combat synchronization has no future cursor.');
+            }
+            $cursorMs = min($candidates);
+        }
+
+        $encounter['timeline_elapsed_ms'] = $targetTimeline;
+
+        return ['encounter' => $encounter, 'character' => $lockedCharacter];
+    }
+
+    private function duePendingActionsAt(int $encounterId, int $cursorMs): array
+    {
+        return array_values(array_filter(
+            $this->repository->lockPendingActionsForEncounter($encounterId),
+            static fn (array $action): bool =>
+                self::integer($action, 'resolves_timeline_ms') === $cursorMs,
+        ));
+    }
+
+    private function strictlyFutureCandidates(
+        array $encounter,
+        array $turnState,
+        bool $enemyDecisionSuppressed,
+        int $cursorMs,
+        int $targetTimelineMs,
+    ): array {
+        $candidates = [];
+        if ($targetTimelineMs > $cursorMs) {
+            $candidates[] = $targetTimelineMs;
+        }
+
+        $turnEnd = self::integer($turnState, 'turn_ends_timeline_ms');
+        if ($turnEnd > $cursorMs && $turnEnd <= $targetTimelineMs) {
+            $candidates[] = $turnEnd;
+        }
+
+        foreach ($this->repository->lockPendingActionsForEncounter(
+            self::positiveInteger($encounter, 'id'),
+        ) as $action) {
+            $resolvesAt = self::integer($action, 'resolves_timeline_ms');
+            if ($resolvesAt > $cursorMs && $resolvesAt <= $targetTimelineMs) {
+                $candidates[] = $resolvesAt;
+                break;
+            }
+        }
+
+        if (!$enemyDecisionSuppressed) {
+            $nextEnemyDecision = self::integer(
+                $encounter,
+                'next_enemy_decision_timeline_ms',
+            );
+            if ($nextEnemyDecision > $cursorMs && $nextEnemyDecision <= $targetTimelineMs) {
+                $candidates[] = $nextEnemyDecision;
+            }
+        }
+
+        return $candidates;
     }
 
     private function processEnemyDecisionAtCursor(

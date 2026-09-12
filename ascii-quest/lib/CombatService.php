@@ -180,12 +180,14 @@ final class CombatService
                 throw new RuntimeException('Stored combat enemy is unavailable.');
             }
             $stats = CharacterStats::calculate($character);
-            $synchronized = $this->synchronizer->synchronize(
+            $synchronization = $this->synchronizer->synchronize(
                 $encounter,
+                $character,
                 (int) $stats['rates']['action'],
                 (int) $enemy['action'],
-                $character,
             );
+            $synchronized = $synchronization['encounter'];
+            $character = $synchronization['character'];
             $encounterId = self::integer($encounter, 'id');
             $expectedVersion = self::integer($encounter, 'version');
             $synchronizationSaved = $this->repository->updateLockedEncounterSynchronization(
@@ -234,12 +236,14 @@ final class CombatService
                 throw new RuntimeException('Stored combat enemy is unavailable.');
             }
             $stats = CharacterStats::calculate($character);
-            $synchronized = $this->synchronizer->synchronize(
+            $synchronization = $this->synchronizer->synchronize(
                 $encounter,
+                $character,
                 (int) $stats['rates']['action'],
                 (int) $enemy['action'],
-                $character,
             );
+            $synchronized = $synchronization['encounter'];
+            $character = $synchronization['character'];
             $encounterId = self::integer($encounter, 'id');
             $this->persistSynchronization(
                 $encounterId,
