@@ -10,6 +10,7 @@ final class CombatRepository
     private ?array $lockedEncounter = null;
     private bool $detailRowsTouched = false;
     private bool $actionRowsLocked = false;
+    private ?int $lockedBlockActionId = null;
 
     public function __construct(private PDO $pdo)
     {
@@ -438,6 +439,18 @@ final class CombatRepository
             'snapshot_critical_chance',
             'snapshot_critical_damage',
         ]);
+        $values += [
+            'parent_action_id' => $action['parent_action_id'] ?? null,
+            'completed_timeline_ms' => $action['completed_timeline_ms'] ?? null,
+            'block_token' => $action['block_token'] ?? null,
+            'block_expires_timeline_ms' => $action['block_expires_timeline_ms'] ?? null,
+            'block_attempted_timeline_ms' => $action['block_attempted_timeline_ms'] ?? null,
+            'block_prompt_x' => $action['block_prompt_x'] ?? null,
+            'block_prompt_y' => $action['block_prompt_y'] ?? null,
+            'resolved_damage' => $action['resolved_damage'] ?? null,
+            'prevented_damage' => $action['prevented_damage'] ?? null,
+            'healing_applied' => $action['healing_applied'] ?? null,
+        ];
 
         if ($values['request_token'] !== null) {
             $existing = $this->lockActionByRequestToken($encounterId, (string) $values['request_token']);
@@ -449,17 +462,27 @@ final class CombatRepository
         $params = ['encounter_id' => $encounterId] + $values;
         try {
             $stmt = $this->pdo->prepare('INSERT INTO combat_actions (
-                    encounter_id, actor, action_kind, definition_key, request_token,
+                    encounter_id, parent_action_id, actor, action_kind,
+                    definition_key, request_token,
                     active_slot, state, started_timeline_ms, resolves_timeline_ms,
-                    cooldown_ready_timeline_ms, snapshot_weapon_key,
+                    cooldown_ready_timeline_ms, completed_timeline_ms,
+                    snapshot_weapon_key,
                     snapshot_damage_type, snapshot_base_damage, snapshot_accuracy,
-                    snapshot_critical_chance, snapshot_critical_damage
+                    snapshot_critical_chance, snapshot_critical_damage,
+                    block_token, block_expires_timeline_ms,
+                    block_attempted_timeline_ms, block_prompt_x, block_prompt_y,
+                    resolved_damage, prevented_damage, healing_applied
                 ) VALUES (
-                    :encounter_id, :actor, :action_kind, :definition_key, :request_token,
+                    :encounter_id, :parent_action_id, :actor, :action_kind,
+                    :definition_key, :request_token,
                     :active_slot, :state, :started_timeline_ms, :resolves_timeline_ms,
-                    :cooldown_ready_timeline_ms, :snapshot_weapon_key,
+                    :cooldown_ready_timeline_ms, :completed_timeline_ms,
+                    :snapshot_weapon_key,
                     :snapshot_damage_type, :snapshot_base_damage, :snapshot_accuracy,
-                    :snapshot_critical_chance, :snapshot_critical_damage
+                    :snapshot_critical_chance, :snapshot_critical_damage,
+                    :block_token, :block_expires_timeline_ms,
+                    :block_attempted_timeline_ms, :block_prompt_x, :block_prompt_y,
+                    :resolved_damage, :prevented_damage, :healing_applied
                 )');
             $stmt->execute($params);
         } catch (PDOException $exception) {
@@ -498,6 +521,92 @@ final class CombatRepository
         $action = $stmt->fetch();
 
         return is_array($action) ? $action : null;
+    }
+
+    public function lockEnemyActionForBlock(int $encounterId, int $actionId): ?array
+    {
+        $this->requireEncounterLock($encounterId);
+        $this->detailRowsTouched = true;
+
+        $stmt = $this->pdo->prepare("SELECT *
+            FROM combat_actions
+            WHERE id = :action_id
+              AND encounter_id = :encounter_id
+              AND actor = 'enemy'
+            LIMIT 1
+            FOR UPDATE");
+        $stmt->execute([
+            'action_id' => $actionId,
+            'encounter_id' => $encounterId,
+        ]);
+        $action = $stmt->fetch();
+        $this->lockedBlockActionId = is_array($action) ? $actionId : null;
+
+        return is_array($action) ? $action : null;
+    }
+
+    public function createResolvedBlockCommand(
+        int $encounterId,
+        int $parentActionId,
+        string $definitionKey,
+        string $requestToken,
+        int $attemptedTimelineMs,
+    ): array {
+        $this->requireBlockActionLock($encounterId, $parentActionId);
+        if ($attemptedTimelineMs < 0) {
+            throw new InvalidArgumentException('Block attempt timeline cannot be negative.');
+        }
+
+        return $this->createAction($encounterId, [
+            'parent_action_id' => $parentActionId,
+            'actor' => 'player',
+            'action_kind' => 'block',
+            'definition_key' => $definitionKey,
+            'request_token' => $requestToken,
+            'active_slot' => null,
+            'state' => 'resolved',
+            'started_timeline_ms' => $attemptedTimelineMs,
+            'resolves_timeline_ms' => $attemptedTimelineMs,
+            'cooldown_ready_timeline_ms' => null,
+            'completed_timeline_ms' => $attemptedTimelineMs,
+            'snapshot_weapon_key' => null,
+            'snapshot_damage_type' => null,
+            'snapshot_base_damage' => null,
+            'snapshot_accuracy' => null,
+            'snapshot_critical_chance' => null,
+            'snapshot_critical_damage' => null,
+        ]);
+    }
+
+    public function markLockedEnemyActionBlockAttempted(
+        int $encounterId,
+        int $actionId,
+        string $blockToken,
+        int $attemptedTimelineMs,
+    ): bool {
+        $this->requireBlockActionLock($encounterId, $actionId);
+        if ($attemptedTimelineMs < 0) {
+            throw new InvalidArgumentException('Block attempt timeline cannot be negative.');
+        }
+
+        $stmt = $this->pdo->prepare("UPDATE combat_actions
+            SET block_attempted_timeline_ms = :attempted_timeline_ms
+            WHERE id = :action_id
+              AND encounter_id = :encounter_id
+              AND actor = 'enemy'
+              AND state = 'pending'
+              AND block_token = :block_token
+              AND block_attempted_timeline_ms IS NULL
+              AND :expiry_timeline_ms < block_expires_timeline_ms");
+        $stmt->execute([
+            'attempted_timeline_ms' => $attemptedTimelineMs,
+            'expiry_timeline_ms' => $attemptedTimelineMs,
+            'action_id' => $actionId,
+            'encounter_id' => $encounterId,
+            'block_token' => $blockToken,
+        ]);
+
+        return $stmt->rowCount() === 1;
     }
 
     public function lockActionsForEncounter(int $encounterId): array
@@ -683,6 +792,14 @@ final class CombatRepository
         }
     }
 
+    private function requireBlockActionLock(int $encounterId, int $actionId): void
+    {
+        $this->requireEncounterLock($encounterId);
+        if ($this->lockedBlockActionId !== $actionId) {
+            throw new LogicException('The incoming enemy action must be locked before Block mutation.');
+        }
+    }
+
     private function requireKeys(array $values, array $keys): array
     {
         $result = [];
@@ -705,5 +822,6 @@ final class CombatRepository
         $this->lockedEncounter = null;
         $this->detailRowsTouched = false;
         $this->actionRowsLocked = false;
+        $this->lockedBlockActionId = null;
     }
 }

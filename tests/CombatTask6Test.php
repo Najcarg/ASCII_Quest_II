@@ -26,6 +26,10 @@ $prototypeChampionDamageResolverPath =
 if (is_file($prototypeChampionDamageResolverPath)) {
     require_once $prototypeChampionDamageResolverPath;
 }
+$prototypeBlockResolverPath = __DIR__ . '/../ascii-quest/lib/PrototypeBlockResolver.php';
+if (is_file($prototypeBlockResolverPath)) {
+    require_once $prototypeBlockResolverPath;
+}
 $combatActionResolverPath = __DIR__ . '/../ascii-quest/lib/CombatActionResolver.php';
 if (is_file($combatActionResolverPath)) {
     require_once $combatActionResolverPath;
@@ -124,7 +128,11 @@ function task6ActionResolver(
         CombatDefinitionRegistry::fromDefaultConfig(),
         $equipment,
         task6EnemyDefenseResolver($random),
-        task6ChampionDamageResolver(),
+        new PrototypeBlockResolver(
+            task6ChampionDamageResolver(),
+            $random,
+            CombatDefinitionRegistry::fromDefaultConfig()->playerReaction('basic_block'),
+        ),
     );
 }
 

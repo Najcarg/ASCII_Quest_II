@@ -352,6 +352,151 @@ final class CombatService
         }
     }
 
+    public function attemptBlock(
+        int $userId,
+        int $characterId,
+        int $enemyActionId,
+        string $blockToken,
+        string $requestToken,
+    ): array {
+        if ($enemyActionId <= 0) {
+            throw new InvalidArgumentException('Invalid enemy combat action.');
+        }
+        if (preg_match('/\A[0-9a-f]{64}\z/D', $blockToken) !== 1) {
+            throw new InvalidArgumentException('Invalid combat Block token.');
+        }
+        if (preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/D', $requestToken) !== 1) {
+            throw new InvalidArgumentException('Invalid combat request token.');
+        }
+
+        $guard = new CombatAccessGuard($this->repository);
+        $synchronizationPersisted = false;
+        try {
+            $decision = $guard->beginAtomic(
+                CombatAccessGuard::GAME_LOAD,
+                $userId,
+                $characterId,
+            );
+            $character = $decision['character'];
+            $encounter = $decision['active_encounter'];
+            if ($encounter === null) {
+                throw new DomainException('No active combat encounter was found.');
+            }
+
+            $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
+            if ($enemy === null) {
+                throw new RuntimeException('Stored combat enemy is unavailable.');
+            }
+            $blockDefinition = $this->definitions->playerReaction('basic_block');
+            if ($blockDefinition === null) {
+                throw new RuntimeException('Player Block reaction is unavailable.');
+            }
+            $blockDefinitionKey = (string) ($blockDefinition['key'] ?? '');
+            $stats = CharacterStats::calculate($character);
+            $synchronization = $this->synchronizer->synchronize(
+                $encounter,
+                $character,
+                (int) $stats['rates']['action'],
+                (int) $enemy['action'],
+            );
+            $synchronized = $synchronization['encounter'];
+            $character = $synchronization['character'];
+            $encounterId = self::integer($encounter, 'id');
+            $this->persistSynchronization(
+                $encounterId,
+                $synchronized,
+                self::integer($encounter, 'version'),
+            );
+            $synchronizationPersisted = true;
+            if (($synchronized['status'] ?? null) !== 'active') {
+                throw new DomainException('Combat is no longer active.');
+            }
+
+            $replay = $this->repository->lockActionByRequestToken(
+                $encounterId,
+                $requestToken,
+            );
+            if ($replay !== null) {
+                if (
+                    ($replay['actor'] ?? null) !== 'player' ||
+                    ($replay['action_kind'] ?? null) !== 'block' ||
+                    ($replay['definition_key'] ?? null) !== $blockDefinitionKey ||
+                    self::integer($replay, 'parent_action_id') !== $enemyActionId ||
+                    ($replay['state'] ?? null) !== 'resolved'
+                ) {
+                    throw new DomainException('Combat request token collides with another action.');
+                }
+                $state = $this->projector->project($character, $synchronized);
+                $guard->commit();
+
+                return $state;
+            }
+
+            $incomingAction = $this->repository->lockEnemyActionForBlock(
+                $encounterId,
+                $enemyActionId,
+            );
+            if (
+                $incomingAction === null ||
+                ($incomingAction['state'] ?? null) !== 'pending' ||
+                ($incomingAction['block_attempted_timeline_ms'] ?? null) !== null
+            ) {
+                throw new DomainException('The Block opportunity is unavailable.');
+            }
+            $storedBlockToken = $incomingAction['block_token'] ?? null;
+            if (!is_string($storedBlockToken) || !hash_equals($storedBlockToken, $blockToken)) {
+                throw new DomainException('The Block opportunity is unavailable.');
+            }
+            $timeline = self::integer($synchronized, 'timeline_elapsed_ms');
+            if ($timeline >= self::integer($incomingAction, 'block_expires_timeline_ms')) {
+                throw new DomainException('The Block opportunity has expired.');
+            }
+
+            $command = $this->repository->createResolvedBlockCommand(
+                $encounterId,
+                $enemyActionId,
+                $blockDefinitionKey,
+                $requestToken,
+                $timeline,
+            );
+            if (
+                ($command['actor'] ?? null) !== 'player' ||
+                ($command['action_kind'] ?? null) !== 'block' ||
+                self::integer($command, 'parent_action_id') !== $enemyActionId
+            ) {
+                throw new RuntimeException('Block command persistence returned invalid state.');
+            }
+            if (!$this->repository->markLockedEnemyActionBlockAttempted(
+                $encounterId,
+                $enemyActionId,
+                $blockToken,
+                $timeline,
+            )) {
+                throw new RuntimeException('Block opportunity changed concurrently.');
+            }
+
+            $state = $this->projector->project($character, $synchronized);
+            $guard->commit();
+
+            return $state;
+        } catch (DomainException $exception) {
+            if ($synchronizationPersisted) {
+                try {
+                    $guard->commit();
+                } catch (Throwable $commitException) {
+                    $guard->rollBack();
+                    throw $commitException;
+                }
+            } else {
+                $guard->rollBack();
+            }
+            throw $exception;
+        } catch (Throwable $exception) {
+            $guard->rollBack();
+            throw $exception;
+        }
+    }
+
     private function persistSynchronization(int $encounterId, array &$encounter, int $expectedVersion): void
     {
         if (!$this->repository->updateLockedEncounterSynchronization($encounterId, $encounter, $expectedVersion)) {

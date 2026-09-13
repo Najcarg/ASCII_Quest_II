@@ -22,6 +22,8 @@ final class CombatStateProjector
         $lockedActions = $this->repository->actionsForEncounter($encounterId);
         $playerActions = [];
         $activeEnemyAction = null;
+        $reactionPrompt = null;
+        $timelineMs = self::integer($encounter, 'timeline_elapsed_ms');
         foreach ($lockedActions as $action) {
             if (($action['actor'] ?? null) === 'player') {
                 $playerActions[] = self::allowlist($action, [
@@ -53,6 +55,14 @@ final class CombatStateProjector
                 'started_timeline_ms' => self::integer($action, 'started_timeline_ms'),
                 'resolves_timeline_ms' => self::integer($action, 'resolves_timeline_ms'),
             ];
+
+            if ($reactionPrompt === null) {
+                $reactionPrompt = self::reactionPrompt(
+                    $action,
+                    $definition,
+                    $timelineMs,
+                );
+            }
         }
 
         $events = [];
@@ -92,7 +102,7 @@ final class CombatStateProjector
             ],
             'player_actions' => $playerActions,
             'active_effects' => [],
-            'reaction_prompt' => null,
+            'reaction_prompt' => $reactionPrompt,
             'potion' => [
                 'key' => (string) ($encounter['potion_key'] ?? ''),
                 'charge_allowance' => self::integer($encounter, 'potion_charge_allowance'),
@@ -126,5 +136,44 @@ final class CombatStateProjector
         }
 
         return $result;
+    }
+
+    private static function reactionPrompt(
+        array $action,
+        array $definition,
+        int $timelineMs,
+    ): ?array {
+        $token = $action['block_token'] ?? null;
+        $expiresTimelineMs = $action['block_expires_timeline_ms'] ?? null;
+        $promptX = $action['block_prompt_x'] ?? null;
+        $promptY = $action['block_prompt_y'] ?? null;
+        if (
+            ($action['block_attempted_timeline_ms'] ?? null) !== null ||
+            !is_string($token) ||
+            preg_match('/\A[0-9a-f]{64}\z/D', $token) !== 1 ||
+            (!is_int($expiresTimelineMs) && !is_string($expiresTimelineMs)) ||
+            preg_match('/\A\d+\z/D', (string) $expiresTimelineMs) !== 1 ||
+            (int) $expiresTimelineMs <= $timelineMs ||
+            !is_numeric($promptX) ||
+            !is_numeric($promptY) ||
+            (float) $promptX < 0.0 ||
+            (float) $promptX > 1.0 ||
+            (float) $promptY < 0.0 ||
+            (float) $promptY > 1.0
+        ) {
+            return null;
+        }
+
+        return [
+            'enemy_action_id' => self::integer($action, 'id'),
+            'definition_key' => (string) $action['definition_key'],
+            'name' => (string) $definition['name'],
+            'damage_type' => (string) $definition['damage_type'],
+            'resolves_timeline_ms' => self::integer($action, 'resolves_timeline_ms'),
+            'expires_timeline_ms' => (int) $expiresTimelineMs,
+            'block_token' => $token,
+            'x' => (float) $promptX,
+            'y' => (float) $promptY,
+        ];
     }
 }

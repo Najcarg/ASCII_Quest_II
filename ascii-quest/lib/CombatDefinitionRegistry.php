@@ -18,6 +18,9 @@ final class CombatDefinitionRegistry
     /** @var array<string, array<string, mixed>> */
     private array $potions;
 
+    /** @var array<string, array<string, mixed>> */
+    private array $playerReactions;
+
     public function __construct(array $config)
     {
         if (($config['foundation_only'] ?? null) !== true) {
@@ -39,6 +42,9 @@ final class CombatDefinitionRegistry
         );
         $this->potions = self::validatePotions(
             self::requiredArray($prototypeBalance, 'potions'),
+        );
+        $this->playerReactions = self::validatePlayerReactions(
+            self::requiredArray($prototypeBalance, 'player_reactions'),
         );
         $this->enemies = self::validateEnemies(
             self::requiredArray($prototypeBalance, 'enemies'),
@@ -77,6 +83,11 @@ final class CombatDefinitionRegistry
     public function potion(string $key): ?array
     {
         return $this->potions[$key] ?? null;
+    }
+
+    public function playerReaction(string $key): ?array
+    {
+        return $this->playerReactions[$key] ?? null;
     }
 
     public function encounter(string $id): ?array
@@ -133,6 +144,26 @@ final class CombatDefinitionRegistry
         return $potions;
     }
 
+    private static function validatePlayerReactions(array $reactions): array
+    {
+        if (count($reactions) !== 1 || !array_key_exists('basic_block', $reactions)) {
+            throw new RuntimeException('Combat foundation requires the Basic Block player reaction.');
+        }
+
+        foreach ($reactions as $key => $reaction) {
+            self::assertDefinitionIdentity($key, $reaction, 'player reaction');
+            self::assertNonEmptyString($reaction, 'name', 'Player reaction');
+            $promptBounds = self::requiredArray($reaction, 'prompt_safe_bounds');
+            self::normalizedBounds($promptBounds, 'x');
+            self::normalizedBounds($promptBounds, 'y');
+            $serverOnly = self::requiredArray($reaction, 'server_only');
+            self::percentage($serverOnly, 'prototype_chance_percent');
+            self::percentage($serverOnly, 'prototype_reduction_percent');
+        }
+
+        return $reactions;
+    }
+
     private static function validateEnemies(array $enemies): array
     {
         if ($enemies === []) {
@@ -184,8 +215,8 @@ final class CombatDefinitionRegistry
             self::assertCanonicalIdentifier($block['key'] ?? null, 'Enemy Block');
             self::assertNonEmptyString($block, 'name', 'Enemy Block');
             $blockServerOnly = self::requiredArray($block, 'server_only');
-            self::positiveInteger($blockServerOnly, 'prototype_chance_percent');
-            self::positiveInteger($blockServerOnly, 'prototype_reduction_percent');
+            self::percentage($blockServerOnly, 'prototype_chance_percent');
+            self::percentage($blockServerOnly, 'prototype_reduction_percent');
 
             $serverOnly = self::requiredArray($enemy, 'server_only');
             self::positiveInteger($serverOnly, 'prototype_gold_reward');
@@ -289,6 +320,33 @@ final class CombatDefinitionRegistry
         }
 
         return $value;
+    }
+
+    private static function percentage(array $definition, string $key): int
+    {
+        $value = self::positiveInteger($definition, $key);
+        if ($value > 100) {
+            throw new RuntimeException("Combat {$key} cannot exceed 100.");
+        }
+
+        return $value;
+    }
+
+    private static function normalizedBounds(array $bounds, string $axis): void
+    {
+        $minimumKey = $axis . '_min_thousandths';
+        $maximumKey = $axis . '_max_thousandths';
+        $minimum = $bounds[$minimumKey] ?? null;
+        $maximum = $bounds[$maximumKey] ?? null;
+        if (
+            !is_int($minimum) ||
+            !is_int($maximum) ||
+            $minimum < 0 ||
+            $maximum > 1000 ||
+            $minimum >= $maximum
+        ) {
+            throw new RuntimeException('Combat Block prompt bounds are invalid.');
+        }
     }
 
     private static function requiredArray(array $definition, string $key): array

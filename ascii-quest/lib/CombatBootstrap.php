@@ -16,6 +16,7 @@ require_once __DIR__ . '/CombatTurnEngine.php';
 require_once __DIR__ . '/PrototypeChampionDamageResolver.php';
 require_once __DIR__ . '/PrototypeCombatEquipmentProvider.php';
 require_once __DIR__ . '/PrototypeEnemyDefenseResolver.php';
+require_once __DIR__ . '/PrototypeBlockResolver.php';
 require_once __DIR__ . '/SystemCombatClock.php';
 require_once __DIR__ . '/SystemCombatRandomSource.php';
 
@@ -58,7 +59,13 @@ final class CombatBootstrap
             $definitions,
             $equipmentProvider,
             new PrototypeEnemyDefenseResolver($randomSource),
-            new PrototypeChampionDamageResolver(),
+            new PrototypeBlockResolver(
+                new PrototypeChampionDamageResolver(),
+                $randomSource,
+                $definitions->playerReaction('basic_block') ?? throw new RuntimeException(
+                    'Player Block reaction is unavailable.',
+                ),
+            ),
         );
 
         return new CombatService(
@@ -74,6 +81,7 @@ final class CombatBootstrap
                 $definitions,
                 new CaveBrutePolicy($turnEngine),
                 $actionResolver,
+                $randomSource,
             ),
             $equipmentProvider,
             new CombatStateProjector($repository, $definitions),

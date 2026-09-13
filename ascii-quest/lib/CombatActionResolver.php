@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/ChampionDamageResolver.php';
+require_once __DIR__ . '/BlockResolver.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatEquipmentProvider.php';
 require_once __DIR__ . '/CombatRepository.php';
@@ -14,7 +14,7 @@ final class CombatActionResolver
         private CombatDefinitionRegistry $definitions,
         private CombatEquipmentProvider $equipment,
         private EnemyDefenseResolver $enemyDefense,
-        private ChampionDamageResolver $championDamage,
+        private BlockResolver $blockResolver,
     ) {
     }
 
@@ -105,9 +105,10 @@ final class CombatActionResolver
             throw new DomainException('Unsupported enemy combat action.');
         }
 
-        $damage = $this->championDamage->resolve(
+        $damage = $this->blockResolver->resolve(
             $lockedAction,
             $this->equipment->currentDefense($lockedCharacter),
+            ($lockedAction['block_attempted_timeline_ms'] ?? null) !== null,
         );
         $appliedDamage = self::requiredNonNegativeInteger($damage, 'applied_damage');
         $preventedDamage = self::requiredNonNegativeInteger($damage, 'prevented_damage');

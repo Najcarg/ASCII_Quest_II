@@ -364,6 +364,8 @@ final class FakeCombatPdo extends PDO
                 $this->actions,
                 static fn (array $row): bool =>
                     $row['encounter_id'] === (int) $params['encounter_id'] &&
+                    (!array_key_exists('action_id', $params) ||
+                        $row['id'] === (int) $params['action_id']) &&
                     (!str_contains($normalized, "and state = 'pending'") ||
                         $row['state'] === 'pending') &&
                     (!array_key_exists('request_token', $params) ||
@@ -413,6 +415,29 @@ final class FakeCombatPdo extends PDO
             $setClause = trim((string) preg_replace('/^update combat_actions set (.*?) where .*$/', '$1', $normalized));
             $lifecycleSet = "state = 'resolved', active_slot = null, completed_timeline_ms = :completed_timeline_ms";
             $damageSet = "state = 'resolved', active_slot = null, completed_timeline_ms = :completed_timeline_ms, resolved_damage = :resolved_damage, prevented_damage = :prevented_damage";
+            $blockAttemptSet = 'block_attempted_timeline_ms = :attempted_timeline_ms';
+            if ($setClause === $blockAttemptSet) {
+                $id = (int) $params['action_id'];
+                $action = $this->actions[$id] ?? null;
+                if (
+                    $action === null ||
+                    $action['encounter_id'] !== (int) $params['encounter_id'] ||
+                    $action['actor'] !== 'enemy' ||
+                    $action['state'] !== 'pending' ||
+                    $action['block_token'] !== $params['block_token'] ||
+                    $action['block_attempted_timeline_ms'] !== null ||
+                    (int) $params['expiry_timeline_ms'] >=
+                        (int) $action['block_expires_timeline_ms']
+                ) {
+                    return ['rows' => [], 'row_count' => 0];
+                }
+
+                $this->actions[$id]['block_attempted_timeline_ms'] =
+                    (int) $params['attempted_timeline_ms'];
+                $this->writeOrder[] = ['kind' => 'block_attempt'];
+
+                return ['rows' => [], 'row_count' => 1];
+            }
             if (!in_array($setClause, [$lifecycleSet, $damageSet], true)) {
                 throw new RuntimeException('Unexpected combat action resolution SET clause.');
             }

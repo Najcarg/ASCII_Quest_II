@@ -1653,7 +1653,7 @@ return [
             new CombatRepository($pdo),
             $clock,
             new Task5MutableEquipmentProvider(),
-            new Task6SequenceRandomSource([]),
+            new Task6SequenceRandomSource([500, 500]),
         )->state(7, 42);
 
         $actions = array_values($pdo->actions);
@@ -1714,7 +1714,7 @@ return [
             $repository,
             $clock,
             new Task5MutableEquipmentProvider(),
-            new Task6SequenceRandomSource([]),
+            new Task6SequenceRandomSource([500, 500]),
         );
         $definitions = CombatDefinitionRegistry::fromDefaultConfig();
 

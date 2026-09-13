@@ -62,6 +62,23 @@ return [
             ],
         ],
 
+        'player_reactions' => [
+            'basic_block' => [
+                'key' => 'basic_block',
+                'name' => 'Block',
+                'prompt_safe_bounds' => [
+                    'x_min_thousandths' => 100,
+                    'x_max_thousandths' => 900,
+                    'y_min_thousandths' => 100,
+                    'y_max_thousandths' => 900,
+                ],
+                'server_only' => [
+                    'prototype_chance_percent' => 20,
+                    'prototype_reduction_percent' => 50,
+                ],
+            ],
+        ],
+
         'enemies' => [
             'cave_brute' => [
                 'key' => 'cave_brute',

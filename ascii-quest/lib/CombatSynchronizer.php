@@ -5,6 +5,7 @@ require_once __DIR__ . '/CombatClock.php';
 require_once __DIR__ . '/CombatActionResolver.php';
 require_once __DIR__ . '/CaveBrutePolicy.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
+require_once __DIR__ . '/CombatRandomSource.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
 
 final class CombatSynchronizer
@@ -15,6 +16,7 @@ final class CombatSynchronizer
     private ?CombatDefinitionRegistry $definitions;
     private ?CaveBrutePolicy $caveBrutePolicy;
     private ?CombatActionResolver $actionResolver;
+    private ?CombatRandomSource $randomSource;
 
     public function __construct(
         private CombatClock $clock,
@@ -25,6 +27,7 @@ final class CombatSynchronizer
         ?CombatDefinitionRegistry $definitions = null,
         ?CaveBrutePolicy $caveBrutePolicy = null,
         ?CombatActionResolver $actionResolver = null,
+        ?CombatRandomSource $randomSource = null,
     ) {
         if (!is_finite($maxCatchupSeconds) || $maxCatchupSeconds <= 0) {
             throw new InvalidArgumentException('Combat catch-up limit must be positive.');
@@ -39,6 +42,7 @@ final class CombatSynchronizer
         $this->definitions = $definitions;
         $this->caveBrutePolicy = $caveBrutePolicy;
         $this->actionResolver = $actionResolver;
+        $this->randomSource = $randomSource;
 
         $this->dueEventProcessor = $dueEventProcessor ?? ($repository === null
             ? static fn (array $encounter, int $throughTimelineMs): array => $encounter
@@ -481,6 +485,7 @@ final class CombatSynchronizer
             $cursorMs,
             $durationMs,
         );
+        $blockPrompt = $this->blockPromptForEnemyAction($cursorMs + $durationMs);
         $action = $this->repository->createAction(
             self::positiveInteger($encounter, 'id'),
             [
@@ -499,6 +504,11 @@ final class CombatSynchronizer
                 'snapshot_accuracy' => null,
                 'snapshot_critical_chance' => null,
                 'snapshot_critical_damage' => null,
+                'block_token' => $blockPrompt['block_token'],
+                'block_expires_timeline_ms' => $blockPrompt['block_expires_timeline_ms'],
+                'block_attempted_timeline_ms' => null,
+                'block_prompt_x' => $blockPrompt['block_prompt_x'],
+                'block_prompt_y' => $blockPrompt['block_prompt_y'],
             ],
         );
 
@@ -511,6 +521,38 @@ final class CombatSynchronizer
             'turn_state' => $turnState,
             'started_action' => $action,
             'suppress_enemy_decisions' => false,
+        ];
+    }
+
+    private function blockPromptForEnemyAction(
+        int $resolvesTimelineMs,
+    ): array {
+        if ($this->randomSource === null) {
+            return [
+                'block_token' => null,
+                'block_expires_timeline_ms' => null,
+                'block_prompt_x' => null,
+                'block_prompt_y' => null,
+            ];
+        }
+
+        $block = $this->definitions?->playerReaction('basic_block');
+        $bounds = is_array($block) ? ($block['prompt_safe_bounds'] ?? null) : null;
+        if (!is_array($bounds)) {
+            throw new DomainException('Player Block reaction prompt definition is unavailable.');
+        }
+
+        return [
+            'block_token' => $this->randomSource->token(32),
+            'block_expires_timeline_ms' => $resolvesTimelineMs,
+            'block_prompt_x' => $this->randomSource->integer(
+                self::integer($bounds, 'x_min_thousandths'),
+                self::integer($bounds, 'x_max_thousandths'),
+            ) / 1000,
+            'block_prompt_y' => $this->randomSource->integer(
+                self::integer($bounds, 'y_min_thousandths'),
+                self::integer($bounds, 'y_max_thousandths'),
+            ) / 1000,
         ];
     }
 
