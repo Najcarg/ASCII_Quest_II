@@ -497,6 +497,169 @@ final class CombatService
         }
     }
 
+    public function usePotion(
+        int $userId,
+        int $characterId,
+        string $requestToken,
+    ): array {
+        if (preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/D', $requestToken) !== 1) {
+            throw new InvalidArgumentException('Invalid combat request token.');
+        }
+
+        $guard = new CombatAccessGuard($this->repository);
+        $synchronizationPersisted = false;
+        try {
+            $decision = $guard->beginAtomic(
+                CombatAccessGuard::GAME_LOAD,
+                $userId,
+                $characterId,
+            );
+            $character = $decision['character'];
+            $encounter = $decision['active_encounter'];
+            if ($encounter === null) {
+                throw new DomainException('No active combat encounter was found.');
+            }
+
+            $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
+            if ($enemy === null) {
+                throw new RuntimeException('Stored combat enemy is unavailable.');
+            }
+            $stats = CharacterStats::calculate($character);
+            $synchronization = $this->synchronizer->synchronize(
+                $encounter,
+                $character,
+                (int) $stats['rates']['action'],
+                (int) $enemy['action'],
+            );
+            $synchronized = $synchronization['encounter'];
+            $character = $synchronization['character'];
+            $encounterId = self::integer($encounter, 'id');
+            $this->persistSynchronization(
+                $encounterId,
+                $synchronized,
+                self::integer($encounter, 'version'),
+            );
+            $synchronizationPersisted = true;
+            if (($synchronized['status'] ?? null) !== 'active') {
+                throw new DomainException('Combat is no longer active.');
+            }
+
+            $potionKey = (string) ($synchronized['potion_key'] ?? '');
+            $replay = $this->repository->lockActionByRequestToken(
+                $encounterId,
+                $requestToken,
+            );
+            if ($replay !== null) {
+                if (
+                    ($replay['actor'] ?? null) !== 'player' ||
+                    ($replay['action_kind'] ?? null) !== 'potion' ||
+                    ($replay['definition_key'] ?? null) !== $potionKey ||
+                    ($replay['state'] ?? null) !== 'resolved'
+                ) {
+                    throw new DomainException('Combat request token collides with another action.');
+                }
+                $state = $this->projector->project($character, $synchronized);
+                $guard->commit();
+
+                return $state;
+            }
+
+            if (self::integer($character, 'current_hp') <= 0) {
+                throw new DomainException('The Champion cannot use a Potion.');
+            }
+            $potion = $this->definitions->potion($potionKey);
+            if ($potion === null || ($potion['key'] ?? null) !== $potionKey) {
+                throw new DomainException('The combat Potion is unavailable.');
+            }
+            $chargesRemaining = self::integer($synchronized, 'potion_charges_remaining');
+            if ($chargesRemaining <= 0) {
+                throw new DomainException('No combat Potion charges remain.');
+            }
+
+            $stats = CharacterStats::calculate($character);
+            $maximumLife = (int) $stats['resources']['max_life'];
+            $currentHp = self::integer($character, 'current_hp');
+            if ($currentHp >= $maximumLife) {
+                throw new DomainException('The Champion is already at Maximum Life.');
+            }
+            $healingApplied = min(
+                (int) $potion['prototype_healing'],
+                $maximumLife - $currentHp,
+            );
+            $newCurrentHp = $currentHp + $healingApplied;
+            if (!$this->repository->updateLockedCharacterCurrentHp(
+                $userId,
+                $characterId,
+                $currentHp,
+                $newCurrentHp,
+            )) {
+                throw new RuntimeException('Champion Life changed concurrently. Please retry.');
+            }
+
+            $expectedVersion = self::integer($synchronized, 'version');
+            if (!$this->repository->consumeLockedEncounterPotionCharge(
+                $encounterId,
+                $chargesRemaining,
+                $expectedVersion,
+            )) {
+                throw new RuntimeException('Combat Potion charges changed concurrently. Please retry.');
+            }
+            $synchronized['potion_charges_remaining'] = $chargesRemaining - 1;
+            $synchronized['version'] = $expectedVersion + 1;
+            $character['current_hp'] = $newCurrentHp;
+
+            $timeline = self::integer($synchronized, 'timeline_elapsed_ms');
+            $command = $this->repository->createResolvedPotionCommand(
+                $encounterId,
+                $potionKey,
+                $requestToken,
+                $timeline,
+                $healingApplied,
+            );
+            if (
+                ($command['actor'] ?? null) !== 'player' ||
+                ($command['action_kind'] ?? null) !== 'potion' ||
+                ($command['definition_key'] ?? null) !== $potionKey ||
+                ($command['request_token'] ?? null) !== $requestToken ||
+                ($command['state'] ?? null) !== 'resolved' ||
+                self::integer($command, 'healing_applied') !== $healingApplied
+            ) {
+                throw new RuntimeException('Potion command persistence returned invalid state.');
+            }
+
+            $this->repository->appendEvent(
+                $encounterId,
+                'potion_used',
+                sprintf(
+                    'You recover %d HP with %s.',
+                    $healingApplied,
+                    (string) $potion['name'],
+                ),
+                null,
+            );
+
+            $state = $this->projector->project($character, $synchronized);
+            $guard->commit();
+
+            return $state;
+        } catch (DomainException $exception) {
+            if ($synchronizationPersisted) {
+                try {
+                    $guard->commit();
+                } catch (Throwable $commitException) {
+                    $guard->rollBack();
+                    throw $commitException;
+                }
+            } else {
+                $guard->rollBack();
+            }
+            throw $exception;
+        } catch (Throwable $exception) {
+            $guard->rollBack();
+            throw $exception;
+        }
+    }
+
     private function persistSynchronization(int $encounterId, array &$encounter, int $expectedVersion): void
     {
         if (!$this->repository->updateLockedEncounterSynchronization($encounterId, $encounter, $expectedVersion)) {

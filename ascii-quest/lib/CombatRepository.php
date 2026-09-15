@@ -419,6 +419,67 @@ final class CombatRepository
         return $stmt->rowCount() === 1;
     }
 
+    public function consumeLockedEncounterPotionCharge(
+        int $encounterId,
+        int $expectedRemaining,
+        int $expectedVersion,
+    ): bool {
+        $this->requireEncounterLock($encounterId);
+        if ($expectedRemaining <= 0) {
+            throw new InvalidArgumentException('Potion charges remaining must be positive.');
+        }
+
+        $stmt = $this->pdo->prepare('UPDATE combat_encounters
+            SET potion_charges_remaining = potion_charges_remaining - 1,
+                version = version + 1
+            WHERE id = :encounter_id
+              AND version = :expected_version
+              AND potion_charges_remaining = :expected_remaining
+              AND potion_charges_remaining > 0');
+        $stmt->execute([
+            'encounter_id' => $encounterId,
+            'expected_version' => $expectedVersion,
+            'expected_remaining' => $expectedRemaining,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    public function createResolvedPotionCommand(
+        int $encounterId,
+        string $definitionKey,
+        string $requestToken,
+        int $timelineMs,
+        int $healingApplied,
+    ): array {
+        if ($timelineMs < 0) {
+            throw new InvalidArgumentException('Potion command timeline cannot be negative.');
+        }
+        if ($healingApplied <= 0) {
+            throw new InvalidArgumentException('Potion command healing must be positive.');
+        }
+
+        return $this->createAction($encounterId, [
+            'actor' => 'player',
+            'action_kind' => 'potion',
+            'definition_key' => $definitionKey,
+            'request_token' => $requestToken,
+            'active_slot' => null,
+            'state' => 'resolved',
+            'started_timeline_ms' => $timelineMs,
+            'resolves_timeline_ms' => $timelineMs,
+            'cooldown_ready_timeline_ms' => null,
+            'completed_timeline_ms' => $timelineMs,
+            'snapshot_weapon_key' => null,
+            'snapshot_damage_type' => null,
+            'snapshot_base_damage' => null,
+            'snapshot_accuracy' => null,
+            'snapshot_critical_chance' => null,
+            'snapshot_critical_damage' => null,
+            'healing_applied' => $healingApplied,
+        ]);
+    }
+
     public function createAction(int $encounterId, array $action): array
     {
         $this->requireEncounterLock($encounterId);

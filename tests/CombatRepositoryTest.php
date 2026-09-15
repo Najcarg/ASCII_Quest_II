@@ -29,6 +29,8 @@ final class FakeCombatPdo extends PDO
     public bool $failActionInsert = false;
     public bool $failActionResolution = false;
     public bool $failCharacterHpUpdate = false;
+    public bool $failPotionChargeUpdate = false;
+    public bool $failEventInsert = false;
 
     private bool $transactionActive = false;
     private ?array $snapshot = null;
@@ -303,6 +305,27 @@ final class FakeCombatPdo extends PDO
             ));
             $legacySet = 'timeline_elapsed_ms = :timeline_elapsed_ms, last_synchronized_at = :last_synchronized_at, version = version + 1';
             $synchronizationSet = 'timeline_elapsed_ms = :timeline_elapsed_ms, last_synchronized_at = :last_synchronized_at, turn_number = :turn_number, turn_started_timeline_ms = :turn_started_timeline_ms, player_actions_remaining = :player_actions_remaining, enemy_actions_remaining = :enemy_actions_remaining, enemy_current_hp = :enemy_current_hp, next_enemy_decision_timeline_ms = :next_enemy_decision_timeline_ms, enemy_ai_initialized_timeline_ms = :enemy_ai_initialized_timeline_ms, version = version + 1';
+            $potionChargeSet = 'potion_charges_remaining = potion_charges_remaining - 1, version = version + 1';
+            if ($setClause === $potionChargeSet) {
+                $id = (int) $params['encounter_id'];
+                $encounter = $this->encounters[$id] ?? null;
+                if (
+                    $this->failPotionChargeUpdate ||
+                    $encounter === null ||
+                    (int) $encounter['version'] !== (int) $params['expected_version'] ||
+                    (int) $encounter['potion_charges_remaining'] !==
+                        (int) $params['expected_remaining'] ||
+                    (int) $encounter['potion_charges_remaining'] <= 0
+                ) {
+                    return ['rows' => [], 'row_count' => 0];
+                }
+
+                $this->encounters[$id]['potion_charges_remaining']--;
+                $this->encounters[$id]['version']++;
+                $this->writeOrder[] = ['kind' => 'potion_charge'];
+
+                return ['rows' => [], 'row_count' => 1];
+            }
             if (!in_array($setClause, [$legacySet, $synchronizationSet], true)) {
                 throw new RuntimeException('Unexpected combat encounter synchronization SET clause.');
             }
@@ -481,6 +504,9 @@ final class FakeCombatPdo extends PDO
         }
 
         if (str_starts_with($normalized, 'insert into combat_events')) {
+            if ($this->failEventInsert) {
+                throw new RuntimeException('Injected combat event insert failure.');
+            }
             $id = $this->nextEventId++;
             $this->events[$id] = array_merge($params, ['id' => $id]);
             $this->lastInsertIdValue = (string) $id;
