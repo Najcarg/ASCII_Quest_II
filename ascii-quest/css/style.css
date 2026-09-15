@@ -1639,6 +1639,277 @@ a:hover {
     border-left-color: #a05245;
     color: #f0c4bc;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Battle HUD
+|--------------------------------------------------------------------------
+*/
+
+.battle-hud {
+    position: relative;
+    min-height: 520px;
+}
+
+.battle-turn-heading,
+.combat-command-state {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #d2b97a;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.battle-turn-heading strong,
+.combat-command-state strong {
+    color: #fff0c8;
+}
+
+.combat-progress {
+    height: 9px;
+    overflow: hidden;
+    border: 1px solid rgba(169, 122, 59, 0.65);
+    background: rgba(0, 0, 0, 0.62);
+}
+
+.combat-progress-fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(to right, #6f1d14, #d09a45);
+    transition: width 90ms linear;
+}
+
+.combat-turn-bar {
+    margin-top: 4px;
+}
+
+.battle-scene {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    min-height: 205px;
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px solid rgba(169, 122, 59, 0.45);
+    background:
+        radial-gradient(circle at center, rgba(111, 29, 20, 0.24), transparent 52%),
+        rgba(0, 0, 0, 0.32);
+}
+
+.battle-combatant {
+    min-width: 0;
+    text-align: center;
+}
+
+.battle-combatant h2 {
+    margin: 4px 0;
+    color: #f1dfb1;
+    font-size: clamp(15px, 1.7vw, 22px);
+}
+
+.battle-combatant p {
+    margin: 4px 0;
+    color: #c9b88e;
+    font-size: 11px;
+}
+
+.battle-side-label {
+    color: #8f8067;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.battle-glyph {
+    min-height: 75px;
+    margin: 7px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f0d58a;
+    font-family: "Courier New", monospace;
+    font-size: clamp(42px, 6vw, 72px);
+    line-height: 1;
+    text-shadow: 0 0 16px rgba(184, 62, 35, 0.45);
+}
+
+.battle-clash {
+    color: #a97a3b;
+    font-family: "Courier New", monospace;
+    font-size: clamp(11px, 1.5vw, 18px);
+    white-space: nowrap;
+}
+
+.combat-enemy-hp-bar {
+    max-width: 150px;
+    margin: 5px auto 0;
+}
+
+.battle-combatant .combat-enemy-action {
+    color: #f0d58a;
+}
+
+.combat-enemy-hp-bar .combat-progress-fill {
+    background: linear-gradient(to right, #771f18, #c04b36);
+}
+
+.combat-reaction-layer {
+    position: absolute;
+    inset: 8px;
+    pointer-events: none;
+}
+
+.combat-reaction-layer[hidden] {
+    display: none;
+}
+
+.combat-block-button {
+    position: absolute;
+    width: auto;
+    min-width: 68px;
+    margin: 0;
+    padding: 9px 12px;
+    transform: translate(-50%, -50%);
+    border: 2px solid #f0d58a;
+    background: #6f1d14;
+    box-shadow: 0 0 16px rgba(240, 213, 138, 0.65);
+    color: #fff0c8;
+    font: 700 12px "Courier New", monospace;
+    pointer-events: auto;
+}
+
+.combat-block-button:disabled {
+    opacity: 0.55;
+}
+
+.combat-message {
+    margin-top: 7px;
+    padding: 6px 8px;
+    border-left: 3px solid #a05245;
+    background: rgba(80, 18, 14, 0.32);
+    color: #f0c4bc;
+    font-size: 11px;
+}
+
+.combat-message[hidden] {
+    display: none;
+}
+
+.combat-command-panel {
+    margin-top: 8px;
+    padding: 8px;
+    border: 1px solid rgba(169, 122, 59, 0.45);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.combat-attack-button {
+    margin: 0;
+    padding: 9px 12px;
+}
+
+.combat-attack-button span,
+.combat-attack-button strong {
+    display: block;
+}
+
+.combat-command-label {
+    color: #b8a98b;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.combat-attack-button strong {
+    margin-top: 2px;
+    color: #fff0c8;
+    font-size: 14px;
+    font-weight: normal;
+}
+
+.combat-command-state {
+    margin-top: 6px;
+}
+
+.combat-cooldown-bar {
+    margin-top: 4px;
+}
+
+.combat-cooldown-bar .combat-progress-fill {
+    background: linear-gradient(to right, #49331e, #d9bf7a);
+}
+
+.combat-effects-panel,
+.combat-loot-row {
+    margin-top: 8px;
+    padding: 6px 8px;
+    border: 1px solid rgba(169, 122, 59, 0.35);
+    background: rgba(0, 0, 0, 0.24);
+}
+
+.combat-effects-panel h3 {
+    margin: 0 0 4px;
+    color: #d2b97a;
+    font-size: 10px;
+    font-weight: normal;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.combat-effects-list,
+.combat-effect {
+    color: #8f8067;
+    font-size: 10px;
+}
+
+.combat-loot-row[hidden] {
+    display: none;
+}
+
+.combat-loot-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    color: #665b49;
+    font-size: 9px;
+    text-transform: uppercase;
+}
+
+.combat-loot-row strong {
+    color: #8f8067;
+    font-weight: normal;
+}
+
+.combat-potion-button {
+    height: 40px;
+    margin: 0;
+    padding: 2px;
+    font-family: inherit;
+}
+
+.combat-potion-button:not(:disabled) {
+    border-style: solid;
+    border-color: #7e8b4a;
+    cursor: pointer;
+}
+
+.combat-potion-button:not(:disabled) strong {
+    color: #d9e8b5;
+}
+
+@media (max-width: 720px) {
+    .battle-hud {
+        min-height: 0;
+    }
+
+    .battle-scene {
+        min-height: 180px;
+    }
+}
 /*
 |--------------------------------------------------------------------------
 | Extra Map Tiles

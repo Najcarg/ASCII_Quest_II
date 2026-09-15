@@ -331,6 +331,7 @@ $explorationHudVersion = (int) filemtime(
     __DIR__ . "/js/exploration_hud.js",
 );
 $gameControlsVersion = (int) filemtime(__DIR__ . "/js/game_controls.js");
+$combatHudVersion = (int) filemtime(__DIR__ . "/js/combat_hud.js");
 
 $mainStatLabels = [
     "strength" => ["short" => "STR", "label" => "Strength"],
@@ -629,20 +630,105 @@ $detailStatGroups = [
 
             <section class="map-area hud-center-panel">
                 <?php if ($isCombatMode): ?>
-                    <section class="combat-placeholder" aria-label="Active combat">
+                    <section
+                        id="battleHud"
+                        class="battle-hud"
+                        aria-label="Active combat"
+                    >
                         <div class="map-title">Battle</div>
-                        <h2><?= e($combatState["enemy"]["name"]) ?></h2>
-                        <pre aria-hidden="true"><?= e($combatState["enemy"]["glyph"]) ?></pre>
-                        <p>
-                            Enemy HP:
-                            <strong><?= e($combatState["enemy"]["current_hp"]) ?>/<?= e($combatState["enemy"]["maximum_hp"]) ?></strong>
-                        </p>
-                        <p>Combat is active and safely stored. Battle controls arrive in the next combat task.</p>
+                        <div class="battle-turn-heading">
+                            <span>Turn</span>
+                            <strong id="combatTurnNumber"><?= e($combatState["turn"]["number"]) ?></strong>
+                        </div>
+                        <div
+                            id="combatTurnBar"
+                            class="combat-progress combat-turn-bar"
+                            role="progressbar"
+                            aria-label="Turn progress"
+                            aria-valuemin="0"
+                            aria-valuenow="0"
+                            aria-valuemax="100"
+                        >
+                            <span id="combatTurnFill" class="combat-progress-fill"></span>
+                        </div>
+
+                        <div class="battle-scene">
+                            <article id="combatChampion" class="battle-combatant battle-champion">
+                                <span class="battle-side-label">Champion</span>
+                                <pre class="battle-glyph" aria-hidden="true"><?= e($character["glyph"]) ?></pre>
+                                <h2><?= e($character["character_name"]) ?></h2>
+                                <p>HP <strong id="combatChampionHp"><?= e($combatState["champion"]["current_hp"]) ?></strong></p>
+                            </article>
+
+                            <div class="battle-clash" aria-hidden="true">&gt;&gt; × &lt;&lt;</div>
+
+                            <article id="combatEnemy" class="battle-combatant battle-enemy">
+                                <span class="battle-side-label">Enemy</span>
+                                <pre id="combatEnemyGlyph" class="battle-glyph" aria-hidden="true"><?= e($combatState["enemy"]["glyph"]) ?></pre>
+                                <h2 id="combatEnemyName"><?= e($combatState["enemy"]["name"]) ?></h2>
+                                <p>HP <strong id="combatEnemyHp"><?= e($combatState["enemy"]["current_hp"]) ?>/<?= e($combatState["enemy"]["maximum_hp"]) ?></strong></p>
+                                <p class="combat-enemy-action">Incoming: <strong id="combatEnemyAction">—</strong></p>
+                                <div
+                                    id="combatEnemyHpBar"
+                                    class="combat-progress combat-enemy-hp-bar"
+                                    role="progressbar"
+                                    aria-label="Enemy Life"
+                                    aria-valuemin="0"
+                                    aria-valuenow="<?= e($combatState["enemy"]["current_hp"]) ?>"
+                                    aria-valuemax="<?= e($combatState["enemy"]["maximum_hp"]) ?>"
+                                >
+                                    <span id="combatEnemyHpFill" class="combat-progress-fill"></span>
+                                </div>
+                            </article>
+
+                            <div id="combatReactionLayer" class="combat-reaction-layer" hidden>
+                                <button id="combatBlockButton" class="combat-block-button" type="button">BLOCK</button>
+                            </div>
+                        </div>
+
+                        <div
+                            id="combatMessage"
+                            class="combat-message"
+                            role="status"
+                            aria-live="polite"
+                            hidden
+                        ></div>
+
+                        <section class="combat-command-panel" aria-label="Combat commands">
+                            <button id="combatAttackButton" class="combat-attack-button" type="button">
+                                <span class="combat-command-label">Equipped Weapon</span>
+                                <strong id="combatAttackName"><?= e($combatState["player_attack"]["name"]) ?></strong>
+                            </button>
+                            <div class="combat-command-state">
+                                <span>Action <strong id="combatActionCount"><?= e($combatState["turn"]["player_actions_remaining"]) ?></strong></span>
+                                <span id="combatAttackStatus">Ready</span>
+                            </div>
+                            <div
+                                id="combatCooldownBar"
+                                class="combat-progress combat-cooldown-bar"
+                                role="progressbar"
+                                aria-label="Weapon recovery"
+                                aria-valuemin="0"
+                                aria-valuenow="0"
+                                aria-valuemax="100"
+                            >
+                                <span id="combatCooldownFill" class="combat-progress-fill"></span>
+                            </div>
+                        </section>
+
+                        <section class="combat-effects-panel" aria-label="Active combat effects">
+                            <h3>Active Effects</h3>
+                            <div id="combatEffects" class="combat-effects-list"></div>
+                        </section>
+
+                        <section id="combatLootRow" class="combat-loot-row" aria-label="Victory and loot">
+                            <strong>Victory / Loot</strong>
+                            <span>Reserved for a later combat task</span>
+                        </section>
+
                         <section class="hud-bottom-panel">
                             <div class="game-log-title">Battle Info</div>
-                            <div class="game-log-messages">
-                                <div class="game-log-entry game-log-warning">The Cave Brute engages.</div>
-                            </div>
+                            <div id="combatBattleEvents" class="game-log-messages"></div>
                         </section>
                     </section>
                 <?php else: ?>
@@ -838,10 +924,17 @@ $detailStatGroups = [
                         <h2>Loadout</h2>
                         <div class="loadout-grid">
                             <?php foreach (["Skill 1", "Skill 2", "Skill 3", "Ultimate", "Potion"] as $slot): ?>
-                                <div class="loadout-slot">
-                                    <span><?= e($slot) ?></span>
-                                    <strong>Empty</strong>
-                                </div>
+                                <?php if ($slot === "Potion" && $isCombatMode): ?>
+                                    <button id="combatPotionButton" class="loadout-slot combat-potion-button" type="button">
+                                        <span>Potion</span>
+                                        <strong id="combatPotionCharges"><?= e($combatState["potion"]["charges_remaining"]) ?> / <?= e($combatState["potion"]["charge_allowance"]) ?></strong>
+                                    </button>
+                                <?php else: ?>
+                                    <div class="loadout-slot">
+                                        <span><?= e($slot) ?></span>
+                                        <strong>Empty</strong>
+                                    </div>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </div>
                     </section>
@@ -942,6 +1035,9 @@ window.ASCII_QUEST_STATE = {
 </script>
 
 <script src="js/exploration_hud.js?v=<?= $explorationHudVersion ?>"></script>
+<?php if ($isCombatMode): ?>
+<script src="js/combat_hud.js?v=<?= $combatHudVersion ?>"></script>
+<?php endif; ?>
 <script src="js/game_controls.js?v=<?= $gameControlsVersion ?>"></script>
 
 </body>

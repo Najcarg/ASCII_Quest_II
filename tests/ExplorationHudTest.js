@@ -22,6 +22,16 @@ const gameMarkup = fs.readFileSync(
     path.join(__dirname, "..", "ascii-quest", "game.php"),
     "utf8",
 );
+const combatHudPath = path.join(
+    __dirname,
+    "..",
+    "ascii-quest",
+    "js",
+    "combat_hud.js",
+);
+const combatHudSource = fs.existsSync(combatHudPath)
+    ? fs.readFileSync(combatHudPath, "utf8")
+    : "";
 const criticalDamageMapping = gameMarkup.match(
     /\["Critical Damage", "combat\.critical_damage".+?, "(number|percentage)"\],/,
 );
@@ -667,8 +677,16 @@ const tests = {
         assert.ok(gameControlsSource.includes("encounterEnemy"));
         assert.equal(gameControlsSource.includes('interactWithCurrentTile("combat"'), false);
         assert.ok(gameMarkup.includes("encounterEnemy"));
-        assert.ok(gameMarkup.includes("combat-placeholder"));
+        assert.ok(gameMarkup.includes('id="battleHud"'));
         assert.equal(controls.requests.length, 0);
+    },
+
+    "combat module is pointer-only while exploration keeps its existing keyboard controls"() {
+        assert.ok(gameControlsSource.includes('gameState.mode !== "exploration"'));
+        assert.ok(gameControlsSource.includes('document.addEventListener("keydown"'));
+        assert.ok(gameMarkup.includes("js/combat_hud.js"));
+        assert.equal(combatHudSource.includes("keydown"), false);
+        assert.equal(combatHudSource.includes("keyup"), false);
     },
 
     "Warp destinations expose current, disabled, and travel actions"() {
