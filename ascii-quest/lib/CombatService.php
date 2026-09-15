@@ -8,6 +8,7 @@ require_once __DIR__ . '/CombatClock.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatEncounterTrigger.php';
 require_once __DIR__ . '/CombatEquipmentProvider.php';
+require_once __DIR__ . '/CombatPlayerActionEvaluator.php';
 require_once __DIR__ . '/CombatStateProjector.php';
 require_once __DIR__ . '/CombatSynchronizer.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
@@ -19,6 +20,7 @@ final class CombatService
     private CombatTurnEngine $turnEngine;
     private CombatEquipmentProvider $equipmentProvider;
     private CombatStateProjector $projector;
+    private CombatPlayerActionEvaluator $playerActionEvaluator;
 
     public function __construct(
         private object $repository,
@@ -27,8 +29,11 @@ final class CombatService
         ?CombatSynchronizer $synchronizer = null,
         ?CombatEquipmentProvider $equipmentProvider = null,
         ?CombatStateProjector $projector = null,
+        ?CombatPlayerActionEvaluator $playerActionEvaluator = null,
     ) {
         $this->turnEngine = new CombatTurnEngine($definitions->turnDurationSeconds());
+        $this->playerActionEvaluator = $playerActionEvaluator ??
+            new CombatPlayerActionEvaluator($this->turnEngine);
         $this->synchronizer = $synchronizer ?? new CombatSynchronizer(
             $clock,
             $this->turnEngine,
@@ -39,7 +44,11 @@ final class CombatService
             new CaveBrutePolicy($this->turnEngine),
         );
         $this->equipmentProvider = $equipmentProvider ?? new PrototypeCombatEquipmentProvider($definitions);
-        $this->projector = $projector ?? new CombatStateProjector($repository, $definitions);
+        $this->projector = $projector ?? new CombatStateProjector(
+            $repository,
+            $definitions,
+            $this->playerActionEvaluator,
+        );
     }
 
     public function movementDecision(
@@ -271,32 +280,25 @@ final class CombatService
                 return $state;
             }
 
-            if (self::integer($character, 'current_hp') <= 0) {
-                throw new DomainException('The Champion cannot begin another action.');
-            }
-            if (self::integer($synchronized, 'enemy_current_hp') <= 0) {
-                throw new DomainException('The enemy cannot receive another action.');
-            }
-
             $definition = $this->definitions->playerAction($actionKey);
             if ($definition === null || ($definition['key'] ?? null) !== $actionKey || ($definition['kind'] ?? null) !== 'weapon') {
                 throw new DomainException('Combat weapon action is unavailable.');
             }
 
             $timeline = self::integer($synchronized, 'timeline_elapsed_ms');
-            foreach ($this->repository->lockActionsForEncounter($encounterId) as $action) {
-                if (($action['actor'] ?? null) !== 'player') {
-                    continue;
-                }
-                if (($action['state'] ?? null) === 'pending') {
-                    throw new DomainException('The Champion is already executing an action.');
-                }
-                if (($action['definition_key'] ?? null) === $actionKey && self::integer($action, 'cooldown_ready_timeline_ms') > $timeline) {
-                    throw new DomainException('That weapon action is cooling down.');
-                }
+            $availability = $this->playerActionEvaluator->evaluate(
+                $synchronized,
+                $character,
+                $this->repository->lockActionsForEncounter($encounterId),
+                $definition,
+            );
+            if (!$availability['available']) {
+                throw new DomainException(self::playerActionDisabledMessage(
+                    $availability['disabled_reason'],
+                ));
             }
 
-            $durationMs = (int) round((float) $definition['duration_seconds'] * 1000);
+            $durationMs = $availability['duration_ms'];
             $cooldownMs = (int) round((float) $definition['cooldown_seconds'] * 1000);
             $turnState = $this->turnEngine->synchronizeTurn(
                 [],
@@ -350,6 +352,19 @@ final class CombatService
             $guard->rollBack();
             throw $exception;
         }
+    }
+
+    private static function playerActionDisabledMessage(?string $reason): string
+    {
+        return match ($reason) {
+            'encounter_inactive' => 'Combat is no longer active.',
+            'actor_unavailable' => 'The Champion cannot begin another action.',
+            'target_unavailable' => 'The enemy cannot receive another action.',
+            'actor_busy' => 'The Champion is already executing an action.',
+            'cooldown' => 'That weapon action is cooling down.',
+            'no_actions', 'insufficient_turn_time' => 'Combat action cannot start.',
+            default => 'Combat action cannot start.',
+        };
     }
 
     public function attemptBlock(

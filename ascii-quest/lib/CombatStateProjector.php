@@ -2,13 +2,22 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
+require_once __DIR__ . '/CombatPlayerActionEvaluator.php';
+require_once __DIR__ . '/CombatTurnEngine.php';
 
 final class CombatStateProjector
 {
+    private CombatPlayerActionEvaluator $playerActionEvaluator;
+
     public function __construct(
         private object $repository,
         private CombatDefinitionRegistry $definitions,
+        ?CombatPlayerActionEvaluator $playerActionEvaluator = null,
     ) {
+        $this->playerActionEvaluator = $playerActionEvaluator ??
+            new CombatPlayerActionEvaluator(
+                new CombatTurnEngine($definitions->turnDurationSeconds()),
+            );
     }
 
     public function project(array $character, array $encounter): array
@@ -72,6 +81,19 @@ final class CombatStateProjector
             ]);
         }
 
+        $playerAttackDefinition = $this->definitions->playerAction(
+            CombatPlayerActionEvaluator::WEAPON_ACTION_KEY,
+        );
+        if ($playerAttackDefinition === null) {
+            throw new RuntimeException('Player weapon action is unavailable.');
+        }
+        $playerAttackState = $this->playerActionEvaluator->evaluate(
+            $encounter,
+            $character,
+            $lockedActions,
+            $playerAttackDefinition,
+        );
+
         return [
             'encounter_id' => $encounterId,
             'status' => (string) $encounter['status'],
@@ -84,6 +106,7 @@ final class CombatStateProjector
             'turn' => [
                 'number' => self::integer($encounter, 'turn_number'),
                 'started_timeline_ms' => self::integer($encounter, 'turn_started_timeline_ms'),
+                'ends_timeline_ms' => $this->playerActionEvaluator->turnEndsTimelineMs($encounter),
                 'player_actions_remaining' => self::integer($encounter, 'player_actions_remaining'),
                 'enemy_actions_remaining' => self::integer($encounter, 'enemy_actions_remaining'),
             ],
@@ -99,6 +122,17 @@ final class CombatStateProjector
                 'current_hp' => self::integer($encounter, 'enemy_current_hp'),
                 'maximum_hp' => self::integer($encounter, 'enemy_max_hp'),
                 'active_action' => $activeEnemyAction,
+            ],
+            'player_attack' => [
+                'key' => (string) $playerAttackDefinition['key'],
+                'name' => (string) $playerAttackDefinition['name'],
+                'duration_ms' => $playerAttackState['duration_ms'],
+                'cooldown_started_timeline_ms' =>
+                    $playerAttackState['cooldown_started_timeline_ms'],
+                'cooldown_ready_timeline_ms' =>
+                    $playerAttackState['cooldown_ready_timeline_ms'],
+                'available' => $playerAttackState['available'],
+                'disabled_reason' => $playerAttackState['disabled_reason'],
             ],
             'player_actions' => $playerActions,
             'active_effects' => [],

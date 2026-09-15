@@ -1048,8 +1048,16 @@ return [
         assertSameValue(61, $state['enemy']['active_action']['id'] ?? null, 'At most the first pending enemy action is projected.');
 
         $publicKeys = task7RecursiveStateKeys($state);
+        assertSameValue(
+            false,
+            in_array(
+                'cooldown_ready_timeline_ms',
+                task7RecursiveStateKeys($state['enemy']),
+                true,
+            ),
+            'Enemy cooldown_ready_timeline_ms is absent recursively.',
+        );
         foreach ([
-            'cooldown_ready_timeline_ms',
             'next_enemy_decision_timeline_ms',
             'enemy_ai_initialized_timeline_ms',
             'future_policy_choice',
