@@ -935,6 +935,55 @@ return [
         assertSameValue(145, $result['character']['current_hp'], 'Synchronization does not heal or recreate Champion HP.');
     },
 
+    'Task 6 stop keeps enemy decision cursor at or after a crossed Turn boundary' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 109761,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_number' => 11,
+            'turn_started_timeline_ms' => 100000,
+            'next_enemy_decision_timeline_ms' => 102000,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'player_actions_remaining' => 1,
+            'enemy_actions_remaining' => 2,
+        ]);
+        $pdo->characters[42]['current_hp'] = 0;
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:01.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $repository = new CombatRepository($pdo);
+        $definitions = CombatDefinitionRegistry::fromDefaultConfig();
+        $turnEngine = new CombatTurnEngine($definitions->turnDurationSeconds());
+        $synchronizer = new CombatSynchronizer(
+            $clock,
+            $turnEngine,
+            $definitions->maxDisconnectedCatchupSeconds(),
+            null,
+            $repository,
+            $definitions,
+            new CaveBrutePolicy($turnEngine),
+            task6ActionResolver(
+                $repository,
+                new Task5MutableEquipmentProvider(),
+                new Task6SequenceRandomSource([]),
+            ),
+        );
+
+        $repository->beginTransaction();
+        $character = $repository->lockOwnedCharacter(7, 42);
+        $encounter = $repository->lockActiveEncounter(42);
+        $result = $synchronizer->synchronize($encounter, $character, 1, 2);
+        $repository->rollBack();
+
+        assertSameValue(110000, $result['encounter']['turn_started_timeline_ms'], 'Synchronization crosses the next Turn boundary.');
+        assertSameValue(
+            110000,
+            $result['encounter']['next_enemy_decision_timeline_ms'],
+            'Stopped enemy decisions cannot leave their cursor behind the advanced Turn start.',
+        );
+    },
+
     'Legacy Cave Brute AI anchors once at 55603 without historical replay' => function (): void {
         $pdo = new FakeCombatPdo();
         $pdo->encounters[91] = task4Encounter([

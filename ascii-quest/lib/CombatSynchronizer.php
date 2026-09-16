@@ -338,6 +338,10 @@ final class CombatSynchronizer
         }
 
         $encounter['timeline_elapsed_ms'] = $targetTimeline;
+        $encounter['next_enemy_decision_timeline_ms'] = max(
+            self::integer($encounter, 'next_enemy_decision_timeline_ms'),
+            self::integer($encounter, 'turn_started_timeline_ms'),
+        );
 
         return ['encounter' => $encounter, 'character' => $lockedCharacter];
     }
