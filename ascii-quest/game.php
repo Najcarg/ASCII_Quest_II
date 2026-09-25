@@ -167,6 +167,19 @@ if ($isCombatMode) {
         }
     }
 }
+$combatSkillOneAvailable = ($combatSkillOne["available"] ?? false) === true;
+$combatSkillOneStatus = match (true) {
+    $combatSkillOne === null => "Unavailable",
+    $combatSkillOneAvailable => "Ready",
+    ($combatSkillOne["disabled_reason"] ?? null) === "encounter_inactive" => "Combat unavailable",
+    ($combatSkillOne["disabled_reason"] ?? null) === "actor_unavailable" => "You cannot act",
+    ($combatSkillOne["disabled_reason"] ?? null) === "target_unavailable" => "Target unavailable",
+    ($combatSkillOne["disabled_reason"] ?? null) === "actor_busy" => "Action in progress",
+    ($combatSkillOne["disabled_reason"] ?? null) === "cooldown" => "Skill recovering",
+    ($combatSkillOne["disabled_reason"] ?? null) === "no_actions" => "No Action available",
+    ($combatSkillOne["disabled_reason"] ?? null) === "insufficient_turn_time" => "Not enough Turn time",
+    default => "Unavailable",
+};
 $tileTypes = [];
 $mapData = [];
 $mapWidth = 0;
@@ -704,24 +717,88 @@ $detailStatGroups = [
                         ></div>
 
                         <section class="combat-command-panel" aria-label="Combat commands">
-                            <button id="combatAttackButton" class="combat-attack-button" type="button">
-                                <span class="combat-command-label">Equipped Weapon</span>
-                                <strong id="combatAttackName"><?= e($combatState["player_attack"]["name"]) ?></strong>
-                            </button>
                             <div class="combat-command-state">
                                 <span>Action <strong id="combatActionCount"><?= e($combatState["turn"]["player_actions_remaining"]) ?></strong></span>
-                                <span id="combatAttackStatus">Ready</span>
                             </div>
-                            <div
-                                id="combatCooldownBar"
-                                class="combat-progress combat-cooldown-bar"
-                                role="progressbar"
-                                aria-label="Weapon recovery"
-                                aria-valuemin="0"
-                                aria-valuenow="0"
-                                aria-valuemax="100"
-                            >
-                                <span id="combatCooldownFill" class="combat-progress-fill"></span>
+                            <div class="combat-command-grid">
+                                <div class="combat-command-slot">
+                                    <button id="combatAttackButton" class="combat-action-button combat-attack-button" type="button">
+                                        <span class="combat-command-label">Weapon Attack</span>
+                                        <strong id="combatAttackName"><?= e($combatState["player_attack"]["name"]) ?></strong>
+                                        <small id="combatAttackStatus">Ready</small>
+                                    </button>
+                                    <div
+                                        id="combatCooldownBar"
+                                        class="combat-progress combat-cooldown-bar"
+                                        role="progressbar"
+                                        aria-label="Weapon recovery"
+                                        aria-valuemin="0"
+                                        aria-valuenow="0"
+                                        aria-valuemax="100"
+                                    >
+                                        <span id="combatCooldownFill" class="combat-progress-fill"></span>
+                                    </div>
+                                </div>
+
+                                <div class="combat-command-slot">
+                                    <button id="combatSkill1Button" class="combat-action-button combat-skill-button" type="button" <?= $combatSkillOneAvailable ? "" : "disabled" ?>>
+                                        <span class="combat-command-label">Skill 1</span>
+                                        <strong id="combatSkill1Name"><?= e($combatSkillOne["name"] ?? "Empty") ?></strong>
+                                        <small id="combatSkill1Status"><?= e($combatSkillOneStatus) ?></small>
+                                    </button>
+                                    <div
+                                        id="combatSkill1CooldownBar"
+                                        class="combat-progress combat-skill-cooldown-bar"
+                                        role="progressbar"
+                                        aria-label="Skill 1 recovery"
+                                        aria-valuemin="0"
+                                        aria-valuemax="100"
+                                        aria-valuenow="<?= $combatSkillOneAvailable ? "100" : "0" ?>"
+                                    >
+                                        <span id="combatSkill1CooldownFill" class="combat-progress-fill"></span>
+                                    </div>
+                                </div>
+
+                                <div class="combat-command-slot">
+                                    <button id="combatSkill2Button" class="combat-action-button combat-skill-button" type="button" disabled>
+                                        <span class="combat-command-label">Skill 2</span>
+                                        <strong id="combatSkill2Name">Empty</strong>
+                                        <small id="combatSkill2Status">Unavailable</small>
+                                    </button>
+                                    <div id="combatSkill2CooldownBar" class="combat-progress combat-skill-cooldown-bar" role="progressbar" aria-label="Skill 2 recovery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                        <span id="combatSkill2CooldownFill" class="combat-progress-fill"></span>
+                                    </div>
+                                </div>
+
+                                <div class="combat-command-slot">
+                                    <button id="combatSkill3Button" class="combat-action-button combat-skill-button" type="button" disabled>
+                                        <span class="combat-command-label">Skill 3</span>
+                                        <strong id="combatSkill3Name">Empty</strong>
+                                        <small id="combatSkill3Status">Unavailable</small>
+                                    </button>
+                                    <div id="combatSkill3CooldownBar" class="combat-progress combat-skill-cooldown-bar" role="progressbar" aria-label="Skill 3 recovery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                        <span id="combatSkill3CooldownFill" class="combat-progress-fill"></span>
+                                    </div>
+                                </div>
+
+                                <div class="combat-command-slot">
+                                    <button id="combatUltimateButton" class="combat-action-button combat-skill-button" type="button" disabled>
+                                        <span class="combat-command-label">Ultimate</span>
+                                        <strong id="combatUltimateName">Empty</strong>
+                                        <small id="combatUltimateStatus">Unavailable</small>
+                                    </button>
+                                    <div id="combatUltimateCooldownBar" class="combat-progress combat-skill-cooldown-bar" role="progressbar" aria-label="Ultimate recovery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                        <span id="combatUltimateCooldownFill" class="combat-progress-fill"></span>
+                                    </div>
+                                </div>
+
+                                <div class="combat-command-slot">
+                                    <button id="combatPotionButton" class="combat-action-button combat-potion-button" type="button">
+                                        <span class="combat-command-label">Potion</span>
+                                        <strong id="combatPotionCharges"><?= e($combatState["potion"]["charges_remaining"]) ?>/<?= e($combatState["potion"]["charge_allowance"]) ?></strong>
+                                        <small>Use Potion</small>
+                                    </button>
+                                </div>
                             </div>
                         </section>
 
@@ -932,31 +1009,25 @@ $detailStatGroups = [
                     <section class="hud-item-section">
                         <h2>Loadout</h2>
                         <div class="loadout-grid">
-                            <?php foreach (["Skill 1", "Skill 2", "Skill 3", "Ultimate", "Potion"] as $slot): ?>
-                                <?php if ($slot === "Skill 1" && $isCombatMode && $combatSkillOne !== null): ?>
-                                    <button id="combatSkill1Button" class="loadout-slot combat-skill-button" type="button">
+                            <?php foreach ([
+                                "skill_1" => "Skill 1",
+                                "skill_2" => "Skill 2",
+                                "skill_3" => "Skill 3",
+                                "ultimate" => "Ultimate",
+                                "potion" => "Potion",
+                            ] as $loadoutSlotKey => $slot): ?>
+                                <?php if ($loadoutSlotKey === "skill_1" && $isCombatMode && $combatSkillOne !== null): ?>
+                                    <div class="loadout-slot" data-loadout-slot="skill_1">
                                         <span>Skill 1</span>
-                                        <strong id="combatSkill1Name"><?= e($combatSkillOne["name"]) ?></strong>
-                                        <small id="combatSkill1Status">Ready</small>
-                                        <span
-                                            id="combatSkill1CooldownBar"
-                                            class="combat-progress combat-skill-cooldown-bar"
-                                            role="progressbar"
-                                            aria-label="Skill recovery"
-                                            aria-valuemin="0"
-                                            aria-valuemax="100"
-                                            aria-valuenow="100"
-                                        >
-                                            <span id="combatSkill1CooldownFill" class="combat-progress-fill"></span>
-                                        </span>
-                                    </button>
-                                <?php elseif ($slot === "Potion" && $isCombatMode): ?>
-                                    <button id="combatPotionButton" class="loadout-slot combat-potion-button" type="button">
+                                        <strong><?= e($combatSkillOne["name"]) ?></strong>
+                                    </div>
+                                <?php elseif ($loadoutSlotKey === "potion" && $isCombatMode): ?>
+                                    <div class="loadout-slot" data-loadout-slot="potion">
                                         <span>Potion</span>
-                                        <strong id="combatPotionCharges"><?= e($combatState["potion"]["charges_remaining"]) ?> / <?= e($combatState["potion"]["charge_allowance"]) ?></strong>
-                                    </button>
+                                        <strong><?= e($combatState["potion"]["key"]) ?></strong>
+                                    </div>
                                 <?php else: ?>
-                                    <div class="loadout-slot">
+                                    <div class="loadout-slot" data-loadout-slot="<?= e($loadoutSlotKey) ?>">
                                         <span><?= e($slot) ?></span>
                                         <strong>Empty</strong>
                                     </div>

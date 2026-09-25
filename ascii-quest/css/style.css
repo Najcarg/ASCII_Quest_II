@@ -1807,9 +1807,40 @@ a:hover {
     background: rgba(0, 0, 0, 0.3);
 }
 
+.combat-command-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.combat-command-slot {
+    min-width: 0;
+}
+
+.combat-action-button {
+    width: 100%;
+    min-height: 62px;
+    margin: 0;
+    padding: 5px;
+    font-family: inherit;
+}
+
+.combat-action-button span,
+.combat-action-button strong,
+.combat-action-button small {
+    display: block;
+}
+
+.combat-action-button small {
+    margin-top: 3px;
+    color: #8f8067;
+    font-size: 8px;
+}
+
 .combat-attack-button {
     margin: 0;
-    padding: 9px 12px;
+    padding: 5px;
 }
 
 .combat-attack-button span,
@@ -1832,7 +1863,7 @@ a:hover {
 }
 
 .combat-command-state {
-    margin-top: 6px;
+    margin-top: 0;
 }
 
 .combat-cooldown-bar {

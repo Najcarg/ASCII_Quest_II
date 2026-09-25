@@ -97,6 +97,8 @@ function deferredResponse() {
 
 function combatDocument() {
     function element() {
+        const listeners = {};
+
         return {
             attributes: {},
             children: [],
@@ -109,6 +111,12 @@ function combatDocument() {
             appendChild(child) {
                 this.children.push(child);
             },
+            addEventListener(type, listener) {
+                listeners[type] = listener;
+            },
+            click() {
+                return listeners.click?.();
+            },
             replaceChildren(...children) {
                 this.children = children;
             },
@@ -119,6 +127,7 @@ function combatDocument() {
     }
 
     const ids = [
+        "battleHud",
         "combatTurnNumber", "combatTurnBar", "combatTurnFill",
         "combatChampionHp", "combatEnemyName", "combatEnemyGlyph",
         "combatEnemyHp", "combatEnemyHpBar", "combatEnemyHpFill", "combatEnemyAction",
@@ -126,6 +135,9 @@ function combatDocument() {
         "combatCooldownBar", "combatCooldownFill", "combatActionCount",
         "combatSkill1Button", "combatSkill1Name", "combatSkill1Status",
         "combatSkill1CooldownBar", "combatSkill1CooldownFill",
+        "combatSkill2Button", "combatSkill2Name", "combatSkill2Status",
+        "combatSkill3Button", "combatSkill3Name", "combatSkill3Status",
+        "combatUltimateButton", "combatUltimateName", "combatUltimateStatus",
         "combatReactionLayer", "combatBlockButton", "combatEffects",
         "combatBattleEvents", "combatLootRow", "combatMessage",
         "combatPotionButton", "combatPotionCharges", "playerHp",
@@ -147,27 +159,45 @@ function combatDocument() {
 }
 
 const tests = {
-    "active combat markup provides the approved center HUD and right Potion control"() {
+    "active combat markup provides all center controls while right Loadout stays display-only"() {
         assert.equal(gameMarkup.includes("combat-placeholder"), false);
+        const commandPanel = gameMarkup.match(
+            /<section class="combat-command-panel"[\s\S]*?<\/section>/,
+        )?.[0] || "";
+        const loadoutPanel = gameMarkup.match(
+            /<h2>Loadout<\/h2>[\s\S]*?<\/section>/,
+        )?.[0] || "";
         for (const id of [
             "battleHud",
             "combatChampion",
             "combatEnemy",
             "combatEnemyHpBar",
             "combatTurnBar",
-            "combatAttackButton",
-            "combatCooldownBar",
             "combatReactionLayer",
             "combatEffects",
             "combatBattleEvents",
             "combatLootRow",
+        ]) {
+            assert.ok(gameMarkup.includes(`id="${id}"`), `${id} markup exists.`);
+        }
+        for (const id of [
+            "combatAttackButton",
+            "combatCooldownBar",
             "combatPotionButton",
             "combatPotionCharges",
             "combatSkill1Button",
             "combatSkill1CooldownBar",
+            "combatSkill2Button",
+            "combatSkill3Button",
+            "combatUltimateButton",
         ]) {
-            assert.ok(gameMarkup.includes(`id="${id}"`), `${id} markup exists.`);
+            assert.ok(commandPanel.includes(`id="${id}"`), `${id} is a center combat control.`);
         }
+        assert.equal(loadoutPanel.includes("<button"), false);
+        assert.equal(loadoutPanel.includes('id="combatSkill1Button"'), false);
+        assert.equal(loadoutPanel.includes('id="combatPotionButton"'), false);
+        assert.ok(loadoutPanel.includes('data-loadout-slot="skill_1"'));
+        assert.ok(loadoutPanel.includes('data-loadout-slot="potion"'));
         assert.ok(gameMarkup.includes("js/combat_hud.js"));
         assert.equal(gameMarkup.includes(">Attack</span>"), false);
         assert.equal(/id="combatLootRow"[^>]*hidden/.test(gameMarkup), false);
@@ -386,6 +416,95 @@ const tests = {
 
         assert.equal(documentRoot.elements.combatSkill1Status.textContent, "Ready");
         assert.equal(documentRoot.elements.combatSkill1Button.disabled, false);
+    },
+
+    "unconfigured center Skill 2 Skill 3 and Ultimate slots render Empty and disabled"() {
+        const documentRoot = combatDocument();
+        const state = combatState();
+
+        hud.renderCombatHud(
+            documentRoot,
+            state,
+            { attack: false, skill: false, block: false, potion: false, refresh: false },
+            Date.parse(state.server_observed_at),
+        );
+
+        for (const prefix of ["combatSkill2", "combatSkill3", "combatUltimate"]) {
+            assert.equal(documentRoot.elements[`${prefix}Name`].textContent, "Empty");
+            assert.equal(documentRoot.elements[`${prefix}Status`].textContent, "Unavailable");
+            assert.equal(documentRoot.elements[`${prefix}Button`].disabled, true);
+        }
+    },
+
+    "server-rendered Skill 1 respects authoritative availability before JavaScript paints"() {
+        const commandPanel = gameMarkup.match(
+            /<section class="combat-command-panel"[\s\S]*?<\/section>/,
+        )?.[0] || "";
+
+        assert.ok(gameMarkup.includes("$combatSkillOneAvailable"));
+        assert.ok(gameMarkup.includes("$combatSkillOneStatus"));
+        assert.match(
+            commandPanel,
+            /id="combatSkill1Button"[^>]*<\?= \$combatSkillOneAvailable \? "" : "disabled" \?>/,
+        );
+        assert.ok(commandPanel.includes('id="combatSkill1Status"><?= e($combatSkillOneStatus) ?>'));
+    },
+
+    "secure request UUID falls back to getRandomValues when randomUUID is unavailable"() {
+        assert.equal(typeof hud.createRequestToken, "function");
+        const cryptoSource = {
+            getRandomValues(bytes) {
+                for (let index = 0; index < bytes.length; index++) {
+                    bytes[index] = index;
+                }
+                return bytes;
+            },
+        };
+
+        assert.equal(
+            hud.createRequestToken(cryptoSource),
+            "00010203-0405-4607-8809-0a0b0c0d0e0f",
+        );
+    },
+
+    async "READY center Weapon Attack click sends intent and reconciles returned state"() {
+        const documentRoot = combatDocument();
+        const initial = combatState({
+            player_attack: {
+                ...combatState().player_attack,
+                available: true,
+                disabled_reason: null,
+            },
+        });
+        const returned = combatState({
+            version: 6,
+            player_attack: {
+                ...initial.player_attack,
+                available: false,
+                disabled_reason: "actor_busy",
+            },
+        });
+        const requests = [];
+        const gameState = { mode: "combat", combat: initial };
+
+        hud.initializeCombatHud(documentRoot, gameState, {
+            csrfToken: "csrf",
+            fetchImplementation: async (url, options) => {
+                requests.push({ url, options });
+                return { ok: true, json: async () => returned };
+            },
+            now: () => Date.parse(initial.server_observed_at),
+            requestTokenFactory: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        });
+
+        await documentRoot.elements.combatAttackButton.click();
+
+        assert.equal(requests.length, 1);
+        assert.equal(requests[0].url, "combat_action.php");
+        assert.equal(JSON.parse(requests[0].options.body).action_key, "prototype_weapon_attack");
+        assert.equal(gameState.combat, returned);
+        assert.equal(documentRoot.elements.combatAttackButton.disabled, true);
+        assert.equal(documentRoot.elements.combatAttackStatus.textContent, "Action in progress");
     },
 
     async "attack intent is pointer-driven idempotent while pending and never fabricates success"() {

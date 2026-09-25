@@ -24,11 +24,7 @@
                 typeof root.fetch === "function" ? root.fetch.bind(root) : null,
             now: () => Date.now(),
             requestTokenFactory() {
-                if (typeof root.crypto?.randomUUID !== "function") {
-                    throw new Error("Secure combat request tokens are unavailable.");
-                }
-
-                return root.crypto.randomUUID();
+                return combatHud.createRequestToken(root.crypto);
             },
             scheduleFrame:
                 typeof root.requestAnimationFrame === "function"
@@ -50,6 +46,34 @@
     "use strict";
 
     const ERROR_FALLBACK = "Unable to reach the combat server. Please try again.";
+    const SKILL_CONTROLS = [
+        { slot: "skill_1", id: "combatSkill1" },
+        { slot: "skill_2", id: "combatSkill2" },
+        { slot: "skill_3", id: "combatSkill3" },
+        { slot: "ultimate", id: "combatUltimate" },
+    ];
+
+    function createRequestToken(cryptoSource) {
+        if (typeof cryptoSource?.randomUUID === "function") {
+            return cryptoSource.randomUUID();
+        }
+        if (typeof cryptoSource?.getRandomValues !== "function") {
+            throw new Error("Secure combat request tokens are unavailable.");
+        }
+
+        const bytes = cryptoSource.getRandomValues(new Uint8Array(16));
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+
+        return [
+            hex.slice(0, 4).join(""),
+            hex.slice(4, 6).join(""),
+            hex.slice(6, 8).join(""),
+            hex.slice(8, 10).join(""),
+            hex.slice(10, 16).join(""),
+        ].join("-");
+    }
 
     function clamp(value, minimum, maximum) {
         return Math.max(minimum, Math.min(maximum, value));
@@ -464,22 +488,25 @@
             attackButton.dataset.disabledReason = view.attack.disabledReason || "";
         }
 
-        const skillOne = view.skills.find((skill) => skill.slot === "skill_1");
-        const skillOneButton = documentRoot.getElementById("combatSkill1Button");
-        if (skillOne) {
-            setText(documentRoot, "combatSkill1Name", skillOne.name);
-            setText(documentRoot, "combatSkill1Status", skillOne.disabledText);
+        for (const control of SKILL_CONTROLS) {
+            const skill = view.skills.find((candidate) => candidate.slot === control.slot);
+            const button = documentRoot.getElementById(control.id + "Button");
+            setText(documentRoot, control.id + "Name", skill?.name || "Empty");
+            setText(
+                documentRoot,
+                control.id + "Status",
+                skill?.disabledText || "Unavailable",
+            );
             setProgress(
                 documentRoot,
-                "combatSkill1CooldownBar",
-                "combatSkill1CooldownFill",
-                skillOne.cooldownProgressPercent,
+                control.id + "CooldownBar",
+                control.id + "CooldownFill",
+                skill?.cooldownProgressPercent ?? 0,
             );
-        }
-        if (skillOneButton) {
-            skillOneButton.disabled =
-                !skillOne || !skillOne.available || pending.skill;
-            skillOneButton.dataset.disabledReason = skillOne?.disabledReason || "";
+            if (button) {
+                button.disabled = !skill || !skill.available || pending.skill;
+                button.dataset.disabledReason = skill?.disabledReason || "";
+            }
         }
 
         const reactionLayer = documentRoot.getElementById("combatReactionLayer");
@@ -559,13 +586,13 @@
             "combatCooldownFill",
             view.attack.cooldownProgressPercent,
         );
-        const skillOne = view.skills.find((skill) => skill.slot === "skill_1");
-        if (skillOne) {
+        for (const control of SKILL_CONTROLS) {
+            const skill = view.skills.find((candidate) => candidate.slot === control.slot);
             setProgress(
                 documentRoot,
-                "combatSkill1CooldownBar",
-                "combatSkill1CooldownFill",
-                skillOne.cooldownProgressPercent,
+                control.id + "CooldownBar",
+                control.id + "CooldownFill",
+                skill?.cooldownProgressPercent ?? 0,
             );
         }
         renderEffects(documentRoot, view.effects);
@@ -617,10 +644,12 @@
             "click",
             () => controller.block(),
         );
-        documentRoot.getElementById("combatSkill1Button")?.addEventListener(
-            "click",
-            () => controller.skill("skill_1"),
-        );
+        for (const control of SKILL_CONTROLS) {
+            documentRoot.getElementById(control.id + "Button")?.addEventListener(
+                "click",
+                () => controller.skill(control.slot),
+            );
+        }
         documentRoot.getElementById("combatPotionButton")?.addEventListener(
             "click",
             () => controller.potion(),
@@ -647,6 +676,7 @@
 
     return {
         buildPresentation,
+        createRequestToken,
         createCombatController,
         disabledReasonText,
         initializeCombatHud,
