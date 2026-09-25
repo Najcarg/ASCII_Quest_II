@@ -712,10 +712,10 @@ return [
                 ])],
                 'prototype_weapon_attack',
             ],
-            'non-weapon key' => [
+            'unavailable action key' => [
                 ['player_actions_remaining' => 1],
                 [],
-                'prototype_flame_strike',
+                'prototype_unavailable_skill',
             ],
         ];
 
@@ -945,7 +945,7 @@ return [
                 fn (): array => $service->startPlayerAction(
                     7,
                     42,
-                    'prototype_flame_strike',
+                    'prototype_unavailable_skill',
                     sprintf('20202020-2020-4020-8020-%012d', $timeline),
                 ),
                 'Configured-disallowed command at timeline ' . $timeline,

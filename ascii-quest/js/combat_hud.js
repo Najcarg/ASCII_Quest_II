@@ -93,6 +93,16 @@
             : messages[reason] || "Combat action unavailable";
     }
 
+    function skillDisabledReasonText(reason) {
+        if (reason === null || reason === undefined) {
+            return "Ready";
+        }
+
+        return reason === "cooldown"
+            ? "Skill recovering"
+            : disabledReasonText(reason);
+    }
+
     function buildPresentation(state, wallNowMs) {
         const timelineMs = interpolatedTimeline(state, wallNowMs);
         const attack = state?.player_attack || {};
@@ -106,6 +116,41 @@
                 ? 100
                 : progressPercent(cooldownStart, cooldownReady, timelineMs);
         const prompt = state?.reaction_prompt;
+        const skills = Array.isArray(state?.player_skills)
+            ? state.player_skills.map(function (skill) {
+                  const cooldownStart = skill?.cooldown_started_timeline_ms;
+                  const cooldownReady = skill?.cooldown_ready_timeline_ms;
+
+                  return {
+                      slot: String(skill?.slot || ""),
+                      key: String(skill?.key || ""),
+                      name: String(skill?.name || ""),
+                      available: skill?.available === true,
+                      disabledReason: skill?.disabled_reason ?? null,
+                      disabledText: skillDisabledReasonText(skill?.disabled_reason),
+                      cooldownProgressPercent:
+                          cooldownStart === null ||
+                          cooldownStart === undefined ||
+                          cooldownReady === null ||
+                          cooldownReady === undefined
+                              ? 100
+                              : progressPercent(cooldownStart, cooldownReady, timelineMs),
+                  };
+              })
+            : [];
+        const effects = Array.isArray(state?.active_effects)
+            ? state.active_effects.map(function (effect) {
+                  return {
+                      key: String(effect?.key || ""),
+                      name: String(effect?.name || ""),
+                      durationProgressPercent: progressPercent(
+                          effect?.started_timeline_ms,
+                          effect?.ends_timeline_ms,
+                          timelineMs,
+                      ),
+                  };
+              })
+            : [];
 
         return {
             status: String(state?.status || ""),
@@ -136,6 +181,7 @@
                 disabledText: disabledReasonText(attack.disabled_reason),
                 cooldownProgressPercent: cooldownProgress,
             },
+            skills,
             block:
                 prompt === null || prompt === undefined
                     ? { visible: false, name: "", xPercent: 0, yPercent: 0 }
@@ -149,9 +195,7 @@
                 chargeAllowance: Number(state?.potion?.charge_allowance) || 0,
                 chargesRemaining: Number(state?.potion?.charges_remaining) || 0,
             },
-            effects: Array.isArray(state?.active_effects)
-                ? state.active_effects
-                : [],
+            effects,
             events: Array.isArray(state?.battle_events)
                 ? state.battle_events
                 : [],
@@ -163,6 +207,7 @@
         let authoritativeState = options.initialState;
         const pendingState = {
             attack: false,
+            skill: false,
             block: false,
             potion: false,
             refresh: false,
@@ -245,6 +290,21 @@
                     request_token: options.requestTokenFactory(),
                 });
             },
+            skill(slot) {
+                const skills = Array.isArray(authoritativeState?.player_skills)
+                    ? authoritativeState.player_skills
+                    : [];
+                const skill = skills.find((candidate) => candidate?.slot === slot);
+                if (skill?.available !== true || pendingState.skill) {
+                    return Promise.resolve(false);
+                }
+
+                return request("skill", "combat_action.php", {
+                    csrf_token: options.csrfToken,
+                    action_key: skill.key,
+                    request_token: options.requestTokenFactory(),
+                });
+            },
             block() {
                 const prompt = authoritativeState?.reaction_prompt;
                 if (!prompt || pendingState.block) {
@@ -316,6 +376,41 @@
         container.replaceChildren(...elements);
     }
 
+    function renderEffects(documentRoot, effects) {
+        const container = documentRoot.getElementById("combatEffects");
+        if (!container) {
+            return;
+        }
+        if (effects.length === 0) {
+            const empty = documentRoot.createElement("div");
+            empty.className = "combat-effect combat-effect-info";
+            empty.textContent = "No active effects";
+            container.replaceChildren(empty);
+            return;
+        }
+
+        const entries = effects.map(function (effect) {
+            const item = documentRoot.createElement("div");
+            item.className = "combat-effect";
+            const name = documentRoot.createElement("span");
+            name.className = "combat-effect-name";
+            name.textContent = effect.name || effect.key;
+            const bar = documentRoot.createElement("span");
+            bar.className = "combat-progress combat-effect-bar";
+            bar.setAttribute("role", "progressbar");
+            bar.setAttribute("aria-valuenow", String(effect.durationProgressPercent));
+            const fill = documentRoot.createElement("span");
+            fill.className = "combat-progress-fill";
+            fill.style.width = String(effect.durationProgressPercent) + "%";
+            bar.appendChild(fill);
+            item.appendChild(name);
+            item.appendChild(bar);
+
+            return item;
+        });
+        container.replaceChildren(...entries);
+    }
+
     function renderCombatHud(documentRoot, state, pending, wallNowMs) {
         const view = buildPresentation(state, wallNowMs);
         setText(documentRoot, "combatTurnNumber", view.turn.number);
@@ -369,6 +464,24 @@
             attackButton.dataset.disabledReason = view.attack.disabledReason || "";
         }
 
+        const skillOne = view.skills.find((skill) => skill.slot === "skill_1");
+        const skillOneButton = documentRoot.getElementById("combatSkill1Button");
+        if (skillOne) {
+            setText(documentRoot, "combatSkill1Name", skillOne.name);
+            setText(documentRoot, "combatSkill1Status", skillOne.disabledText);
+            setProgress(
+                documentRoot,
+                "combatSkill1CooldownBar",
+                "combatSkill1CooldownFill",
+                skillOne.cooldownProgressPercent,
+            );
+        }
+        if (skillOneButton) {
+            skillOneButton.disabled =
+                !skillOne || !skillOne.available || pending.skill;
+            skillOneButton.dataset.disabledReason = skillOne?.disabledReason || "";
+        }
+
         const reactionLayer = documentRoot.getElementById("combatReactionLayer");
         const blockButton = documentRoot.getElementById("combatBlockButton");
         if (reactionLayer) {
@@ -394,13 +507,7 @@
             potionButton.disabled = view.potion.chargesRemaining <= 0 || pending.potion;
         }
 
-        replaceMessages(
-            documentRoot,
-            "combatEffects",
-            view.effects,
-            "No active effects",
-            "combat-effect",
-        );
+        renderEffects(documentRoot, view.effects);
         replaceMessages(
             documentRoot,
             "combatBattleEvents",
@@ -452,6 +559,16 @@
             "combatCooldownFill",
             view.attack.cooldownProgressPercent,
         );
+        const skillOne = view.skills.find((skill) => skill.slot === "skill_1");
+        if (skillOne) {
+            setProgress(
+                documentRoot,
+                "combatSkill1CooldownBar",
+                "combatSkill1CooldownFill",
+                skillOne.cooldownProgressPercent,
+            );
+        }
+        renderEffects(documentRoot, view.effects);
     }
 
     function initializeCombatHud(documentRoot, gameState, options) {
@@ -461,7 +578,13 @@
         }
 
         const now = typeof options.now === "function" ? options.now : () => Date.now();
-        let pending = { attack: false, block: false, potion: false, refresh: false };
+        let pending = {
+            attack: false,
+            skill: false,
+            block: false,
+            potion: false,
+            refresh: false,
+        };
         let controller;
         const paint = function () {
             renderCombatHud(documentRoot, controller.state(), pending, now());
@@ -493,6 +616,10 @@
         documentRoot.getElementById("combatBlockButton")?.addEventListener(
             "click",
             () => controller.block(),
+        );
+        documentRoot.getElementById("combatSkill1Button")?.addEventListener(
+            "click",
+            () => controller.skill("skill_1"),
         );
         documentRoot.getElementById("combatPotionButton")?.addEventListener(
             "click",
@@ -526,5 +653,6 @@
         interpolatedTimeline,
         progressPercent,
         renderCombatHud,
+        skillDisabledReasonText,
     };
 });

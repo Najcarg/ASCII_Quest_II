@@ -32,6 +32,7 @@ final class CombatStateProjector
         $playerActions = [];
         $activeEnemyAction = null;
         $reactionPrompt = null;
+        $activeEffects = [];
         $timelineMs = self::integer($encounter, 'timeline_elapsed_ms');
         foreach ($lockedActions as $action) {
             if (($action['actor'] ?? null) === 'player') {
@@ -40,6 +41,27 @@ final class CombatStateProjector
                     'started_timeline_ms', 'resolves_timeline_ms',
                     'cooldown_ready_timeline_ms', 'completed_timeline_ms',
                 ]);
+            }
+            if (
+                ($action['actor'] ?? null) === 'system' &&
+                ($action['action_kind'] ?? null) === 'skill' &&
+                ($action['state'] ?? null) === 'resolved'
+            ) {
+                $effect = $this->definitions->playerEffect(
+                    (string) ($action['definition_key'] ?? ''),
+                );
+                if ($effect !== null) {
+                    $startedTimelineMs = self::integer($action, 'started_timeline_ms');
+                    $endsTimelineMs = self::integer($action, 'resolves_timeline_ms');
+                    if ($startedTimelineMs <= $timelineMs && $endsTimelineMs > $timelineMs) {
+                        $activeEffects[] = [
+                            'key' => (string) $effect['key'],
+                            'name' => (string) $effect['name'],
+                            'started_timeline_ms' => $startedTimelineMs,
+                            'ends_timeline_ms' => $endsTimelineMs,
+                        ];
+                    }
+                }
             }
             if (
                 $activeEnemyAction !== null ||
@@ -93,6 +115,30 @@ final class CombatStateProjector
             $lockedActions,
             $playerAttackDefinition,
         );
+        $playerSkills = [];
+        foreach ($this->definitions->playerActions() as $definition) {
+            if (($definition['kind'] ?? null) !== 'skill') {
+                continue;
+            }
+            $skillState = $this->playerActionEvaluator->evaluate(
+                $encounter,
+                $character,
+                $lockedActions,
+                $definition,
+            );
+            $playerSkills[] = [
+                'slot' => (string) $definition['slot'],
+                'key' => (string) $definition['key'],
+                'name' => (string) $definition['name'],
+                'duration_ms' => $skillState['duration_ms'],
+                'cooldown_started_timeline_ms' =>
+                    $skillState['cooldown_started_timeline_ms'],
+                'cooldown_ready_timeline_ms' =>
+                    $skillState['cooldown_ready_timeline_ms'],
+                'available' => $skillState['available'],
+                'disabled_reason' => $skillState['disabled_reason'],
+            ];
+        }
 
         return [
             'encounter_id' => $encounterId,
@@ -134,8 +180,9 @@ final class CombatStateProjector
                 'available' => $playerAttackState['available'],
                 'disabled_reason' => $playerAttackState['disabled_reason'],
             ],
+            'player_skills' => $playerSkills,
             'player_actions' => $playerActions,
-            'active_effects' => [],
+            'active_effects' => $activeEffects,
             'reaction_prompt' => $reactionPrompt,
             'potion' => [
                 'key' => (string) ($encounter['potion_key'] ?? ''),

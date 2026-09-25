@@ -1866,6 +1866,26 @@ a:hover {
     font-size: 10px;
 }
 
+.combat-effects-list {
+    display: grid;
+    gap: 4px;
+}
+
+.combat-effect {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(70px, 1fr);
+    align-items: center;
+    gap: 7px;
+}
+
+.combat-effect-bar {
+    height: 6px;
+}
+
+.combat-effect-bar .combat-progress-fill {
+    background: linear-gradient(to right, #8d321d, #d09a45);
+}
+
 .combat-loot-row[hidden] {
     display: none;
 }
@@ -1889,6 +1909,45 @@ a:hover {
     margin: 0;
     padding: 2px;
     font-family: inherit;
+}
+
+.combat-skill-button {
+    min-height: 62px;
+    margin: 0;
+    padding: 3px;
+    font-family: inherit;
+}
+
+.combat-skill-button span,
+.combat-skill-button strong,
+.combat-skill-button small {
+    display: block;
+}
+
+.combat-skill-button:not(:disabled) {
+    border-style: solid;
+    border-color: #b88a3d;
+    cursor: pointer;
+}
+
+.combat-skill-button strong {
+    color: #f0d58a;
+    font-size: 10px;
+    font-weight: normal;
+}
+
+.combat-skill-button small {
+    color: #8f8067;
+    font-size: 8px;
+}
+
+.combat-skill-cooldown-bar {
+    height: 5px;
+    margin-top: 3px;
+}
+
+.combat-skill-cooldown-bar .combat-progress-fill {
+    background: linear-gradient(to right, #49331e, #d9bf7a);
 }
 
 .combat-potion-button:not(:disabled) {

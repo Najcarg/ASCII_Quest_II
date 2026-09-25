@@ -23,13 +23,16 @@ final class CombatPlayerActionEvaluator
         array $definition,
     ): array {
         $definitionKey = (string) ($definition['key'] ?? '');
-        if ($definitionKey === '' || ($definition['kind'] ?? null) !== 'weapon') {
-            throw new InvalidArgumentException('Player weapon action definition is invalid.');
+        if (
+            $definitionKey === '' ||
+            !in_array($definition['kind'] ?? null, ['weapon', 'skill'], true)
+        ) {
+            throw new InvalidArgumentException('Player combat action definition is invalid.');
         }
 
         $durationMs = (int) round((float) ($definition['duration_seconds'] ?? 0) * 1000);
         if ($durationMs <= 0) {
-            throw new InvalidArgumentException('Player weapon action duration is invalid.');
+            throw new InvalidArgumentException('Player combat action duration is invalid.');
         }
 
         $timelineMs = self::integer($encounter, 'timeline_elapsed_ms');

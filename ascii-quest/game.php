@@ -158,6 +158,15 @@ try {
 }
 
 $isCombatMode = $combatState !== [];
+$combatSkillOne = null;
+if ($isCombatMode) {
+    foreach ($combatState["player_skills"] ?? [] as $combatSkill) {
+        if (($combatSkill["slot"] ?? null) === "skill_1") {
+            $combatSkillOne = $combatSkill;
+            break;
+        }
+    }
+}
 $tileTypes = [];
 $mapData = [];
 $mapWidth = 0;
@@ -924,7 +933,24 @@ $detailStatGroups = [
                         <h2>Loadout</h2>
                         <div class="loadout-grid">
                             <?php foreach (["Skill 1", "Skill 2", "Skill 3", "Ultimate", "Potion"] as $slot): ?>
-                                <?php if ($slot === "Potion" && $isCombatMode): ?>
+                                <?php if ($slot === "Skill 1" && $isCombatMode && $combatSkillOne !== null): ?>
+                                    <button id="combatSkill1Button" class="loadout-slot combat-skill-button" type="button">
+                                        <span>Skill 1</span>
+                                        <strong id="combatSkill1Name"><?= e($combatSkillOne["name"]) ?></strong>
+                                        <small id="combatSkill1Status">Ready</small>
+                                        <span
+                                            id="combatSkill1CooldownBar"
+                                            class="combat-progress combat-skill-cooldown-bar"
+                                            role="progressbar"
+                                            aria-label="Skill recovery"
+                                            aria-valuemin="0"
+                                            aria-valuemax="100"
+                                            aria-valuenow="100"
+                                        >
+                                            <span id="combatSkill1CooldownFill" class="combat-progress-fill"></span>
+                                        </span>
+                                    </button>
+                                <?php elseif ($slot === "Potion" && $isCombatMode): ?>
                                     <button id="combatPotionButton" class="loadout-slot combat-potion-button" type="button">
                                         <span>Potion</span>
                                         <strong id="combatPotionCharges"><?= e($combatState["potion"]["charges_remaining"]) ?> / <?= e($combatState["potion"]["charge_allowance"]) ?></strong>

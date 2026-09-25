@@ -29,7 +29,7 @@ final class CombatActionResolver
         self::assertActionBelongsToEncounter($encounter, $lockedAction);
 
         return match ($lockedAction['actor'] ?? null) {
-            'player' => $this->resolvePlayerWeapon(
+            'player' => $this->resolvePlayerAction(
                 $encounter,
                 $lockedCharacter,
                 $lockedAction,
@@ -43,7 +43,7 @@ final class CombatActionResolver
         };
     }
 
-    private function resolvePlayerWeapon(
+    private function resolvePlayerAction(
         array $encounter,
         array $lockedCharacter,
         array $lockedAction,
@@ -51,10 +51,9 @@ final class CombatActionResolver
         $definitionKey = self::requiredString($lockedAction, 'definition_key');
         $definition = $this->definitions->playerAction($definitionKey);
         if (
-            $definitionKey !== 'prototype_weapon_attack' ||
             $definition === null ||
-            ($definition['kind'] ?? null) !== 'weapon' ||
-            ($lockedAction['action_kind'] ?? null) !== 'weapon' ||
+            !in_array($definition['kind'] ?? null, ['weapon', 'skill'], true) ||
+            ($lockedAction['action_kind'] ?? null) !== ($definition['kind'] ?? null) ||
             ($lockedAction['snapshot_damage_type'] ?? null) !== ($definition['damage_type'] ?? null)
         ) {
             throw new DomainException('Unsupported player combat action.');
@@ -80,12 +79,64 @@ final class CombatActionResolver
             throw new RuntimeException('Pending player action resolution could not be persisted.');
         }
 
+        if (($definition['kind'] ?? null) === 'skill') {
+            $this->createResolvedEffect(
+                self::requiredPositiveInteger($encounter, 'id'),
+                self::requiredPositiveInteger($lockedAction, 'id'),
+                $completedTimelineMs,
+                $definition,
+            );
+        }
+
         $encounter['enemy_current_hp'] = max(0, $enemyCurrentHp - $appliedDamage);
 
         return [
             'encounter' => $encounter,
             'character' => $lockedCharacter,
         ];
+    }
+
+    private function createResolvedEffect(
+        int $encounterId,
+        int $parentActionId,
+        int $startedTimelineMs,
+        array $skillDefinition,
+    ): void {
+        $effect = $skillDefinition['effect'] ?? null;
+        if (!is_array($effect)) {
+            throw new DomainException('Player skill effect is unavailable.');
+        }
+        $durationMs = (int) round((float) ($effect['duration_seconds'] ?? 0) * 1000);
+        if ($durationMs <= 0) {
+            throw new DomainException('Player skill effect duration is invalid.');
+        }
+
+        $stored = $this->repository->createAction($encounterId, [
+            'parent_action_id' => $parentActionId,
+            'actor' => 'system',
+            'action_kind' => 'skill',
+            'definition_key' => self::requiredString($effect, 'key'),
+            'request_token' => null,
+            'active_slot' => null,
+            'state' => 'resolved',
+            'started_timeline_ms' => $startedTimelineMs,
+            'resolves_timeline_ms' => $startedTimelineMs + $durationMs,
+            'cooldown_ready_timeline_ms' => null,
+            'completed_timeline_ms' => $startedTimelineMs,
+            'snapshot_weapon_key' => null,
+            'snapshot_damage_type' => null,
+            'snapshot_base_damage' => null,
+            'snapshot_accuracy' => null,
+            'snapshot_critical_chance' => null,
+            'snapshot_critical_damage' => null,
+        ]);
+        if (
+            ($stored['actor'] ?? null) !== 'system' ||
+            ($stored['state'] ?? null) !== 'resolved' ||
+            self::requiredPositiveInteger($stored, 'parent_action_id') !== $parentActionId
+        ) {
+            throw new RuntimeException('Player skill effect persistence returned invalid state.');
+        }
     }
 
     private function resolveEnemyAttackUsingCurrentDefense(

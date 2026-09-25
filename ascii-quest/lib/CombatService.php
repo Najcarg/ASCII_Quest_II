@@ -269,7 +269,7 @@ final class CombatService
             if ($replay !== null) {
                 if (
                     ($replay['actor'] ?? null) !== 'player' ||
-                    ($replay['action_kind'] ?? null) !== 'weapon' ||
+                    !in_array($replay['action_kind'] ?? null, ['weapon', 'skill'], true) ||
                     ($replay['definition_key'] ?? null) !== $actionKey
                 ) {
                     throw new DomainException('Combat request token collides with another action.');
@@ -281,8 +281,12 @@ final class CombatService
             }
 
             $definition = $this->definitions->playerAction($actionKey);
-            if ($definition === null || ($definition['key'] ?? null) !== $actionKey || ($definition['kind'] ?? null) !== 'weapon') {
-                throw new DomainException('Combat weapon action is unavailable.');
+            if (
+                $definition === null ||
+                ($definition['key'] ?? null) !== $actionKey ||
+                !in_array($definition['kind'] ?? null, ['weapon', 'skill'], true)
+            ) {
+                throw new DomainException('Combat player action is unavailable.');
             }
 
             $timeline = self::integer($synchronized, 'timeline_elapsed_ms');
@@ -313,7 +317,9 @@ final class CombatService
                 throw new DomainException('Combat action cannot start.');
             }
 
-            $snapshot = $this->equipmentProvider->offensiveSnapshot($character, $actionKey);
+            $snapshot = ($definition['kind'] ?? null) === 'weapon'
+                ? $this->equipmentProvider->offensiveSnapshot($character, $actionKey)
+                : self::skillOffensiveSnapshot($definition);
             $turnState = $this->turnEngine->consumeAction($turnState, 'player', $timeline, $durationMs);
             $synchronized['player_actions_remaining'] = $turnState['player_actions_remaining'];
             $this->repository->createAction($encounterId, [
@@ -361,10 +367,22 @@ final class CombatService
             'actor_unavailable' => 'The Champion cannot begin another action.',
             'target_unavailable' => 'The enemy cannot receive another action.',
             'actor_busy' => 'The Champion is already executing an action.',
-            'cooldown' => 'That weapon action is cooling down.',
+            'cooldown' => 'That combat action is cooling down.',
             'no_actions', 'insufficient_turn_time' => 'Combat action cannot start.',
             default => 'Combat action cannot start.',
         };
+    }
+
+    private static function skillOffensiveSnapshot(array $definition): array
+    {
+        return [
+            'snapshot_weapon_key' => null,
+            'snapshot_damage_type' => (string) ($definition['damage_type'] ?? ''),
+            'snapshot_base_damage' => self::integer($definition, 'prototype_damage'),
+            'snapshot_accuracy' => null,
+            'snapshot_critical_chance' => null,
+            'snapshot_critical_damage' => null,
+        ];
     }
 
     public function attemptBlock(

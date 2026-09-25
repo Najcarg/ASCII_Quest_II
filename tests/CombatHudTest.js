@@ -52,6 +52,18 @@ function combatState(overrides = {}) {
             available: false,
             disabled_reason: "cooldown",
         },
+        player_skills: [
+            {
+                slot: "skill_1",
+                key: "prototype_flame_strike",
+                name: "Flame Strike",
+                duration_ms: 1500,
+                cooldown_started_timeline_ms: 1000,
+                cooldown_ready_timeline_ms: 6000,
+                available: false,
+                disabled_reason: "cooldown",
+            },
+        ],
         player_actions: [],
         active_effects: [],
         reaction_prompt: null,
@@ -112,6 +124,8 @@ function combatDocument() {
         "combatEnemyHp", "combatEnemyHpBar", "combatEnemyHpFill", "combatEnemyAction",
         "combatAttackButton", "combatAttackName", "combatAttackStatus",
         "combatCooldownBar", "combatCooldownFill", "combatActionCount",
+        "combatSkill1Button", "combatSkill1Name", "combatSkill1Status",
+        "combatSkill1CooldownBar", "combatSkill1CooldownFill",
         "combatReactionLayer", "combatBlockButton", "combatEffects",
         "combatBattleEvents", "combatLootRow", "combatMessage",
         "combatPotionButton", "combatPotionCharges", "playerHp",
@@ -149,6 +163,8 @@ const tests = {
             "combatLootRow",
             "combatPotionButton",
             "combatPotionCharges",
+            "combatSkill1Button",
+            "combatSkill1CooldownBar",
         ]) {
             assert.ok(gameMarkup.includes(`id="${id}"`), `${id} markup exists.`);
         }
@@ -228,6 +244,37 @@ const tests = {
         assert.equal(reconciled.attack.cooldownProgressPercent, 100);
     },
 
+    "skill cooldown and active effect duration interpolate as separate authoritative windows"() {
+        const initial = combatState({
+            active_effects: [
+                {
+                    key: "prototype_burning",
+                    name: "Burning",
+                    started_timeline_ms: 2500,
+                    ends_timeline_ms: 6500,
+                },
+            ],
+        });
+        const observedAt = Date.parse(initial.server_observed_at);
+        const initialView = hud.buildPresentation(initial, observedAt);
+        const laterView = hud.buildPresentation(initial, observedAt + 1000);
+
+        assert.equal(initialView.skills.length, 1);
+        assert.equal(initialView.skills[0].slot, "skill_1");
+        assert.equal(initialView.skills[0].name, "Flame Strike");
+        assert.equal(initialView.skills[0].disabledText, "Skill recovering");
+        assert.equal(initialView.skills[0].cooldownProgressPercent, 30);
+        assert.equal(initialView.effects.length, 1);
+        assert.equal(initialView.effects[0].name, "Burning");
+        assert.equal(initialView.effects[0].durationProgressPercent, 0);
+        assert.equal(laterView.skills[0].cooldownProgressPercent, 50);
+        assert.equal(laterView.effects[0].durationProgressPercent, 25);
+        assert.notEqual(
+            initialView.skills[0].cooldownProgressPercent,
+            initialView.effects[0].durationProgressPercent,
+        );
+    },
+
     "Battle HUD rendering applies authoritative combat presentation to its DOM hooks"() {
         assert.equal(typeof hud.renderCombatHud, "function");
         const documentRoot = combatDocument();
@@ -284,6 +331,63 @@ const tests = {
         );
     },
 
+    "configured Skill 1 renders its server state and a separate cooldown bar"() {
+        const documentRoot = combatDocument();
+        const state = combatState({
+            active_effects: [
+                {
+                    key: "prototype_burning",
+                    name: "Burning",
+                    started_timeline_ms: 2500,
+                    ends_timeline_ms: 6500,
+                },
+            ],
+        });
+
+        hud.renderCombatHud(
+            documentRoot,
+            state,
+            { attack: false, skill: false, block: false, potion: false, refresh: false },
+            Date.parse(state.server_observed_at),
+        );
+
+        assert.equal(documentRoot.elements.combatSkill1Name.textContent, "Flame Strike");
+        assert.equal(documentRoot.elements.combatSkill1Status.textContent, "Skill recovering");
+        assert.equal(documentRoot.elements.combatSkill1Button.disabled, true);
+        assert.equal(documentRoot.elements.combatSkill1CooldownFill.style.width, "30%");
+        assert.equal(documentRoot.elements.combatEffects.children.length, 1);
+        assert.equal(documentRoot.elements.combatEffects.children[0].children[0].textContent, "Burning");
+        assert.equal(
+            documentRoot.elements.combatEffects.children[0].children[1].children[0].style.width,
+            "0%",
+        );
+    },
+
+    "available Skill 1 renders Ready and remains enabled"() {
+        const documentRoot = combatDocument();
+        const state = combatState({
+            player_skills: [
+                {
+                    ...combatState().player_skills[0],
+                    cooldown_started_timeline_ms: null,
+                    cooldown_ready_timeline_ms: null,
+                    available: true,
+                    disabled_reason: null,
+                },
+            ],
+        });
+
+        hud.renderCombatHud(
+            documentRoot,
+            state,
+            { attack: false, skill: false, block: false, potion: false, refresh: false },
+            Date.parse(state.server_observed_at),
+        );
+
+        assert.equal(documentRoot.elements.combatSkill1Status.textContent, "Ready");
+        assert.equal(documentRoot.elements.combatSkill1Button.disabled, false);
+    },
+
     async "attack intent is pointer-driven idempotent while pending and never fabricates success"() {
         assert.equal(typeof hud.createCombatController, "function");
         const pendingResponse = deferredResponse();
@@ -332,6 +436,52 @@ const tests = {
         assert.equal(await duplicate, false);
         assert.equal(controller.state(), returned);
         assert.equal(states.at(-1), returned);
+    },
+
+    async "skill intent uses the existing action endpoint and suppresses duplicate clicks"() {
+        const pendingResponse = deferredResponse();
+        const requests = [];
+        const initial = combatState({
+            player_skills: [{
+                ...combatState().player_skills[0],
+                available: true,
+                disabled_reason: null,
+            }],
+        });
+        const returned = combatState({
+            version: 6,
+            player_skills: [{
+                ...initial.player_skills[0],
+                available: false,
+                disabled_reason: "actor_busy",
+            }],
+        });
+        const controller = hud.createCombatController({
+            csrfToken: "csrf",
+            fetchImplementation(url, options) {
+                requests.push({ url, options });
+                return pendingResponse.pending;
+            },
+            initialState: initial,
+            requestTokenFactory: () => "abababab-abab-4bab-8bab-abababababab",
+        });
+
+        const first = controller.skill("skill_1");
+        const duplicate = controller.skill("skill_1");
+
+        assert.equal(requests.length, 1);
+        assert.equal(requests[0].url, "combat_action.php");
+        assert.deepEqual(JSON.parse(requests[0].options.body), {
+            csrf_token: "csrf",
+            action_key: "prototype_flame_strike",
+            request_token: "abababab-abab-4bab-8bab-abababababab",
+        });
+        assert.equal(controller.state(), initial, "Skill does not fabricate a local result.");
+
+        pendingResponse.release({ ok: true, json: async () => returned });
+        assert.equal(await first, true);
+        assert.equal(await duplicate, false);
+        assert.equal(controller.state(), returned);
     },
 
     async "Block popup follows authoritative prompt and suppresses duplicate submissions"() {
@@ -509,7 +659,11 @@ const tests = {
         });
         const view = hud.buildPresentation(state, Date.parse(state.server_observed_at));
 
-        assert.deepEqual(view.effects, state.active_effects);
+        assert.deepEqual(view.effects, [{
+            key: "test_effect",
+            name: "Test Effect",
+            durationProgressPercent: 100,
+        }]);
         assert.deepEqual(view.events, state.battle_events);
         assert.equal(view.lootPhase, null);
     },

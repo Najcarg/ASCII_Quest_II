@@ -16,6 +16,9 @@ final class CombatDefinitionRegistry
     private array $playerActions;
 
     /** @var array<string, array<string, mixed>> */
+    private array $playerEffects;
+
+    /** @var array<string, array<string, mixed>> */
     private array $potions;
 
     /** @var array<string, array<string, mixed>> */
@@ -40,6 +43,7 @@ final class CombatDefinitionRegistry
         $this->playerActions = self::validatePlayerActions(
             self::requiredArray($prototypeBalance, 'player_actions'),
         );
+        $this->playerEffects = self::playerEffects($this->playerActions);
         $this->potions = self::validatePotions(
             self::requiredArray($prototypeBalance, 'potions'),
         );
@@ -80,6 +84,16 @@ final class CombatDefinitionRegistry
         return $this->playerActions[$key] ?? null;
     }
 
+    public function playerActions(): array
+    {
+        return array_values($this->playerActions);
+    }
+
+    public function playerEffect(string $key): ?array
+    {
+        return $this->playerEffects[$key] ?? null;
+    }
+
     public function potion(string $key): ?array
     {
         return $this->potions[$key] ?? null;
@@ -110,6 +124,9 @@ final class CombatDefinitionRegistry
             self::assertDefinitionIdentity($key, $action, 'player action');
             self::assertNonEmptyString($action, 'name', 'Player action');
             self::assertNonEmptyString($action, 'kind', 'Player action');
+            if (!in_array($action['kind'], ['weapon', 'skill'], true)) {
+                throw new RuntimeException('Player action kind is invalid.');
+            }
             self::assertNonEmptyString($action, 'damage_type', 'Player action');
             self::positiveNumber($action, 'duration_seconds');
             self::positiveNumber($action, 'cooldown_seconds');
@@ -121,11 +138,36 @@ final class CombatDefinitionRegistry
                     $effect['key'] ?? null,
                     'Player action effect',
                 );
+                self::assertNonEmptyString($effect, 'name', 'Player action effect');
                 self::positiveNumber($effect, 'duration_seconds');
+            }
+            if (($action['kind'] ?? null) === 'skill') {
+                self::assertCanonicalIdentifier($action['slot'] ?? null, 'Player skill slot');
+                if (!array_key_exists('effect', $action)) {
+                    throw new RuntimeException('Player skill effect is required.');
+                }
             }
         }
 
         return $actions;
+    }
+
+    private static function playerEffects(array $actions): array
+    {
+        $effects = [];
+        foreach ($actions as $action) {
+            $effect = $action['effect'] ?? null;
+            if (!is_array($effect)) {
+                continue;
+            }
+            $key = (string) $effect['key'];
+            if (isset($effects[$key])) {
+                throw new RuntimeException('Player effect identifiers must be unique.');
+            }
+            $effects[$key] = $effect;
+        }
+
+        return $effects;
     }
 
     private static function validatePotions(array $potions): array
