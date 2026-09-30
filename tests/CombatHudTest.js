@@ -149,6 +149,8 @@ function combatDocument() {
         "combatBattleEvents", "combatLootRow", "combatMessage",
         "combatPotionButton", "combatPotionCharges", "playerHp",
         "playerHpBar", "playerHpFill",
+        "combatActivePanel", "combatVictoryPanel", "combatVictoryGold",
+        "combatVictoryExperience", "combatPhysicalDrops", "combatCloseButton",
     ];
     const elements = Object.fromEntries(ids.map((id) => [id, element()]));
     elements.playerHpBar.attributes["aria-valuemax"] = "200";
@@ -896,6 +898,101 @@ const tests = {
         );
         assert.equal("innerHTML" in documentRoot.elements.combatBattleEvents.children[4], false);
         assert.equal(view.lootPhase, null);
+    },
+
+    "victory loot freezes combat timing and renders rewards apart from physical drops"() {
+        const documentRoot = combatDocument();
+        const state = combatState({
+            status: "victory_loot",
+            enemy: { ...combatState().enemy, current_hp: 0, active_action: null },
+            player_attack: {
+                ...combatState().player_attack,
+                available: false,
+                disabled_reason: "encounter_inactive",
+            },
+            reaction_prompt: null,
+            loot_phase: {
+                rewards: { gold: 25, experience: 40 },
+                physical_drops: [],
+            },
+        });
+        const observedAt = Date.parse(state.server_observed_at);
+        const view = hud.renderCombatHud(
+            documentRoot,
+            state,
+            { attack: false, skill: false, block: false, potion: false, close: false, refresh: false },
+            observedAt + 5000,
+        );
+
+        assert.equal(view.timelineMs, 2500, "terminal combat timeline does not interpolate");
+        assert.equal(view.turn.progressPercent, 25, "Turn Bar remains frozen at victory");
+        assert.equal(documentRoot.elements.combatActivePanel.hidden, true);
+        assert.equal(documentRoot.elements.combatVictoryPanel.hidden, false);
+        assert.equal(documentRoot.elements.combatVictoryGold.textContent, "25");
+        assert.equal(documentRoot.elements.combatVictoryExperience.textContent, "40");
+        assert.equal(documentRoot.elements.combatPhysicalDrops.textContent, "No physical item drops.");
+        assert.equal(documentRoot.elements.combatAttackButton.disabled, true);
+        assert.equal(documentRoot.elements.combatPotionButton.disabled, true);
+        assert.equal(documentRoot.elements.combatReactionLayer.hidden, true);
+        assert.equal(documentRoot.elements.combatBlockButton.disabled, true);
+        assert.equal(documentRoot.elements.combatCloseButton.disabled, false);
+        assert.deepEqual(view.lootPhase.physicalDrops, []);
+    },
+
+    async "victory close sends only CSRF and request token then returns to exploration"() {
+        const requests = [];
+        let closed = 0;
+        const state = combatState({
+            status: "victory_loot",
+            player_attack: { ...combatState().player_attack, available: true },
+            loot_phase: {
+                rewards: { gold: 25, experience: 40 },
+                physical_drops: [],
+            },
+        });
+        const controller = hud.createCombatController({
+            csrfToken: "csrf",
+            fetchImplementation: async (url, options) => {
+                requests.push([url, options]);
+                return { ok: true, json: async () => ({ closed: true }) };
+            },
+            initialState: state,
+            requestTokenFactory: () => "12121212-1212-4212-8212-121212121212",
+            onClosed() {
+                closed++;
+            },
+        });
+
+        assert.equal(await controller.attack(), false, "stale attack availability cannot bypass victory");
+        assert.equal(await controller.skill("skill_1"), false, "skills are inert during victory");
+        assert.equal(await controller.block(), false, "Block is inert during victory");
+        assert.equal(await controller.potion(), false, "Potion is inert during victory");
+        assert.equal(await controller.close(), true);
+        assert.equal(requests.length, 1);
+        assert.equal(requests[0][0], "combat_close.php");
+        assert.deepEqual(JSON.parse(requests[0][1].body), {
+            csrf_token: "csrf",
+            request_token: "12121212-1212-4212-8212-121212121212",
+        });
+        assert.equal(closed, 1);
+    },
+
+    "victory markup keeps explicit close and Battle Info tabs without draggable rewards"() {
+        for (const id of [
+            "combatActivePanel",
+            "combatVictoryPanel",
+            "combatVictoryGold",
+            "combatVictoryExperience",
+            "combatPhysicalDrops",
+            "combatCloseButton",
+        ]) {
+            assert.ok(gameMarkup.includes(`id="${id}"`), `${id} markup exists.`);
+        }
+        assert.match(gameMarkup, /id="combatCloseButton"[^>]*type="button"/);
+        assert.equal(/(?:Gold|EXP)[\s\S]{0,120}draggable/.test(gameMarkup), false);
+        assert.ok(gameMarkup.includes(">Battle Info</button>"));
+        assert.ok(gameMarkup.includes(">Server Info</button>"));
+        assert.ok(gameMarkup.includes(">Chat</button>"));
     },
 
     async "switching combat tabs leaves polling and timer reaction rendering active"() {

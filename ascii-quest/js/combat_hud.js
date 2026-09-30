@@ -34,6 +34,9 @@
                 typeof root.setInterval === "function"
                     ? root.setInterval.bind(root)
                     : null,
+            onClosed() {
+                root.location.reload();
+            },
         });
     }
 
@@ -98,6 +101,9 @@
 
     function interpolatedTimeline(state, wallNowMs) {
         const authoritativeTimeline = Number(state?.timeline?.elapsed_ms) || 0;
+        if (state?.status !== "active") {
+            return authoritativeTimeline;
+        }
         const observedAtMs = Date.parse(state?.server_observed_at || "");
         const nowMs = Number(wallNowMs);
         if (!Number.isFinite(observedAtMs) || !Number.isFinite(nowMs)) {
@@ -182,6 +188,8 @@
               })
             : [];
 
+        const lootPhase = state?.loot_phase;
+
         return {
             status: String(state?.status || ""),
             timelineMs,
@@ -229,7 +237,18 @@
             events: Array.isArray(state?.battle_events)
                 ? state.battle_events
                 : [],
-            lootPhase: state?.loot_phase ?? null,
+            lootPhase:
+                lootPhase && typeof lootPhase === "object"
+                    ? {
+                          rewards: {
+                              gold: Number(lootPhase?.rewards?.gold) || 0,
+                              experience: Number(lootPhase?.rewards?.experience) || 0,
+                          },
+                          physicalDrops: Array.isArray(lootPhase?.physical_drops)
+                              ? lootPhase.physical_drops
+                              : [],
+                      }
+                    : null,
         };
     }
 
@@ -240,6 +259,7 @@
             skill: false,
             block: false,
             potion: false,
+            close: false,
             refresh: false,
         };
         const now = typeof options.now === "function" ? options.now : () => Date.now();
@@ -281,6 +301,13 @@
                     return false;
                 }
 
+                if (kind === "close" && result?.closed === true) {
+                    if (typeof options.onClosed === "function") {
+                        options.onClosed();
+                    }
+                    return true;
+                }
+
                 const currentVersion = Number(authoritativeState?.version);
                 const resultVersion = Number(result?.version);
                 const isStale =
@@ -310,7 +337,11 @@
             presentation: () => buildPresentation(authoritativeState, now()),
             attack() {
                 const attack = authoritativeState?.player_attack;
-                if (attack?.available !== true || pendingState.attack) {
+                if (
+                    authoritativeState?.status !== "active" ||
+                    attack?.available !== true ||
+                    pendingState.attack
+                ) {
                     return Promise.resolve(false);
                 }
 
@@ -325,7 +356,11 @@
                     ? authoritativeState.player_skills
                     : [];
                 const skill = skills.find((candidate) => candidate?.slot === slot);
-                if (skill?.available !== true || pendingState.skill) {
+                if (
+                    authoritativeState?.status !== "active" ||
+                    skill?.available !== true ||
+                    pendingState.skill
+                ) {
                     return Promise.resolve(false);
                 }
 
@@ -337,7 +372,7 @@
             },
             block() {
                 const prompt = authoritativeState?.reaction_prompt;
-                if (!prompt || pendingState.block) {
+                if (authoritativeState?.status !== "active" || !prompt || pendingState.block) {
                     return Promise.resolve(false);
                 }
 
@@ -350,6 +385,7 @@
             },
             potion() {
                 if (
+                    authoritativeState?.status !== "active" ||
                     Number(authoritativeState?.potion?.charges_remaining) <= 0 ||
                     pendingState.potion
                 ) {
@@ -357,6 +393,20 @@
                 }
 
                 return request("potion", "combat_potion.php", {
+                    csrf_token: options.csrfToken,
+                    request_token: options.requestTokenFactory(),
+                });
+            },
+            close() {
+                if (
+                    authoritativeState?.status !== "victory_loot" ||
+                    !authoritativeState?.loot_phase ||
+                    pendingState.close
+                ) {
+                    return Promise.resolve(false);
+                }
+
+                return request("close", "combat_close.php", {
                     csrf_token: options.csrfToken,
                     request_token: options.requestTokenFactory(),
                 });
@@ -446,6 +496,15 @@
 
     function renderCombatHud(documentRoot, state, pending, wallNowMs) {
         const view = buildPresentation(state, wallNowMs);
+        const isVictoryLoot = view.status === "victory_loot" && view.lootPhase !== null;
+        const activePanel = documentRoot.getElementById("combatActivePanel");
+        const victoryPanel = documentRoot.getElementById("combatVictoryPanel");
+        if (activePanel) {
+            activePanel.hidden = isVictoryLoot;
+        }
+        if (victoryPanel) {
+            victoryPanel.hidden = !isVictoryLoot;
+        }
         setText(documentRoot, "combatTurnNumber", view.turn.number);
         setText(documentRoot, "combatActionCount", view.turn.actionsRemaining);
         setProgress(
@@ -493,7 +552,7 @@
         );
         const attackButton = documentRoot.getElementById("combatAttackButton");
         if (attackButton) {
-            attackButton.disabled = !view.attack.available || pending.attack;
+            attackButton.disabled = isVictoryLoot || !view.attack.available || pending.attack;
             attackButton.dataset.disabledReason = view.attack.disabledReason || "";
         }
 
@@ -513,7 +572,7 @@
                 skill?.cooldownProgressPercent ?? 0,
             );
             if (button) {
-                button.disabled = !skill || !skill.available || pending.skill;
+                button.disabled = isVictoryLoot || !skill || !skill.available || pending.skill;
                 button.dataset.disabledReason = skill?.disabledReason || "";
             }
         }
@@ -521,10 +580,10 @@
         const reactionLayer = documentRoot.getElementById("combatReactionLayer");
         const blockButton = documentRoot.getElementById("combatBlockButton");
         if (reactionLayer) {
-            reactionLayer.hidden = !view.block.visible;
+            reactionLayer.hidden = isVictoryLoot || !view.block.visible;
         }
         if (blockButton) {
-            blockButton.disabled = !view.block.visible || pending.block;
+            blockButton.disabled = isVictoryLoot || !view.block.visible || pending.block;
             blockButton.style.left = String(view.block.xPercent) + "%";
             blockButton.style.top = String(view.block.yPercent) + "%";
             blockButton.setAttribute(
@@ -540,7 +599,21 @@
         );
         const potionButton = documentRoot.getElementById("combatPotionButton");
         if (potionButton) {
-            potionButton.disabled = view.potion.chargesRemaining <= 0 || pending.potion;
+            potionButton.disabled = isVictoryLoot || view.potion.chargesRemaining <= 0 || pending.potion;
+        }
+
+        setText(documentRoot, "combatVictoryGold", view.lootPhase?.rewards?.gold ?? 0);
+        setText(documentRoot, "combatVictoryExperience", view.lootPhase?.rewards?.experience ?? 0);
+        setText(
+            documentRoot,
+            "combatPhysicalDrops",
+            view.lootPhase?.physicalDrops?.length > 0
+                ? "Physical item drops are available."
+                : "No physical item drops.",
+        );
+        const closeButton = documentRoot.getElementById("combatCloseButton");
+        if (closeButton) {
+            closeButton.disabled = !isVictoryLoot || pending.close;
         }
 
         renderEffects(documentRoot, view.effects);
@@ -619,6 +692,7 @@
             skill: false,
             block: false,
             potion: false,
+            close: false,
             refresh: false,
         };
         let controller;
@@ -643,6 +717,7 @@
             onError(message) {
                 showMessage(documentRoot, message, "error");
             },
+            onClosed: options.onClosed,
         });
 
         documentRoot.getElementById("combatAttackButton")?.addEventListener(
@@ -662,6 +737,10 @@
         documentRoot.getElementById("combatPotionButton")?.addEventListener(
             "click",
             () => controller.potion(),
+        );
+        documentRoot.getElementById("combatCloseButton")?.addEventListener(
+            "click",
+            () => controller.close(),
         );
         paint();
 

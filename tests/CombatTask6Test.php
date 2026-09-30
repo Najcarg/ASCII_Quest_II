@@ -1168,7 +1168,7 @@ return [
         assertSameValue(array_values($connectedPdo->actions), array_values($reconnectPdo->actions), 'Equivalent actions and results.');
     },
 
-    'Task 6 caps long disconnect once and invocation-local stop still advances other work' => function (): void {
+    'Task 12 terminal victory supersedes Task 6 catch-up work at stored zero enemy HP' => function (): void {
         $pdo = new FakeCombatPdo();
         $pdo->encounters[91] = task4Encounter([
             'timeline_elapsed_ms' => 0,
@@ -1202,17 +1202,17 @@ return [
 
         $service->state(7, 42);
 
-        assertSameValue(5000, $pdo->encounters[91]['timeline_elapsed_ms'], 'Thirty-second gap applies only five seconds.');
+        assertSameValue(0, $pdo->encounters[91]['timeline_elapsed_ms'], 'Terminal victory stops at the stored lethal cursor.');
         assertSameValue('2026-09-01 12:00:30.000000', $pdo->encounters[91]['last_synchronized_at'], 'Long gap reanchors to actual server time.');
-        assertSameValue('resolved', $pdo->actions[70]['state'], 'Already-started action resolves despite local AI stop.');
-        assertSameValue('pending', $pdo->actions[71]['state'], 'Action beyond capped target is not processed.');
-        assertSameValue(129, $pdo->characters[42]['current_hp'], 'Only the due Smash damages Champion.');
-        assertSameValue(2, count($pdo->actions), 'Stop creates no new enemy action.');
-        assertSameValue('active', $pdo->encounters[91]['status'], 'Task 6 invents no terminal lifecycle state.');
+        assertSameValue('cancelled', $pdo->actions[70]['state'], 'Already-started offense is cancelled before damage.');
+        assertSameValue('cancelled', $pdo->actions[71]['state'], 'Later offense is also cancelled.');
+        assertSameValue(145, $pdo->characters[42]['current_hp'], 'No enemy damage lands after terminal victory.');
+        assertSameValue(2, count($pdo->actions), 'Victory creates no new enemy action.');
+        assertSameValue('victory_loot', $pdo->encounters[91]['status'], 'Task 12 persists terminal victory.');
 
         $service->state(7, 42);
-        assertSameValue(5000, $pdo->encounters[91]['timeline_elapsed_ms'], 'Immediate request replays no discarded gap.');
-        assertSameValue(2, count($pdo->actions), 'Later stop reevaluation remains safe.');
+        assertSameValue(0, $pdo->encounters[91]['timeline_elapsed_ms'], 'Immediate request cannot advance terminal gameplay.');
+        assertSameValue(2, count($pdo->actions), 'Repeated synchronization remains terminal.');
     },
 
     'Player command rejects after synchronization reduces Cave Brute HP to zero' => function (): void {
@@ -1259,7 +1259,7 @@ return [
         assertSameValue('resolved', $pdo->actions[50]['state'], 'The due action resolves exactly once.');
         assertSameValue(1, count($pdo->actions), 'No new player action is inserted.');
         assertSameValue(1, $pdo->encounters[91]['player_actions_remaining'], 'Rejected command consumes no Action.');
-        assertSameValue('active', $pdo->encounters[91]['status'], 'Task 7 creates no victory state.');
+        assertSameValue('victory_loot', $pdo->encounters[91]['status'], 'Task 12 persists victory before rejecting the command.');
         assertSameValue('alive', $pdo->characters[42]['life_state'], 'Task 7 creates no death lifecycle state.');
     },
 

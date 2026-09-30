@@ -282,10 +282,25 @@ final class CombatSynchronizer
         $enemyDecisionSuppressed = false;
         while (true) {
             $encounter['timeline_elapsed_ms'] = $cursorMs;
-            foreach ($this->duePendingActionsAt(
+            $dueActions = $this->duePendingActionsAt(
                 self::positiveInteger($encounter, 'id'),
                 $cursorMs,
-            ) as $action) {
+            );
+            if (
+                ($encounter['status'] ?? null) === 'active' &&
+                self::integer($encounter, 'enemy_current_hp') === 0
+            ) {
+                [$encounter, $lockedCharacter] = $this->transitionToVictory(
+                    $encounter,
+                    $lockedCharacter,
+                    $cursorMs,
+                    $serverNow,
+                );
+            }
+            foreach ($dueActions as $action) {
+                if (($encounter['status'] ?? null) !== 'active') {
+                    break;
+                }
                 $resolved = $this->actionResolver->resolvePending(
                     $encounter,
                     $lockedCharacter,
@@ -293,6 +308,23 @@ final class CombatSynchronizer
                 );
                 $encounter = $resolved['encounter'];
                 $lockedCharacter = $resolved['character'];
+                if (
+                    ($encounter['status'] ?? null) === 'active' &&
+                    self::integer($encounter, 'enemy_current_hp') === 0
+                ) {
+                    [$encounter, $lockedCharacter] = $this->transitionToVictory(
+                        $encounter,
+                        $lockedCharacter,
+                        $cursorMs,
+                        $serverNow,
+                    );
+                    break;
+                }
+            }
+
+            if (($encounter['status'] ?? null) !== 'active') {
+                $targetTimeline = $cursorMs;
+                break;
             }
 
             $turnState = $this->turnEngine->synchronizeTurn(
@@ -344,6 +376,49 @@ final class CombatSynchronizer
         );
 
         return ['encounter' => $encounter, 'character' => $lockedCharacter];
+    }
+
+    private function transitionToVictory(
+        array $encounter,
+        array $lockedCharacter,
+        int $timelineMs,
+        DateTimeImmutable $serverNow,
+    ): array {
+        $encounterId = self::positiveInteger($encounter, 'id');
+        $issuedAt = $serverNow->format('Y-m-d H:i:s.u');
+        if (!$this->repository->transitionLockedEncounterToVictory($encounterId, $issuedAt)) {
+            throw new RuntimeException('Combat victory changed concurrently. Please retry.');
+        }
+
+        $gold = self::integer($encounter, 'reward_gold');
+        $experience = self::integer($encounter, 'reward_experience');
+        $userId = self::positiveInteger($lockedCharacter, 'user_id');
+        $characterId = self::positiveInteger($lockedCharacter, 'id');
+        if (!$this->repository->addLockedCharacterVictoryRewards(
+            $userId,
+            $characterId,
+            $gold,
+            $experience,
+        )) {
+            throw new RuntimeException('Champion rewards changed concurrently. Please retry.');
+        }
+
+        $this->repository->cancelLockedPendingActionsForEncounter($encounterId, $timelineMs);
+        $this->repository->appendEvent(
+            $encounterId,
+            'victory_rewards',
+            sprintf('Victory! You receive %d Gold and %d EXP.', $gold, $experience),
+            'dead',
+        );
+
+        $encounter['status'] = 'victory_loot';
+        $encounter['enemy_current_hp'] = 0;
+        $encounter['timeline_elapsed_ms'] = $timelineMs;
+        $encounter['rewards_issued_at'] = $issuedAt;
+        $lockedCharacter['gold'] = self::integer($lockedCharacter, 'gold') + $gold;
+        $lockedCharacter['experience'] = self::integer($lockedCharacter, 'experience') + $experience;
+
+        return [$encounter, $lockedCharacter];
     }
 
     private function duePendingActionsAt(int $encounterId, int $cursorMs): array

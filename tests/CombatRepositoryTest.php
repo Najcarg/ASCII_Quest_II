@@ -51,6 +51,8 @@ final class FakeCombatPdo extends PDO
                 'pos_y' => 12,
                 'current_hp' => 145,
                 'current_mana' => 80,
+                'gold' => 0,
+                'experience' => 0,
                 'life_state' => 'alive',
                 'strength' => 10,
                 'dexterity' => 5,
@@ -66,6 +68,8 @@ final class FakeCombatPdo extends PDO
                 'pos_y' => 12,
                 'current_hp' => 110,
                 'current_mana' => 70,
+                'gold' => 0,
+                'experience' => 0,
                 'life_state' => 'alive',
                 'strength' => 10,
                 'dexterity' => 5,
@@ -81,6 +85,8 @@ final class FakeCombatPdo extends PDO
                 'pos_y' => 12,
                 'current_hp' => 100,
                 'current_mana' => 60,
+                'gold' => 0,
+                'experience' => 0,
                 'life_state' => 'alive',
                 'strength' => 10,
                 'dexterity' => 5,
@@ -212,6 +218,19 @@ final class FakeCombatPdo extends PDO
             return ['rows' => [], 'row_count' => 1];
         }
 
+        if (str_starts_with($normalized, 'update characters set gold')) {
+            $id = (int) $params['character_id'];
+            $character = $this->characters[$id] ?? null;
+            if ($character === null || (int) $character['user_id'] !== (int) $params['user_id']) {
+                return ['rows' => [], 'row_count' => 0];
+            }
+            $this->characters[$id]['gold'] = (int) ($character['gold'] ?? 0) + (int) $params['gold'];
+            $this->characters[$id]['experience'] = (int) ($character['experience'] ?? 0) + (int) $params['experience'];
+            $this->writeOrder[] = ['kind' => 'rewards'];
+
+            return ['rows' => [], 'row_count' => 1];
+        }
+
         if (
             str_starts_with($normalized, 'select ce.id') &&
             str_contains($normalized, 'from combat_encounters ce')
@@ -306,6 +325,45 @@ final class FakeCombatPdo extends PDO
             $legacySet = 'timeline_elapsed_ms = :timeline_elapsed_ms, last_synchronized_at = :last_synchronized_at, version = version + 1';
             $synchronizationSet = 'timeline_elapsed_ms = :timeline_elapsed_ms, last_synchronized_at = :last_synchronized_at, turn_number = :turn_number, turn_started_timeline_ms = :turn_started_timeline_ms, player_actions_remaining = :player_actions_remaining, enemy_actions_remaining = :enemy_actions_remaining, enemy_current_hp = :enemy_current_hp, next_enemy_decision_timeline_ms = :next_enemy_decision_timeline_ms, enemy_ai_initialized_timeline_ms = :enemy_ai_initialized_timeline_ms, version = version + 1';
             $potionChargeSet = 'potion_charges_remaining = potion_charges_remaining - 1, version = version + 1';
+            $victorySet = "status = 'victory_loot', enemy_current_hp = 0, rewards_issued_at = :rewards_issued_at";
+            $closeSet = "status = 'closed', active_slot = null, completed_at = :completed_at, version = version + 1";
+            if ($setClause === $victorySet) {
+                $id = (int) $params['encounter_id'];
+                $encounter = $this->encounters[$id] ?? null;
+                if (
+                    $encounter === null ||
+                    ($encounter['status'] ?? null) !== 'active' ||
+                    ($encounter['active_slot'] ?? null) !== 1 ||
+                    ($encounter['rewards_issued_at'] ?? null) !== null
+                ) {
+                    return ['rows' => [], 'row_count' => 0];
+                }
+                $this->encounters[$id]['status'] = 'victory_loot';
+                $this->encounters[$id]['enemy_current_hp'] = 0;
+                $this->encounters[$id]['rewards_issued_at'] = $params['rewards_issued_at'];
+                $this->writeOrder[] = ['kind' => 'victory'];
+
+                return ['rows' => [], 'row_count' => 1];
+            }
+            if ($setClause === $closeSet) {
+                $id = (int) $params['encounter_id'];
+                $encounter = $this->encounters[$id] ?? null;
+                if (
+                    $encounter === null ||
+                    ($encounter['status'] ?? null) !== 'victory_loot' ||
+                    ($encounter['active_slot'] ?? null) !== 1 ||
+                    (int) $encounter['version'] !== (int) $params['expected_version']
+                ) {
+                    return ['rows' => [], 'row_count' => 0];
+                }
+                $this->encounters[$id]['status'] = 'closed';
+                $this->encounters[$id]['active_slot'] = null;
+                $this->encounters[$id]['completed_at'] = $params['completed_at'];
+                $this->encounters[$id]['version']++;
+                $this->writeOrder[] = ['kind' => 'close'];
+
+                return ['rows' => [], 'row_count' => 1];
+            }
             if ($setClause === $potionChargeSet) {
                 $id = (int) $params['encounter_id'];
                 $encounter = $this->encounters[$id] ?? null;
@@ -439,6 +497,23 @@ final class FakeCombatPdo extends PDO
             $lifecycleSet = "state = 'resolved', active_slot = null, completed_timeline_ms = :completed_timeline_ms";
             $damageSet = "state = 'resolved', active_slot = null, completed_timeline_ms = :completed_timeline_ms, resolved_damage = :resolved_damage, prevented_damage = :prevented_damage";
             $blockAttemptSet = 'block_attempted_timeline_ms = :attempted_timeline_ms';
+            $cancelSet = "state = 'cancelled', active_slot = null, completed_timeline_ms = :completed_timeline_ms";
+            if ($setClause === $cancelSet) {
+                $count = 0;
+                foreach ($this->actions as $id => $action) {
+                    if (
+                        (int) $action['encounter_id'] === (int) $params['encounter_id'] &&
+                        ($action['state'] ?? null) === 'pending'
+                    ) {
+                        $this->actions[$id]['state'] = 'cancelled';
+                        $this->actions[$id]['active_slot'] = null;
+                        $this->actions[$id]['completed_timeline_ms'] = (int) $params['completed_timeline_ms'];
+                        $count++;
+                    }
+                }
+
+                return ['rows' => [], 'row_count' => $count];
+            }
             if ($setClause === $blockAttemptSet) {
                 $id = (int) $params['action_id'];
                 $action = $this->actions[$id] ?? null;

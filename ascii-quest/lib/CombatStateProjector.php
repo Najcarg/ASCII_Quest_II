@@ -204,7 +204,15 @@ final class CombatStateProjector
                 'charges_remaining' => self::integer($encounter, 'potion_charges_remaining'),
             ],
             'battle_events' => $events,
-            'loot_phase' => null,
+            'loot_phase' => ($encounter['status'] ?? null) === 'victory_loot'
+                ? [
+                    'rewards' => [
+                        'gold' => self::integer($encounter, 'reward_gold'),
+                        'experience' => self::integer($encounter, 'reward_experience'),
+                    ],
+                    'physical_drops' => [],
+                ]
+                : null,
         ];
     }
 

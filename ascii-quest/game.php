@@ -158,6 +158,7 @@ try {
 }
 
 $isCombatMode = $combatState !== [];
+$isVictoryLoot = $isCombatMode && ($combatState['status'] ?? null) === 'victory_loot';
 $combatSkillOne = null;
 if ($isCombatMode) {
     foreach ($combatState["player_skills"] ?? [] as $combatSkill) {
@@ -658,6 +659,7 @@ $detailStatGroups = [
                         aria-label="Active combat"
                     >
                         <div class="map-title">Battle</div>
+                        <div id="combatActivePanel" <?= $isVictoryLoot ? "hidden" : "" ?>>
                         <div class="battle-turn-heading">
                             <span>Turn</span>
                             <strong id="combatTurnNumber"><?= e($combatState["turn"]["number"]) ?></strong>
@@ -806,10 +808,26 @@ $detailStatGroups = [
                             <h3>Active Effects</h3>
                             <div id="combatEffects" class="combat-effects-list"></div>
                         </section>
+                        </div>
 
-                        <section id="combatLootRow" class="combat-loot-row" aria-label="Victory and loot">
-                            <strong>Victory / Loot</strong>
-                            <span>Reserved for a later combat task</span>
+                        <section
+                            id="combatVictoryPanel"
+                            class="combat-victory-panel"
+                            aria-label="Victory rewards and loot"
+                            <?= $isVictoryLoot ? "" : "hidden" ?>
+                        >
+                            <h2>Victory</h2>
+                            <p>The Cave Brute has been defeated. Your rewards were issued.</p>
+                            <div class="combat-victory-rewards">
+                                <span>Gold <strong id="combatVictoryGold"><?= e($combatState['loot_phase']['rewards']['gold'] ?? 0) ?></strong></span>
+                                <span>Raw EXP <strong id="combatVictoryExperience"><?= e($combatState['loot_phase']['rewards']['experience'] ?? 0) ?></strong></span>
+                            </div>
+                            <section id="combatLootRow" class="combat-loot-row" aria-label="Physical item drops">
+                                <strong>Physical Drops</strong>
+                                <span id="combatPhysicalDrops">No physical item drops.</span>
+                            </section>
+                            <p>The completed encounter remains open until you continue.</p>
+                            <button id="combatCloseButton" class="combat-action-button" type="button">Close / Continue</button>
                         </section>
 
                         <section class="hud-bottom-panel" data-tab-group>

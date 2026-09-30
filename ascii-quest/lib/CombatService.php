@@ -693,6 +693,49 @@ final class CombatService
         }
     }
 
+    public function closeVictory(
+        int $userId,
+        int $characterId,
+        string $requestToken,
+    ): array {
+        if (preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/D', $requestToken) !== 1) {
+            throw new InvalidArgumentException('Invalid combat request token.');
+        }
+
+        $guard = new CombatAccessGuard($this->repository);
+        try {
+            $decision = $guard->beginAtomic(
+                CombatAccessGuard::GAME_LOAD,
+                $userId,
+                $characterId,
+            );
+            $encounter = $decision['active_encounter'];
+            if ($encounter === null) {
+                throw new DomainException('No victory loot encounter was found.');
+            }
+            if (($encounter['status'] ?? null) !== 'victory_loot') {
+                throw new DomainException('Combat victory loot is not ready to close.');
+            }
+            if (($encounter['rewards_issued_at'] ?? null) === null) {
+                throw new RuntimeException('Victory rewards were not issued.');
+            }
+
+            if (!$this->repository->closeLockedVictoryEncounter(
+                self::integer($encounter, 'id'),
+                $this->clock->now()->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+                self::integer($encounter, 'version'),
+            )) {
+                throw new RuntimeException('Combat close changed concurrently. Please retry.');
+            }
+            $guard->commit();
+
+            return ['closed' => true];
+        } catch (Throwable $exception) {
+            $guard->rollBack();
+            throw $exception;
+        }
+    }
+
     private function persistSynchronization(int $encounterId, array &$encounter, int $expectedVersion): void
     {
         if (!$this->repository->updateLockedEncounterSynchronization($encounterId, $encounter, $expectedVersion)) {

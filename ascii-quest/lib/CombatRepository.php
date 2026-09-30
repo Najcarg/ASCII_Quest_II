@@ -279,6 +279,32 @@ final class CombatRepository
         return $stmt->rowCount() === 1;
     }
 
+    public function addLockedCharacterVictoryRewards(
+        int $userId,
+        int $characterId,
+        int $gold,
+        int $experience,
+    ): bool {
+        $this->requireChampionLock($characterId);
+        if ($gold < 0 || $experience < 0) {
+            throw new InvalidArgumentException('Combat rewards cannot be negative.');
+        }
+
+        $stmt = $this->pdo->prepare('UPDATE characters
+            SET gold = gold + :gold,
+                experience = experience + :experience
+            WHERE id = :character_id
+              AND user_id = :user_id');
+        $stmt->execute([
+            'gold' => $gold,
+            'experience' => $experience,
+            'character_id' => $characterId,
+            'user_id' => $userId,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
     public function createEncounter(int $characterId, array $encounter): array
     {
         $this->requireChampionLock($characterId);
@@ -412,6 +438,53 @@ final class CombatRepository
             WHERE id = :encounter_id
               AND version = :expected_version');
         $stmt->execute($values + [
+            'encounter_id' => $encounterId,
+            'expected_version' => $expectedVersion,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    public function transitionLockedEncounterToVictory(
+        int $encounterId,
+        string $rewardsIssuedAt,
+    ): bool {
+        $this->requireEncounterLock($encounterId);
+
+        $stmt = $this->pdo->prepare("UPDATE combat_encounters
+            SET status = 'victory_loot',
+                enemy_current_hp = 0,
+                rewards_issued_at = :rewards_issued_at
+            WHERE id = :encounter_id
+              AND status = 'active'
+              AND active_slot = 1
+              AND rewards_issued_at IS NULL");
+        $stmt->execute([
+            'rewards_issued_at' => $rewardsIssuedAt,
+            'encounter_id' => $encounterId,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    public function closeLockedVictoryEncounter(
+        int $encounterId,
+        string $completedAt,
+        int $expectedVersion,
+    ): bool {
+        $this->requireEncounterLock($encounterId);
+
+        $stmt = $this->pdo->prepare("UPDATE combat_encounters
+            SET status = 'closed',
+                active_slot = NULL,
+                completed_at = :completed_at,
+                version = version + 1
+            WHERE id = :encounter_id
+              AND status = 'victory_loot'
+              AND active_slot = 1
+              AND version = :expected_version");
+        $stmt->execute([
+            'completed_at' => $completedAt,
             'encounter_id' => $encounterId,
             'expected_version' => $expectedVersion,
         ]);
@@ -762,6 +835,32 @@ final class CombatRepository
         ]);
 
         return $stmt->rowCount() === 1;
+    }
+
+    public function cancelLockedPendingActionsForEncounter(
+        int $encounterId,
+        int $completedTimelineMs,
+    ): int {
+        $this->requireEncounterLock($encounterId);
+        if (!$this->actionRowsLocked) {
+            throw new LogicException('Combat action rows must be locked before cancellation.');
+        }
+        if ($completedTimelineMs < 0) {
+            throw new InvalidArgumentException('Combat cancellation timeline cannot be negative.');
+        }
+
+        $stmt = $this->pdo->prepare("UPDATE combat_actions
+            SET state = 'cancelled',
+                active_slot = NULL,
+                completed_timeline_ms = :completed_timeline_ms
+            WHERE encounter_id = :encounter_id
+              AND state = 'pending'");
+        $stmt->execute([
+            'completed_timeline_ms' => $completedTimelineMs,
+            'encounter_id' => $encounterId,
+        ]);
+
+        return $stmt->rowCount();
     }
 
     public function appendEvent(
