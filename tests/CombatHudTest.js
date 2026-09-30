@@ -12,6 +12,13 @@ const hudPath = path.join(
     "combat_hud.js",
 );
 const hud = fs.existsSync(hudPath) ? require(hudPath) : {};
+const explorationHud = require(path.join(
+    __dirname,
+    "..",
+    "ascii-quest",
+    "js",
+    "exploration_hud.js",
+));
 const hudSource = fs.existsSync(hudPath)
     ? fs.readFileSync(hudPath, "utf8")
     : "";
@@ -158,7 +165,77 @@ function combatDocument() {
     };
 }
 
+function combatTabGroup() {
+    function tabElement(id, target, active = false) {
+        const listeners = {};
+        const classes = new Set(active ? ["hud-tab", "is-active"] : ["hud-tab"]);
+
+        return {
+            id,
+            dataset: target ? { tabTarget: target } : {},
+            hidden: false,
+            attributes: {},
+            classList: {
+                contains(name) {
+                    return classes.has(name);
+                },
+                toggle(name, enabled) {
+                    enabled ? classes.add(name) : classes.delete(name);
+                },
+            },
+            setAttribute(name, value) {
+                this.attributes[name] = String(value);
+            },
+            addEventListener(type, listener) {
+                listeners[type] = listener;
+            },
+            click() {
+                return listeners.click?.();
+            },
+        };
+    }
+
+    const buttons = [
+        tabElement("combatBattleInfoTab", "combat-battle-info", true),
+        tabElement("combatServerInfoTab", "combat-server-info"),
+        tabElement("combatChatTab", "combat-chat"),
+    ];
+    const panels = [
+        tabElement("combat-battle-info"),
+        tabElement("combat-server-info"),
+        tabElement("combat-chat"),
+    ];
+
+    return {
+        buttons,
+        panels,
+        querySelectorAll(selector) {
+            return selector === "[data-tab-target]" ? buttons : panels;
+        },
+    };
+}
+
 const tests = {
+    "combat lower tabs start on Battle Info and retain Server Info and Chat placeholders"() {
+        const combatStart = gameMarkup.indexOf('id="battleHud"');
+        const explorationStart = gameMarkup.indexOf("<?php else:", combatStart);
+        const combatMarkup = gameMarkup.slice(combatStart, explorationStart);
+        const battleIndex = combatMarkup.indexOf(">Battle Info</button>");
+        const serverIndex = combatMarkup.indexOf(">Server Info</button>");
+        const chatIndex = combatMarkup.indexOf(">Chat</button>");
+
+        assert.ok(combatMarkup.includes('class="hud-bottom-panel" data-tab-group'));
+        assert.ok(battleIndex >= 0, "Battle Info is a combat tab.");
+        assert.ok(battleIndex < serverIndex && serverIndex < chatIndex, "Combat tab order is authoritative.");
+        assert.match(
+            combatMarkup,
+            /class="hud-tab is-active"[\s\S]*?aria-selected="true"[\s\S]*?data-tab-target="combat-battle-info"[\s\S]*?>Battle Info<\/button>/,
+        );
+        assert.match(combatMarkup, /id="combat-battle-info"[\s\S]*?data-tab-panel/);
+        assert.match(combatMarkup, /id="combat-server-info"[\s\S]*?Server information will appear here in a later milestone\./);
+        assert.match(combatMarkup, /id="combat-chat"[\s\S]*?Chat will be implemented in a later milestone\./);
+    },
+
     "active combat markup provides all center controls while right Loadout stays display-only"() {
         assert.equal(gameMarkup.includes("combat-placeholder"), false);
         const commandPanel = gameMarkup.match(
@@ -768,15 +845,26 @@ const tests = {
         assert.equal(controller.state(), newer);
     },
 
-    "Battle Info and effects render only projected server state"() {
+    "Battle Info renders ordered text with only fixed allowlisted emphasis classes"() {
+        const documentRoot = combatDocument();
         const state = combatState({
             active_effects: [{ key: "test_effect", name: "Test Effect" }],
             battle_events: [
-                { sequence_number: 2, event_type: "damage", message: "Cave Brute hits for 12.", emphasis: "danger" },
-                { sequence_number: 3, event_type: "potion_used", message: "Potion restores 24 Life.", emphasis: "success" },
+                { sequence_number: 1, message: "Critical hit.", emphasis: "critical" },
+                { sequence_number: 2, message: "Attack blocked.", emphasis: "blocked" },
+                { sequence_number: 3, message: "Level gained.", emphasis: "level_up" },
+                { sequence_number: 4, message: "Enemy defeated.", emphasis: "dead" },
+                { sequence_number: 5, message: '<script>alert(1)</script>', emphasis: '"><script>bad()</script>' },
+                { sequence_number: 6, message: "Prototype key stays ordinary.", emphasis: "constructor" },
             ],
         });
-        const view = hud.buildPresentation(state, Date.parse(state.server_observed_at));
+
+        const view = hud.renderCombatHud(
+            documentRoot,
+            state,
+            { attack: false, skill: false, block: false, potion: false, refresh: false },
+            Date.parse(state.server_observed_at),
+        );
 
         assert.deepEqual(view.effects, [{
             key: "test_effect",
@@ -784,7 +872,87 @@ const tests = {
             durationProgressPercent: 100,
         }]);
         assert.deepEqual(view.events, state.battle_events);
+        assert.deepEqual(
+            documentRoot.elements.combatBattleEvents.children.map((entry) => entry.textContent),
+            [
+                "Critical hit.",
+                "Attack blocked.",
+                "Level gained.",
+                "Enemy defeated.",
+                "<script>alert(1)</script>",
+                "Prototype key stays ordinary.",
+            ],
+        );
+        assert.deepEqual(
+            documentRoot.elements.combatBattleEvents.children.map((entry) => entry.className),
+            [
+                "game-log-entry game-log-entry-critical",
+                "game-log-entry game-log-entry-blocked",
+                "game-log-entry game-log-entry-level-up",
+                "game-log-entry game-log-entry-dead",
+                "game-log-entry",
+                "game-log-entry",
+            ],
+        );
+        assert.equal("innerHTML" in documentRoot.elements.combatBattleEvents.children[4], false);
         assert.equal(view.lootPhase, null);
+    },
+
+    async "switching combat tabs leaves polling and timer reaction rendering active"() {
+        const documentRoot = combatDocument();
+        const tabs = combatTabGroup();
+        const pollCallbacks = [];
+        const frameCallbacks = [];
+        let nowMs = Date.parse(combatState().server_observed_at);
+        const returned = combatState({
+            version: 6,
+            timeline: { elapsed_ms: 3500 },
+            reaction_prompt: null,
+        });
+        const initial = combatState({
+            reaction_prompt: {
+                enemy_action_id: 70,
+                definition_key: "fire_slam",
+                name: "Fire Slam",
+                damage_type: "fire",
+                resolves_timeline_ms: 5000,
+                expires_timeline_ms: 5000,
+                block_token: "b".repeat(64),
+                x: 0.25,
+                y: 0.75,
+            },
+        });
+
+        explorationHud.initializeTabGroup(tabs);
+        hud.initializeCombatHud(documentRoot, { mode: "combat", combat: initial }, {
+            csrfToken: "csrf",
+            fetchImplementation: async () => ({ ok: true, json: async () => returned }),
+            now: () => nowMs,
+            requestTokenFactory: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            schedulePoll(callback) {
+                pollCallbacks.push(callback);
+            },
+            scheduleFrame(callback) {
+                frameCallbacks.push(callback);
+            },
+        });
+
+        tabs.buttons[1].click();
+        tabs.buttons[2].click();
+        assert.equal(tabs.buttons[2].attributes["aria-selected"], "true");
+        assert.equal(tabs.panels[2].hidden, false);
+        assert.equal(documentRoot.elements.combatTurnFill.style.width, "25%");
+        assert.equal(documentRoot.elements.combatCooldownFill.style.width, "50%");
+        assert.equal(documentRoot.elements.combatReactionLayer.hidden, false);
+
+        nowMs += 1000;
+        frameCallbacks.shift()();
+        assert.equal(documentRoot.elements.combatTurnFill.style.width, "35%");
+        assert.equal(documentRoot.elements.combatCooldownFill.style.width, "83.33333333333334%");
+        await pollCallbacks[0]();
+        assert.equal(documentRoot.elements.combatReactionLayer.hidden, true);
+        assert.equal(tabs.buttons[2].attributes["aria-selected"], "true");
+        assert.equal(tabs.panels[2].hidden, false);
     },
 
     "combat presentation ignores hidden enemy timing and introduces no keyboard controls"() {

@@ -46,6 +46,12 @@
     "use strict";
 
     const ERROR_FALLBACK = "Unable to reach the combat server. Please try again.";
+    const EVENT_EMPHASIS_CLASSES = {
+        critical: "game-log-entry-critical",
+        blocked: "game-log-entry-blocked",
+        level_up: "game-log-entry-level-up",
+        dead: "game-log-entry-dead",
+    };
     const SKILL_CONTROLS = [
         { slot: "skill_1", id: "combatSkill1" },
         { slot: "skill_2", id: "combatSkill2" },
@@ -388,12 +394,15 @@
         const entries = values.length === 0 ? [{ message: emptyMessage }] : values;
         const elements = entries.map(function (entry) {
             const element = documentRoot.createElement("div");
-            const emphasis = ["info", "success", "warning", "danger"].includes(
+            const emphasisClass = Object.prototype.hasOwnProperty.call(
+                EVENT_EMPHASIS_CLASSES,
                 entry.emphasis,
             )
-                ? entry.emphasis
-                : "info";
-            element.className = classPrefix + " " + classPrefix + "-" + emphasis;
+                ? EVENT_EMPHASIS_CLASSES[entry.emphasis]
+                : null;
+            element.className = emphasisClass
+                ? classPrefix + " " + emphasisClass
+                : classPrefix;
             element.textContent = String(entry.message ?? entry.name ?? entry.key ?? "");
             return element;
         });

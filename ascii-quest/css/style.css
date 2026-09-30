@@ -1640,6 +1640,26 @@ a:hover {
     color: #f0c4bc;
 }
 
+.game-log-entry-critical {
+    border-left-color: #c8913d;
+    color: #f0d58a;
+}
+
+.game-log-entry-blocked {
+    border-left-color: #6d8291;
+    color: #c5d3d9;
+}
+
+.game-log-entry-level-up {
+    border-left-color: #7e8b4a;
+    color: #d9e8b5;
+}
+
+.game-log-entry-dead {
+    border-left-color: #8f3c35;
+    color: #d9a39c;
+}
+
 /*
 |--------------------------------------------------------------------------
 | Battle HUD

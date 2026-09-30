@@ -603,6 +603,51 @@ return [
         }
     },
 
+    'Combat state projector exposes ordered presentation-safe Battle Info events' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter();
+        foreach ([
+            [703, 3, 'level_up', 'Champion reaches level 2.'],
+            [701, 1, 'critical', 'Critical hit for 24.'],
+            [702, 2, 'blocked', 'The attack was blocked.'],
+            [704, 4, 'dead', 'The Cave Brute falls.'],
+            [705, 5, '"><script>bad()</script>', 'Unknown emphasis stays ordinary.'],
+            [706, 6, null, '<script>alert(1)</script>'],
+        ] as [$id, $sequence, $emphasis, $message]) {
+            $pdo->events[$id] = [
+                'id' => $id,
+                'encounter_id' => 91,
+                'sequence_number' => $sequence,
+                'event_type' => 'private_event_type',
+                'message' => $message,
+                'emphasis' => $emphasis,
+                'created_at' => '2026-09-01 12:00:00.000000',
+                'database_private' => 'never public',
+            ];
+        }
+        $projector = new CombatStateProjector(
+            new CombatRepository($pdo),
+            new CombatDefinitionRegistry(require __DIR__ . '/../ascii-quest/config/combat.php'),
+        );
+
+        $events = $projector->project($pdo->characters[42], $pdo->encounters[91])['battle_events'];
+
+        assertSameValue([1, 2, 3, 4, 5, 6], array_column($events, 'sequence_number'), 'Authoritative sequence orders Battle Info.');
+        assertSameValue(
+            ['critical', 'blocked', 'level_up', 'dead', null, null],
+            array_column($events, 'emphasis'),
+            'Only approved emphasis values survive projection.',
+        );
+        assertSameValue('<script>alert(1)</script>', $events[5]['message'], 'Event messages remain plain presentation data.');
+        foreach ($events as $event) {
+            assertSameValue(
+                ['sequence_number', 'message', 'emphasis'],
+                array_keys($event),
+                'Battle Info exposes only the fields required by the HUD.',
+            );
+        }
+    },
+
     'Explicit weapon intent starts one configured action and consumes one allowance' => function (): void {
         $pdo = new FakeCombatPdo();
         $pdo->encounters[91] = task4Encounter([

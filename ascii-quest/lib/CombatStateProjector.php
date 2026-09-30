@@ -7,6 +7,13 @@ require_once __DIR__ . '/CombatTurnEngine.php';
 
 final class CombatStateProjector
 {
+    private const EVENT_EMPHASIS = [
+        'critical',
+        'blocked',
+        'level_up',
+        'dead',
+    ];
+
     private CombatPlayerActionEvaluator $playerActionEvaluator;
 
     public function __construct(
@@ -98,9 +105,16 @@ final class CombatStateProjector
 
         $events = [];
         foreach ($this->repository->eventsForEncounter($encounterId) as $event) {
-            $events[] = self::allowlist($event, [
-                'sequence_number', 'event_type', 'message', 'emphasis',
-            ]);
+            $emphasis = $event['emphasis'] ?? null;
+            $events[] = [
+                'sequence_number' => self::integer($event, 'sequence_number'),
+                'message' => (string) ($event['message'] ?? ''),
+                'emphasis' => is_string($emphasis) && in_array(
+                    $emphasis,
+                    self::EVENT_EMPHASIS,
+                    true,
+                ) ? $emphasis : null,
+            ];
         }
 
         $playerAttackDefinition = $this->definitions->playerAction(

@@ -812,9 +812,65 @@ $detailStatGroups = [
                             <span>Reserved for a later combat task</span>
                         </section>
 
-                        <section class="hud-bottom-panel">
-                            <div class="game-log-title">Battle Info</div>
-                            <div id="combatBattleEvents" class="game-log-messages"></div>
+                        <section class="hud-bottom-panel" data-tab-group>
+                            <div class="hud-tabs hud-bottom-tabs" role="tablist" aria-label="Combat information panels">
+                                <button
+                                    type="button"
+                                    class="hud-tab is-active"
+                                    role="tab"
+                                    aria-selected="true"
+                                    aria-controls="combat-battle-info"
+                                    data-tab-target="combat-battle-info"
+                                >Battle Info</button>
+                                <button
+                                    type="button"
+                                    class="hud-tab"
+                                    role="tab"
+                                    aria-selected="false"
+                                    aria-controls="combat-server-info"
+                                    data-tab-target="combat-server-info"
+                                >Server Info</button>
+                                <button
+                                    type="button"
+                                    class="hud-tab"
+                                    role="tab"
+                                    aria-selected="false"
+                                    aria-controls="combat-chat"
+                                    data-tab-target="combat-chat"
+                                >Chat</button>
+                            </div>
+
+                            <section
+                                id="combat-battle-info"
+                                class="hud-tab-panel"
+                                role="tabpanel"
+                                data-tab-panel
+                            >
+                                <div class="game-log">
+                                    <div class="game-log-title">Battle History</div>
+                                    <div id="combatBattleEvents" class="game-log-messages"></div>
+                                </div>
+                            </section>
+
+                            <section
+                                id="combat-server-info"
+                                class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
+                                role="tabpanel"
+                                data-tab-panel
+                                hidden
+                            >
+                                <p>Server information will appear here in a later milestone.</p>
+                            </section>
+
+                            <section
+                                id="combat-chat"
+                                class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
+                                role="tabpanel"
+                                data-tab-panel
+                                hidden
+                            >
+                                <p>Chat will be implemented in a later milestone.</p>
+                            </section>
                         </section>
                     </section>
                 <?php else: ?>
