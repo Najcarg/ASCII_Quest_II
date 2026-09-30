@@ -939,7 +939,7 @@ const tests = {
         assert.deepEqual(view.lootPhase.physicalDrops, []);
     },
 
-    async "victory close sends only CSRF and request token then returns to exploration"() {
+    async "victory close sends only CSRF then returns to exploration"() {
         const requests = [];
         let closed = 0;
         const state = combatState({
@@ -972,7 +972,6 @@ const tests = {
         assert.equal(requests[0][0], "combat_close.php");
         assert.deepEqual(JSON.parse(requests[0][1].body), {
             csrf_token: "csrf",
-            request_token: "12121212-1212-4212-8212-121212121212",
         });
         assert.equal(closed, 1);
     },

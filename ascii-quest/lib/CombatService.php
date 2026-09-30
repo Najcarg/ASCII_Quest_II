@@ -696,12 +696,7 @@ final class CombatService
     public function closeVictory(
         int $userId,
         int $characterId,
-        string $requestToken,
     ): array {
-        if (preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/D', $requestToken) !== 1) {
-            throw new InvalidArgumentException('Invalid combat request token.');
-        }
-
         $guard = new CombatAccessGuard($this->repository);
         try {
             $decision = $guard->beginAtomic(
@@ -711,7 +706,13 @@ final class CombatService
             );
             $encounter = $decision['active_encounter'];
             if ($encounter === null) {
-                throw new DomainException('No victory loot encounter was found.');
+                $closedVictory = $this->repository->lockLatestClosedVictoryEncounter($characterId);
+                if ($closedVictory === null) {
+                    throw new DomainException('No victory loot encounter was found.');
+                }
+                $guard->commit();
+
+                return ['closed' => true];
             }
             if (($encounter['status'] ?? null) !== 'victory_loot') {
                 throw new DomainException('Combat victory loot is not ready to close.');

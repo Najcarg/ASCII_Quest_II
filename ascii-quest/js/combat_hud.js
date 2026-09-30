@@ -408,7 +408,6 @@
 
                 return request("close", "combat_close.php", {
                     csrf_token: options.csrfToken,
-                    request_token: options.requestTokenFactory(),
                 });
             },
             refresh() {

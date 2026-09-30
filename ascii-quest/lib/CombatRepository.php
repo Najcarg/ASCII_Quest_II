@@ -190,6 +190,40 @@ final class CombatRepository
         return $this->lockedEncounter;
     }
 
+    public function lockLatestClosedVictoryEncounter(int $characterId): ?array
+    {
+        $this->requireChampionLock($characterId);
+        if (!$this->activeEncounterLockChecked) {
+            throw new LogicException('The active encounter slot must be locked before closed history.');
+        }
+        if ($this->lockedEncounter !== null) {
+            throw new LogicException('Closed history cannot be locked while an active encounter is locked.');
+        }
+        if ($this->detailRowsTouched) {
+            throw new LogicException('Encounter must be locked before action or event rows.');
+        }
+
+        $stmt = $this->pdo->prepare("SELECT *
+            FROM combat_encounters
+            WHERE character_id = :character_id
+              AND status = 'closed'
+              AND active_slot IS NULL
+              AND rewards_issued_at IS NOT NULL
+              AND completed_at IS NOT NULL
+            ORDER BY completed_at DESC, id DESC
+            LIMIT 1
+            FOR UPDATE");
+        $stmt->execute(['character_id' => $characterId]);
+        $encounter = $stmt->fetch();
+
+        $this->lockedEncounter = is_array($encounter) ? $encounter : null;
+        $this->lockedEncounterId = $this->lockedEncounter !== null
+            ? (int) $this->lockedEncounter['id']
+            : null;
+
+        return $this->lockedEncounter;
+    }
+
     public function findActiveEncounter(int $characterId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT *

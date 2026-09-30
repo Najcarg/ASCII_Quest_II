@@ -33,7 +33,7 @@ try {
 }
 
 $requestKeys = is_array($request) ? array_keys($request) : [];
-$allowedKeys = ['csrf_token', 'request_token'];
+$allowedKeys = ['csrf_token'];
 sort($requestKeys);
 sort($allowedKeys);
 if (!is_array($request) || $requestKeys !== $allowedKeys) {
@@ -47,21 +47,12 @@ if (
     sendCombatCloseJson(['success' => false, 'message' => 'Invalid combat close request.'], 403);
 }
 
-$requestToken = $request['request_token'];
-if (
-    !is_string($requestToken) ||
-    preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/D', $requestToken) !== 1
-) {
-    sendCombatCloseJson(['success' => false, 'message' => 'Invalid combat close intent.'], 422);
-}
-
 try {
     require_once __DIR__ . '/db.php';
     require_once __DIR__ . '/lib/CombatBootstrap.php';
     $result = CombatBootstrap::service(getDb())->closeVictory(
         (int) $_SESSION['user_id'],
         (int) $_SESSION['character_id'],
-        $requestToken,
     );
     sendCombatCloseJson($result, 200);
 } catch (OutOfBoundsException) {

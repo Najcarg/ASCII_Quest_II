@@ -280,6 +280,32 @@ final class FakeCombatPdo extends PDO
             return ['rows' => $rows, 'row_count' => count($rows)];
         }
 
+        if (
+            str_starts_with($normalized, 'select') &&
+            str_contains($normalized, 'from combat_encounters') &&
+            str_contains($normalized, "status = 'closed'")
+        ) {
+            if (str_contains($normalized, 'for update')) {
+                $this->lockOrder[] = 'encounter';
+            }
+            $rows = array_values(array_filter(
+                $this->encounters,
+                static fn (array $row): bool =>
+                    (int) $row['character_id'] === (int) $params['character_id'] &&
+                    ($row['status'] ?? null) === 'closed' &&
+                    ($row['active_slot'] ?? null) === null &&
+                    ($row['rewards_issued_at'] ?? null) !== null &&
+                    ($row['completed_at'] ?? null) !== null,
+            ));
+            usort($rows, static function (array $a, array $b): int {
+                $completedOrder = strcmp((string) $b['completed_at'], (string) $a['completed_at']);
+
+                return $completedOrder !== 0 ? $completedOrder : (int) $b['id'] <=> (int) $a['id'];
+            });
+
+            return ['rows' => array_slice($rows, 0, 1), 'row_count' => count($rows) > 0 ? 1 : 0];
+        }
+
         if (str_starts_with($normalized, 'select') && str_contains($normalized, 'from combat_encounters')) {
             if (str_contains($normalized, 'for update')) {
                 $this->lockOrder[] = 'encounter';

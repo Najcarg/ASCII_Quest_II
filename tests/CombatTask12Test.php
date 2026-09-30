@@ -83,12 +83,11 @@ PHP);
 declare(strict_types=1);
 final class Task12EndpointService
 {
-    public function closeVictory(int $userId, int $characterId, string $requestToken): array
+    public function closeVictory(int $userId, int $characterId): array
     {
         file_put_contents((string) getenv('ASCII_QUEST_TASK12_CALL_FILE'), json_encode([
             'user_id' => $userId,
             'character_id' => $characterId,
-            'request_token' => $requestToken,
         ]));
         if ($userId !== 7 || $characterId !== 42) {
             throw new OutOfBoundsException('Private ownership detail.');
@@ -284,16 +283,12 @@ return [
         assertSameValue(1, $pdo->encounters[91]['active_slot'] ?? null, 'Victory loot retains the active encounter slot.');
     },
 
-    'Task 12 owned victory loot closes once without healing or reissuing rewards' => function (): void {
+    'Task 12 owned victory close replay returns success without another mutation' => function (): void {
         [$pdo, , $service] = task12VictoryFixture();
         $service->state(7, 42);
         $before = $pdo->characters[42];
 
-        $result = $service->closeVictory(
-            7,
-            42,
-            '34343434-3434-4434-8434-343434343434',
-        );
+        $result = $service->closeVictory(7, 42);
 
         assertSameValue(['closed' => true], $result, 'Close response.');
         assertSameValue('closed', $pdo->encounters[91]['status'] ?? null, 'Closed lifecycle status.');
@@ -305,16 +300,18 @@ return [
         assertSameValue($before['gold'], $pdo->characters[42]['gold'], 'Close does not reissue Gold.');
         assertSameValue($before['experience'], $pdo->characters[42]['experience'], 'Close does not reissue EXP.');
 
-        task12AssertRejected(
-            fn (): array => $service->closeVictory(
-                7,
-                42,
-                '34343434-3434-4434-8434-343434343434',
-            ),
-            'A replay cannot close or reward another encounter.',
-        );
+        $completedAt = $pdo->encounters[91]['completed_at'];
+        $eventCount = count($pdo->events);
+        $afterFirstClose = $pdo->characters[42];
+        assertSameValue(['closed' => true], $service->closeVictory(7, 42), 'Close replay succeeds.');
         assertSameValue('closed', $pdo->encounters[91]['status'] ?? null, 'Replay leaves one closed encounter.');
-        assertSameValue($before['gold'], $pdo->characters[42]['gold'], 'Replay leaves one reward set.');
+        assertSameValue(null, $pdo->encounters[91]['active_slot'] ?? null, 'Replay keeps active slot released.');
+        assertSameValue($completedAt, $pdo->encounters[91]['completed_at'] ?? null, 'Replay preserves completion time.');
+        assertSameValue($afterFirstClose['gold'], $pdo->characters[42]['gold'], 'Replay leaves one Gold reward set.');
+        assertSameValue($afterFirstClose['experience'], $pdo->characters[42]['experience'], 'Replay leaves one EXP reward set.');
+        assertSameValue($afterFirstClose['current_hp'], $pdo->characters[42]['current_hp'], 'Replay preserves HP.');
+        assertSameValue($afterFirstClose['current_mana'], $pdo->characters[42]['current_mana'], 'Replay preserves Mana.');
+        assertSameValue($eventCount, count($pdo->events), 'Replay creates no reward event.');
     },
 
     'Task 12 close rejects active combat and wrong ownership' => function (): void {
@@ -329,23 +326,40 @@ return [
         $service = task6ChronologicalService($pdo, $clock);
 
         task12AssertRejected(
-            fn (): array => $service->closeVictory(
-                7,
-                42,
-                '56565656-5656-4656-8656-565656565656',
-            ),
+            fn (): array => $service->closeVictory(7, 42),
             'Active combat cannot close.',
         );
         task12AssertRejected(
-            fn (): array => $service->closeVictory(
-                8,
-                42,
-                '78787878-7878-4878-8878-787878787878',
-            ),
+            fn (): array => $service->closeVictory(8, 42),
             'Wrong owner cannot close.',
         );
         assertSameValue('active', $pdo->encounters[91]['status'] ?? null, 'Rejected close preserves encounter.');
         assertSameValue(100, $pdo->characters[42]['gold'] ?? null, 'Rejected close grants no rewards.');
+    },
+
+    'Task 12 close does not treat another Champion closed victory as its replay' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'character_id' => 43,
+            'status' => 'closed',
+            'active_slot' => null,
+            'enemy_current_hp' => 0,
+            'rewards_issued_at' => '2026-09-01 12:00:01.000000',
+            'completed_at' => '2026-09-01 12:00:02.000000',
+        ]);
+        $before = $pdo->encounters[91];
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:03.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $service = task6ChronologicalService($pdo, $clock);
+
+        task12AssertRejected(
+            fn (): array => $service->closeVictory(7, 42),
+            'Another Champion closed victory cannot satisfy this Champion close.',
+        );
+        assertSameValue($before, $pdo->encounters[91], 'Unrelated closed history remains unchanged.');
+        assertSameValue([], $pdo->events, 'Unrelated close creates no event.');
     },
 
     'Task 12 two service instances produce one closed encounter and one reward set' => function (): void {
@@ -353,20 +367,11 @@ return [
         $secondTab = task6ChronologicalService($pdo, $clock, null, new Task6SequenceRandomSource([]));
         $firstTab->state(7, 42);
 
-        assertSameValue(['closed' => true], $firstTab->closeVictory(
-            7,
-            42,
-            'cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd',
-        ), 'First tab closes.');
-        task12AssertRejected(
-            fn (): array => $secondTab->closeVictory(
-                7,
-                42,
-                'efefefef-efef-4fef-8fef-efefefefefef',
-            ),
-            'Second tab cannot repeat the close.',
-        );
+        assertSameValue(['closed' => true], $firstTab->closeVictory(7, 42), 'First tab closes.');
+        $completedAt = $pdo->encounters[91]['completed_at'];
+        assertSameValue(['closed' => true], $secondTab->closeVictory(7, 42), 'Second tab observes closed success.');
         assertSameValue('closed', $pdo->encounters[91]['status'], 'One final closed state.');
+        assertSameValue($completedAt, $pdo->encounters[91]['completed_at'], 'Second tab does not rewrite completion time.');
         assertSameValue(125, $pdo->characters[42]['gold'], 'One Gold reward set.');
         assertSameValue(120, $pdo->characters[42]['experience'], 'One EXP reward set.');
         assertSameValue(1, count($pdo->events), 'One victory event.');
@@ -375,7 +380,6 @@ return [
     'Task 12 close endpoint requires session POST JSON and valid CSRF' => function (): void {
         $validBody = (string) json_encode([
             'csrf_token' => 'session-token',
-            'request_token' => '90909090-9090-4090-8090-909090909090',
         ]);
         foreach ([
             [[], 'POST', $validBody, 401],
@@ -386,7 +390,6 @@ return [
             ]), 400],
             [['user_id' => 7, 'character_id' => 42, 'csrf_token' => 'session-token'], 'POST', (string) json_encode([
                 'csrf_token' => 'wrong-token',
-                'request_token' => '90909090-9090-4090-8090-909090909090',
             ]), 403],
         ] as [$session, $method, $body, $expectedStatus]) {
             [$status, $payload, $call] = task12RunCloseEndpoint($session, $method, $body);
@@ -406,13 +409,10 @@ return [
         assertSameValue(99, $call['character_id'] ?? null, 'Endpoint uses the session Champion for ownership.');
     },
 
-    'Task 12 close endpoint accepts only CSRF and canonical request token from session owner' => function (): void {
+    'Task 12 close endpoint accepts only CSRF from session owner' => function (): void {
         $session = ['user_id' => 7, 'character_id' => 42, 'csrf_token' => 'session-token'];
-        $base = [
-            'csrf_token' => 'session-token',
-            'request_token' => 'abababab-abab-4bab-8bab-abababababab',
-        ];
-        foreach (['reward_gold', 'experience', 'enemy_hp', 'current_hp', 'status', 'loot', 'timeline_ms', 'character_id'] as $field) {
+        $base = ['csrf_token' => 'session-token'];
+        foreach (['request_token', 'reward_gold', 'experience', 'enemy_hp', 'current_hp', 'status', 'loot', 'timeline_ms', 'character_id'] as $field) {
             [$status, , $call] = task12RunCloseEndpoint(
                 $session,
                 'POST',
@@ -421,19 +421,10 @@ return [
             assertSameValue(400, $status, $field . ' is outside strict allowlist.');
             assertSameValue(null, $call, $field . ' never reaches the service.');
         }
-        [$invalidStatus, , $invalidCall] = task12RunCloseEndpoint(
-            $session,
-            'POST',
-            (string) json_encode(array_replace($base, ['request_token' => 'not-a-uuid'])),
-        );
-        assertSameValue(422, $invalidStatus, 'Invalid UUID status.');
-        assertSameValue(null, $invalidCall, 'Invalid UUID never reaches service.');
-
         [$status, $payload, $call] = task12RunCloseEndpoint($session, 'POST', (string) json_encode($base));
         assertSameValue(200, $status, 'Valid close status.');
         assertSameValue(true, $payload['closed'] ?? null, 'Valid close response.');
         assertSameValue(7, $call['user_id'] ?? null, 'Session user is authoritative.');
         assertSameValue(42, $call['character_id'] ?? null, 'Session Champion is authoritative.');
-        assertSameValue($base['request_token'], $call['request_token'] ?? null, 'Canonical request token reaches service.');
     },
 ];
