@@ -24,7 +24,6 @@ require_once __DIR__ . "/map_loader.php";
 require_once __DIR__ . "/lib/WarpBootstrap.php";
 require_once __DIR__ . "/lib/CombatBootstrap.php";
 
-$pdo = getDb();
 $combatGuard = null;
 
 header("Content-Type: application/json");
@@ -146,6 +145,24 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
         "messages" => ["Invalid request method."],
     ]);
 }
+
+$postedToken = $_POST["csrf_token"] ?? "";
+$sessionToken = $_SESSION["csrf_token"] ?? "";
+if (
+    !is_string($postedToken) ||
+    !is_string($sessionToken) ||
+    $postedToken === "" ||
+    $sessionToken === "" ||
+    !hash_equals($sessionToken, $postedToken)
+) {
+    sendJson([
+        "success" => false,
+        "message" => "Security check failed. Please try again.",
+        "messages" => ["Security check failed. Please try again."],
+    ]);
+}
+
+$pdo = getDb();
 
 try {
     $combatGuard = CombatBootstrap::guard($pdo);
@@ -293,22 +310,6 @@ try {
     );
 
     if ($interactableWarp !== null) {
-        $postedToken = $_POST["csrf_token"] ?? "";
-        $sessionToken = $_SESSION["csrf_token"] ?? "";
-        if (
-            !is_string($postedToken) ||
-            !is_string($sessionToken) ||
-            $postedToken === "" ||
-            $sessionToken === "" ||
-            !hash_equals($sessionToken, $postedToken)
-        ) {
-            sendJson([
-                "success" => false,
-                "message" => "Security check failed. Please try again.",
-                "messages" => ["Security check failed. Please try again."],
-            ]);
-        }
-
         $result = $warpService->unlock(
             (int) $_SESSION["user_id"],
             $characterId,

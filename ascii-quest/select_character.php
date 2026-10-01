@@ -6,8 +6,6 @@ session_start();
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/lib/CombatBootstrap.php";
 
-$pdo = getDb();
-
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
     exit();
@@ -32,6 +30,8 @@ if (
     header("Location: character_select.php");
     exit();
 }
+
+$pdo = getDb();
 
 $characterId = (int) ($_POST["character_id"] ?? 0);
 

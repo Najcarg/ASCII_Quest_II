@@ -18,8 +18,6 @@ session_start();
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/lib/CombatBootstrap.php";
 
-$pdo = getDb();
-
 /*
 |--------------------------------------------------------------------------
 | Helper: redirect back to character selection
@@ -68,6 +66,8 @@ if (
     $_SESSION["flash_type"] = "error";
     backToCharacterSelect();
 }
+
+$pdo = getDb();
 
 /*
 |--------------------------------------------------------------------------

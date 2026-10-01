@@ -19,8 +19,6 @@ session_start();
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
 
-$pdo = getDb();
-
 /*
 |--------------------------------------------------------------------------
 | Security: user must be logged in
@@ -30,6 +28,29 @@ if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
     exit();
 }
+
+if (empty($_SESSION["csrf_token"])) {
+    $_SESSION["csrf_token"] = bin2hex(random_bytes(32));
+}
+
+if (($_SERVER["REQUEST_METHOD"] ?? "") === "POST") {
+    $postedToken = $_POST["csrf_token"] ?? "";
+    $sessionToken = $_SESSION["csrf_token"] ?? "";
+    if (
+        !is_string($postedToken) ||
+        !is_string($sessionToken) ||
+        $postedToken === "" ||
+        $sessionToken === "" ||
+        !hash_equals($sessionToken, $postedToken)
+    ) {
+        $_SESSION["flash_message"] = "Security check failed. Please try again.";
+        $_SESSION["flash_type"] = "error";
+        header("Location: create_character.php");
+        exit();
+    }
+}
+
+$pdo = getDb();
 
 /*
 |--------------------------------------------------------------------------
@@ -282,6 +303,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <?php endif; ?>
 
         <form method="post" action="create_character.php">
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="<?= e($_SESSION["csrf_token"]) ?>"
+            >
             <label for="character_name">Character Name</label>
             <input
                 type="text"

@@ -1,0 +1,334 @@
+<?php
+declare(strict_types=1);
+
+function task14RunEarlyRoute(
+    string $route,
+    array $session,
+    string $method,
+    array $post,
+): array {
+    $source = __DIR__ . '/../ascii-quest/' . $route;
+    if (!is_file($source)) {
+        throw new RuntimeException('Missing route fixture: ' . $route);
+    }
+
+    $directory = sys_get_temp_dir() . '/ascii-quest-task14-' . bin2hex(random_bytes(8));
+    $libraryDirectory = $directory . '/lib';
+    $sessionDirectory = $directory . '/sessions';
+    if (!mkdir($libraryDirectory, 0700, true) || !mkdir($sessionDirectory, 0700, true)) {
+        throw new RuntimeException('Unable to create Task 14 route fixture.');
+    }
+
+    $endpoint = $directory . '/' . $route;
+    $runner = $directory . '/run.php';
+    $databaseCall = $directory . '/database-call';
+    copy($source, $endpoint);
+    file_put_contents($directory . '/db.php', <<<'PHP'
+<?php
+declare(strict_types=1);
+function getDb(): object
+{
+    file_put_contents((string) getenv('ASCII_QUEST_TASK14_DATABASE_CALL'), 'called');
+    throw new RuntimeException('Database must not be reached by a rejected request.');
+}
+PHP);
+    foreach (['map_loader.php'] as $dependency) {
+        file_put_contents($directory . '/' . $dependency, "<?php\ndeclare(strict_types=1);\n");
+    }
+    foreach (['CharacterStats.php', 'WarpBootstrap.php', 'CombatBootstrap.php'] as $dependency) {
+        file_put_contents($libraryDirectory . '/' . $dependency, "<?php\ndeclare(strict_types=1);\n");
+    }
+
+    $sessionId = 'task14' . bin2hex(random_bytes(8));
+    $runnerSource = '<?php' . "\n" .
+        'ini_set(\'session.save_path\', ' . var_export($sessionDirectory, true) . ');' . "\n" .
+        'session_id(' . var_export($sessionId, true) . ');' . "\n" .
+        'session_start();' . "\n" .
+        '$_SESSION = ' . var_export($session, true) . ';' . "\n" .
+        'session_write_close();' . "\n" .
+        '$_SERVER[\'REQUEST_METHOD\'] = ' . var_export($method, true) . ';' . "\n" .
+        '$_POST = ' . var_export($post, true) . ';' . "\n" .
+        'register_shutdown_function(static function (): void { echo "\\n__TASK14_STATUS__" . http_response_code(); });' . "\n" .
+        'require ' . var_export($endpoint, true) . ';' . "\n";
+    file_put_contents($runner, $runnerSource);
+
+    $process = proc_open(
+        [PHP_BINARY, $runner],
+        [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+        $pipes,
+        null,
+        array_replace(getenv(), ['ASCII_QUEST_TASK14_DATABASE_CALL' => $databaseCall]),
+    );
+    if (!is_resource($process)) {
+        throw new RuntimeException('Unable to execute Task 14 route fixture.');
+    }
+    fclose($pipes[0]);
+    $stdout = stream_get_contents($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    $exitCode = proc_close($process);
+    $status = 0;
+    $body = $stdout;
+    if (preg_match('/\n__TASK14_STATUS__(\d+)\z/', $stdout, $matches) === 1) {
+        $status = (int) $matches[1];
+        $body = substr($stdout, 0, -strlen($matches[0]));
+    }
+    $databaseReached = is_file($databaseCall);
+
+    foreach (glob($sessionDirectory . '/*') ?: [] as $sessionFile) {
+        unlink($sessionFile);
+    }
+    foreach ([
+        $runner,
+        $databaseCall,
+        $endpoint,
+        $directory . '/db.php',
+        $directory . '/map_loader.php',
+        $libraryDirectory . '/CharacterStats.php',
+        $libraryDirectory . '/WarpBootstrap.php',
+        $libraryDirectory . '/CombatBootstrap.php',
+    ] as $file) {
+        if (is_file($file)) {
+            unlink($file);
+        }
+    }
+    rmdir($sessionDirectory);
+    rmdir($libraryDirectory);
+    rmdir($directory);
+
+    return [$exitCode, $status, $body, $stderr, $databaseReached];
+}
+
+return [
+    'Task 14 exploration mutation routes reject session and CSRF failures before database work' => function (): void {
+        $session = ['user_id' => 7, 'character_id' => 42, 'csrf_token' => 'session-token'];
+        foreach ([
+            'move_character.php',
+            'interact.php',
+            'sync_map_state.php',
+            'create_character.php',
+            'select_character.php',
+            'delete_character.php',
+        ] as $route) {
+            foreach ([
+                ['session' => [], 'post' => ['csrf_token' => 'session-token']],
+                ['session' => $session, 'post' => []],
+                ['session' => $session, 'post' => ['csrf_token' => 'wrong-token']],
+            ] as $case) {
+                [$exitCode, , , $stderr, $databaseReached] = task14RunEarlyRoute(
+                    $route,
+                    $case['session'],
+                    'POST',
+                    $case['post'],
+                );
+                assertSameValue(0, $exitCode, $route . ' rejected request exits safely. ' . $stderr);
+                assertSameValue(false, $databaseReached, $route . ' rejects before database authority.');
+            }
+        }
+    },
+
+    'Task 14 unresolved terminal and ordinary lifecycle route matrix stays server authoritative' => function (): void {
+        $blockedOperations = [
+            CombatAccessGuard::MOVE,
+            CombatAccessGuard::INTERACT,
+            CombatAccessGuard::MAP_SYNC,
+            CombatAccessGuard::WARP_UNLOCK,
+            CombatAccessGuard::WARP_TRAVEL,
+            CombatAccessGuard::STAT_ALLOCATE,
+            CombatAccessGuard::COMBAT_ENTRY,
+        ];
+        foreach (['active', 'victory_loot'] as $status) {
+            [$guard, $repository] = task3CombatGuard();
+            $repository->encounters[] = [
+                'id' => 10,
+                'character_id' => 42,
+                'status' => $status,
+                'active_slot' => 1,
+            ];
+            foreach ($blockedOperations as $operation) {
+                assertTask3GuardRejected(
+                    fn (): array => $guard->assertAllowed($operation, 7, 42),
+                    $status . ' ' . $operation,
+                );
+            }
+            assertSameValue(true, $guard->assertAllowed(
+                CombatAccessGuard::SELECT_CHARACTER,
+                7,
+                42,
+            )['resume_combat'], $status . ' fighter remains resumable.');
+            assertTask3GuardRejected(
+                fn (): array => $guard->assertAllowed(CombatAccessGuard::SELECT_CHARACTER, 7, 43),
+                $status . ' blocks another Champion.',
+            );
+            assertSameValue(true, $guard->assertAllowed(
+                CombatAccessGuard::CREATE_CHARACTER,
+                7,
+                0,
+            )['allowed'], $status . ' keeps creation available.');
+            assertSameValue(0, $repository->writes, $status . ' matrix performs no mutation.');
+        }
+
+        [$closedGuard, $closedRepository] = task3CombatGuard();
+        $closedRepository->encounters[] = [
+            'id' => 10,
+            'character_id' => 42,
+            'status' => 'closed',
+            'active_slot' => null,
+        ];
+        foreach ($blockedOperations as $operation) {
+            assertSameValue(true, $closedGuard->assertAllowed($operation, 7, 42)['allowed'], 'Closed ' . $operation . '.');
+        }
+        assertSameValue(true, $closedGuard->assertAllowed(
+            CombatAccessGuard::DELETE_CHARACTER,
+            7,
+            42,
+        )['allowed'], 'Closed living Champion is deletable.');
+
+        [$deadGuard, $deadRepository] = task3CombatGuard();
+        $deadRepository->characters[42]['life_state'] = 'dead';
+        foreach (array_merge($blockedOperations, [
+            CombatAccessGuard::SELECT_CHARACTER,
+            CombatAccessGuard::DELETE_CHARACTER,
+        ]) as $operation) {
+            assertTask3GuardRejected(
+                fn (): array => $deadGuard->assertAllowed($operation, 7, 42),
+                'Defeated/dead ' . $operation,
+            );
+        }
+    },
+
+    'Task 14 two tabs replay one skill request without duplicate action or allowance spend' => function (): void {
+        $pdo = new FakeCombatPdo();
+        $pdo->encounters[91] = task4Encounter([
+            'enemy_current_hp' => 120,
+            'timeline_elapsed_ms' => 1000,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'turn_started_timeline_ms' => 0,
+            'next_enemy_decision_timeline_ms' => 10000,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'player_actions_remaining' => 2,
+            'enemy_actions_remaining' => 2,
+        ]);
+        $clock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:00.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $first = task6ChronologicalService($pdo, $clock, null, new Task6SequenceRandomSource([21]));
+        $second = task6ChronologicalService($pdo, $clock, null, new Task6SequenceRandomSource([]));
+        $token = '14141414-1414-4414-8414-141414141414';
+
+        $firstState = $first->startPlayerAction(7, 42, 'prototype_flame_strike', $token);
+        $secondState = $second->startPlayerAction(7, 42, 'prototype_flame_strike', $token);
+        $skills = array_values(array_filter(
+            $pdo->actions,
+            static fn (array $action): bool => ($action['definition_key'] ?? null) === 'prototype_flame_strike',
+        ));
+
+        assertSameValue(1, count($skills), 'One durable skill action.');
+        assertSameValue(1, $pdo->encounters[91]['player_actions_remaining'], 'One Action is spent.');
+        assertSameValue($firstState['player_actions'], $secondState['player_actions'], 'Both tabs observe the same action.');
+    },
+
+    'Task 14 two service instances replay weapon Potion and Block commands exactly once' => function (): void {
+        $weaponPdo = new FakeCombatPdo();
+        $weaponPdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 9000,
+            'player_actions_remaining' => 1,
+        ]);
+        $weaponClock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:00.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $weaponToken = '14214214-1421-4421-8421-142142142142';
+        task5RepositoryService($weaponPdo, $weaponClock)->startPlayerAction(
+            7,
+            42,
+            'prototype_weapon_attack',
+            $weaponToken,
+        );
+        task5RepositoryService($weaponPdo, $weaponClock)->startPlayerAction(
+            7,
+            42,
+            'prototype_weapon_attack',
+            $weaponToken,
+        );
+        assertSameValue(1, count($weaponPdo->actions), 'Two weapon tabs persist one action.');
+        assertSameValue(0, $weaponPdo->encounters[91]['player_actions_remaining'], 'Two weapon tabs spend one Action.');
+
+        $potionPdo = new FakeCombatPdo();
+        task8Encounter($potionPdo);
+        $potionPdo->characters[42]['current_hp'] = 100;
+        $potionToken = '14314314-1431-4431-8431-143143143143';
+        task8UsePotion(task8Service($potionPdo), $potionToken);
+        $potionAfterFirst = [
+            $potionPdo->characters[42]['current_hp'],
+            $potionPdo->encounters[91]['potion_charges_remaining'],
+            $potionPdo->actions,
+            $potionPdo->events,
+        ];
+        task8UsePotion(task8Service($potionPdo), $potionToken);
+        assertSameValue($potionAfterFirst, [
+            $potionPdo->characters[42]['current_hp'],
+            $potionPdo->encounters[91]['potion_charges_remaining'],
+            $potionPdo->actions,
+            $potionPdo->events,
+        ], 'Two Potion tabs heal, consume, persist, and log once.');
+
+        $blockPdo = new FakeCombatPdo();
+        $blockPdo->encounters[91] = task4Encounter([
+            'timeline_elapsed_ms' => 500,
+            'last_synchronized_at' => '2026-09-01 12:00:00.000000',
+            'next_enemy_decision_timeline_ms' => 2000,
+            'enemy_ai_initialized_timeline_ms' => 0,
+            'player_actions_remaining' => 0,
+        ]);
+        $blockPdo->actions[71] = task7EnemyAction();
+        $blockClock = new Task4MutableCombatClock(new DateTimeImmutable(
+            '2026-09-01 12:00:00.000000',
+            new DateTimeZone('UTC'),
+        ));
+        $blockToken = '14414414-1441-4441-8441-144144144144';
+        foreach ([new Task7SequenceRandomSource(), new Task7SequenceRandomSource()] as $random) {
+            CombatBootstrap::serviceForRepository(
+                new CombatRepository($blockPdo),
+                $blockClock,
+                new Task5MutableEquipmentProvider(),
+                $random,
+            )->attemptBlock(7, 42, 71, str_repeat('b', 64), $blockToken);
+        }
+        $blockCommands = array_filter(
+            $blockPdo->actions,
+            static fn (array $action): bool => ($action['action_kind'] ?? null) === 'block',
+        );
+        assertSameValue(1, count($blockCommands), 'Two Block tabs persist one resolution.');
+        assertSameValue(500, $blockPdo->actions[71]['block_attempted_timeline_ms'] ?? null, 'Two Block tabs retain one attempt timeline.');
+        assertSameValue(0, $blockPdo->encounters[91]['player_actions_remaining'], 'Block consumes no Action.');
+    },
+
+    'Task 14 navigation guards preserve persisted resources and encounter state' => function (): void {
+        foreach (['active', 'victory_loot'] as $status) {
+            [$guard, $repository] = task3CombatGuard();
+            $repository->characters[42]['current_hp'] = 73;
+            $repository->characters[42]['current_mana'] = 41;
+            $repository->encounters[] = [
+                'id' => 10,
+                'character_id' => 42,
+                'status' => $status,
+                'active_slot' => 1,
+                'enemy_current_hp' => $status === 'active' ? 81 : 0,
+            ];
+            $beforeCharacter = $repository->characters[42];
+            $beforeEncounter = $repository->encounters[0];
+
+            $load = $guard->assertAllowed(CombatAccessGuard::GAME_LOAD, 7, 42);
+            $select = $guard->assertAllowed(CombatAccessGuard::SELECT_CHARACTER, 7, 42);
+
+            assertSameValue(true, $load['resume_combat'], $status . ' game load resumes.');
+            assertSameValue(true, $select['resume_combat'], $status . ' selection resumes.');
+            assertSameValue($beforeCharacter, $repository->characters[42], $status . ' navigation preserves HP and Mana.');
+            assertSameValue($beforeEncounter, $repository->encounters[0], $status . ' navigation preserves encounter.');
+            assertSameValue(0, $repository->writes, $status . ' navigation performs no write.');
+        }
+    },
+];

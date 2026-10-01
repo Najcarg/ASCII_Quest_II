@@ -32,7 +32,6 @@ require_once __DIR__ . "/lib/CharacterStats.php";
 require_once __DIR__ . "/lib/WarpBootstrap.php";
 require_once __DIR__ . "/lib/CombatBootstrap.php";
 
-$pdo = getDb();
 $combatRepository = null;
 $movementTransactionOpen = false;
 
@@ -94,6 +93,24 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
         "messages" => ["Invalid request method."],
     ]);
 }
+
+$postedToken = $_POST["csrf_token"] ?? "";
+$sessionToken = $_SESSION["csrf_token"] ?? "";
+if (
+    !is_string($postedToken) ||
+    !is_string($sessionToken) ||
+    $postedToken === "" ||
+    $sessionToken === "" ||
+    !hash_equals($sessionToken, $postedToken)
+) {
+    sendJson([
+        "success" => false,
+        "message" => "Security check failed. Please try again.",
+        "messages" => ["Security check failed. Please try again."],
+    ]);
+}
+
+$pdo = getDb();
 
 /*
 |--------------------------------------------------------------------------

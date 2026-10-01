@@ -19,7 +19,6 @@ require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
 require_once __DIR__ . "/lib/CombatBootstrap.php";
 
-$pdo = getDb();
 $combatGuard = null;
 
 header("Content-Type: application/json");
@@ -40,6 +39,30 @@ if (!isset($_SESSION["user_id"]) || !isset($_SESSION["character_id"])) {
         "tile_updates" => [],
     ]);
 }
+
+if (($_SERVER["REQUEST_METHOD"] ?? "") !== "POST") {
+    sendJson([
+        "success" => false,
+        "tile_updates" => [],
+    ]);
+}
+
+$postedToken = $_POST["csrf_token"] ?? "";
+$sessionToken = $_SESSION["csrf_token"] ?? "";
+if (
+    !is_string($postedToken) ||
+    !is_string($sessionToken) ||
+    $postedToken === "" ||
+    $sessionToken === "" ||
+    !hash_equals($sessionToken, $postedToken)
+) {
+    sendJson([
+        "success" => false,
+        "tile_updates" => [],
+    ]);
+}
+
+$pdo = getDb();
 
 try {
     $combatGuard = CombatBootstrap::guard($pdo);

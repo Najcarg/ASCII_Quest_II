@@ -311,6 +311,7 @@ function createGameControlsHarness(options = {}) {
     const unlockStates = [];
     let reloads = 0;
     let intervals = 0;
+    const intervalCallbacks = [];
 
     function createElement() {
         return {
@@ -438,8 +439,9 @@ function createGameControlsHarness(options = {}) {
         fetch: fetchImplementation,
         FormData,
         URLSearchParams,
-        setInterval() {
+        setInterval(callback) {
             intervals++;
+            intervalCallbacks.push(callback);
         },
         setTimeout(callback) {
             callback();
@@ -478,6 +480,9 @@ function createGameControlsHarness(options = {}) {
                 key,
                 preventDefault() {},
             });
+        },
+        runMapSync() {
+            return intervalCallbacks[0]?.();
         },
     };
 }
@@ -588,6 +593,18 @@ const tests = {
         assert.equal(controls.requests.length, 1);
         assert.equal(controls.requests[0].url, "move_character.php");
         assert.equal(controls.requests[0].options.body.get("direction"), "right");
+        assert.equal(controls.requests[0].options.body.get("csrf_token"), "test-token");
+    },
+
+    async "map synchronization sends CSRF authority"() {
+        const controls = createGameControlsHarness();
+
+        await controls.runMapSync();
+
+        assert.equal(controls.requests.length, 1);
+        assert.equal(controls.requests[0].url, "sync_map_state.php");
+        assert.equal(controls.requests[0].options.method, "POST");
+        assert.equal(controls.requests[0].options.body.get("csrf_token"), "test-token");
     },
 
     async "E uses the shared interaction endpoint and applies a Warp unlock response"() {

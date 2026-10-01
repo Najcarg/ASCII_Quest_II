@@ -49,8 +49,11 @@ function isExplorationActionPending() {
 */
 async function syncMapState() {
     try {
+        const requestBody = new FormData();
+        requestBody.append("csrf_token", gameState.csrfToken);
         const response = await fetch("sync_map_state.php", {
             method: "POST",
+            body: requestBody,
         });
 
         const result = await response.json();
@@ -384,6 +387,7 @@ async function moveCharacter(direction) {
     try {
         const formData = new FormData();
         formData.append("direction", direction);
+        formData.append("csrf_token", gameState.csrfToken);
 
         const response = await fetch("move_character.php", {
             method: "POST",
