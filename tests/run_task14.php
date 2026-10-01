@@ -28,9 +28,14 @@ foreach ($files as $file) {
 
 $selectedNames = [
     'Task 14 exploration mutation routes reject session and CSRF failures before database work',
+    'Task 14 malformed delete CSRF is rejected without a TypeError or database access',
     'Task 14 unresolved terminal and ordinary lifecycle route matrix stays server authoritative',
     'Task 14 two tabs replay one skill request without duplicate action or allowance spend',
     'Task 14 two service instances replay weapon Potion and Block commands exactly once',
+    'Task 14 accepted weapon and skill tokens replay current victory without duplicate effects',
+    'Task 14 accepted action token replays after later permanent defeat',
+    'Task 14 accepted Potion token replays terminal state without healing or consumption',
+    'Task 14 accepted Block token replays terminal state without another attempt',
     'Task 14 navigation guards preserve persisted resources and encounter state',
     'Retry and two-tab start resume one unchanged encounter',
     'Accepted request tokens replay immutable snapshots while later actions use new equipment',

@@ -58,6 +58,8 @@ $postedToken = $_POST["csrf_token"] ?? "";
 $sessionToken = $_SESSION["csrf_token"] ?? "";
 
 if (
+    !is_string($postedToken) ||
+    !is_string($sessionToken) ||
     $postedToken === "" ||
     $sessionToken === "" ||
     !hash_equals($sessionToken, $postedToken)

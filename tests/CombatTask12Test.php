@@ -200,15 +200,21 @@ return [
         assertSameValue('cancelled', $pdo->actions[61]['state'] ?? null, 'Outstanding enemy offense is cancelled.');
         assertSameValue(null, $pdo->actions[61]['active_slot'] ?? null, 'Cancelled offense releases its active slot.');
 
-        task12AssertRejected(
-            fn (): array => $service->startPlayerAction(
-                7,
-                42,
-                'prototype_weapon_attack',
-                '12121212-1212-4212-8212-121212121212',
-            ),
-            'A player action cannot begin after victory.',
+        $beforeReplay = [
+            'character' => $pdo->characters[42],
+            'actions' => $pdo->actions,
+            'events' => $pdo->events,
+        ];
+        $replay = $service->startPlayerAction(
+            7,
+            42,
+            'prototype_weapon_attack',
+            '12121212-1212-4212-8212-121212121212',
         );
+        assertSameValue('victory_loot', $replay['status'] ?? null, 'Accepted lethal action token replays victory.');
+        assertSameValue($beforeReplay['character'], $pdo->characters[42], 'Replay does not issue rewards again.');
+        assertSameValue($beforeReplay['actions'], $pdo->actions, 'Replay does not recreate the lethal action.');
+        assertSameValue($beforeReplay['events'], $pdo->events, 'Replay does not append another reward event.');
     },
 
     'Task 12 configured Gold and raw EXP issue exactly once with one event' => function (): void {

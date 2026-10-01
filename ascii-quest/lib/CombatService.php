@@ -246,32 +246,28 @@ final class CombatService
             if ($encounter === null) {
                 throw new DomainException('No active combat encounter was found.');
             }
-            if (($encounter['status'] ?? null) !== 'active') {
-                throw new DomainException('Combat is no longer active.');
-            }
-
-            $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
-            if ($enemy === null) {
-                throw new RuntimeException('Stored combat enemy is unavailable.');
-            }
-            $stats = CharacterStats::calculate($character);
-            $synchronization = $this->synchronizer->synchronize(
-                $encounter,
-                $character,
-                (int) $stats['rates']['action'],
-                (int) $enemy['action'],
-            );
-            $synchronized = $synchronization['encounter'];
-            $character = $synchronization['character'];
             $encounterId = self::integer($encounter, 'id');
-            $this->persistSynchronization(
-                $encounterId,
-                $synchronized,
-                self::integer($encounter, 'version'),
-            );
-            $synchronizationPersisted = true;
-            if (($synchronized['status'] ?? null) !== 'active') {
-                throw new DomainException('Combat is no longer active.');
+            $synchronized = $encounter;
+            if (($encounter['status'] ?? null) === 'active') {
+                $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
+                if ($enemy === null) {
+                    throw new RuntimeException('Stored combat enemy is unavailable.');
+                }
+                $stats = CharacterStats::calculate($character);
+                $synchronization = $this->synchronizer->synchronize(
+                    $encounter,
+                    $character,
+                    (int) $stats['rates']['action'],
+                    (int) $enemy['action'],
+                );
+                $synchronized = $synchronization['encounter'];
+                $character = $synchronization['character'];
+                $this->persistSynchronization(
+                    $encounterId,
+                    $synchronized,
+                    self::integer($encounter, 'version'),
+                );
+                $synchronizationPersisted = true;
             }
 
             $replay = $this->repository->lockActionByRequestToken($encounterId, $requestToken);
@@ -287,6 +283,9 @@ final class CombatService
                 $guard->commit();
 
                 return $state;
+            }
+            if (($synchronized['status'] ?? null) !== 'active') {
+                throw new DomainException('Combat is no longer active.');
             }
 
             $definition = $this->definitions->playerAction($actionKey);
@@ -424,37 +423,33 @@ final class CombatService
             if ($encounter === null) {
                 throw new DomainException('No active combat encounter was found.');
             }
-            if (($encounter['status'] ?? null) !== 'active') {
-                throw new DomainException('Combat is no longer active.');
-            }
-
-            $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
-            if ($enemy === null) {
-                throw new RuntimeException('Stored combat enemy is unavailable.');
-            }
             $blockDefinition = $this->definitions->playerReaction('basic_block');
             if ($blockDefinition === null) {
                 throw new RuntimeException('Player Block reaction is unavailable.');
             }
             $blockDefinitionKey = (string) ($blockDefinition['key'] ?? '');
-            $stats = CharacterStats::calculate($character);
-            $synchronization = $this->synchronizer->synchronize(
-                $encounter,
-                $character,
-                (int) $stats['rates']['action'],
-                (int) $enemy['action'],
-            );
-            $synchronized = $synchronization['encounter'];
-            $character = $synchronization['character'];
             $encounterId = self::integer($encounter, 'id');
-            $this->persistSynchronization(
-                $encounterId,
-                $synchronized,
-                self::integer($encounter, 'version'),
-            );
-            $synchronizationPersisted = true;
-            if (($synchronized['status'] ?? null) !== 'active') {
-                throw new DomainException('Combat is no longer active.');
+            $synchronized = $encounter;
+            if (($encounter['status'] ?? null) === 'active') {
+                $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
+                if ($enemy === null) {
+                    throw new RuntimeException('Stored combat enemy is unavailable.');
+                }
+                $stats = CharacterStats::calculate($character);
+                $synchronization = $this->synchronizer->synchronize(
+                    $encounter,
+                    $character,
+                    (int) $stats['rates']['action'],
+                    (int) $enemy['action'],
+                );
+                $synchronized = $synchronization['encounter'];
+                $character = $synchronization['character'];
+                $this->persistSynchronization(
+                    $encounterId,
+                    $synchronized,
+                    self::integer($encounter, 'version'),
+                );
+                $synchronizationPersisted = true;
             }
 
             $replay = $this->repository->lockActionByRequestToken(
@@ -475,6 +470,9 @@ final class CombatService
                 $guard->commit();
 
                 return $state;
+            }
+            if (($synchronized['status'] ?? null) !== 'active') {
+                throw new DomainException('Combat is no longer active.');
             }
 
             $incomingAction = $this->repository->lockEnemyActionForBlock(
@@ -564,32 +562,28 @@ final class CombatService
             if ($encounter === null) {
                 throw new DomainException('No active combat encounter was found.');
             }
-            if (($encounter['status'] ?? null) !== 'active') {
-                throw new DomainException('Combat is no longer active.');
-            }
-
-            $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
-            if ($enemy === null) {
-                throw new RuntimeException('Stored combat enemy is unavailable.');
-            }
-            $stats = CharacterStats::calculate($character);
-            $synchronization = $this->synchronizer->synchronize(
-                $encounter,
-                $character,
-                (int) $stats['rates']['action'],
-                (int) $enemy['action'],
-            );
-            $synchronized = $synchronization['encounter'];
-            $character = $synchronization['character'];
             $encounterId = self::integer($encounter, 'id');
-            $this->persistSynchronization(
-                $encounterId,
-                $synchronized,
-                self::integer($encounter, 'version'),
-            );
-            $synchronizationPersisted = true;
-            if (($synchronized['status'] ?? null) !== 'active') {
-                throw new DomainException('Combat is no longer active.');
+            $synchronized = $encounter;
+            if (($encounter['status'] ?? null) === 'active') {
+                $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
+                if ($enemy === null) {
+                    throw new RuntimeException('Stored combat enemy is unavailable.');
+                }
+                $stats = CharacterStats::calculate($character);
+                $synchronization = $this->synchronizer->synchronize(
+                    $encounter,
+                    $character,
+                    (int) $stats['rates']['action'],
+                    (int) $enemy['action'],
+                );
+                $synchronized = $synchronization['encounter'];
+                $character = $synchronization['character'];
+                $this->persistSynchronization(
+                    $encounterId,
+                    $synchronized,
+                    self::integer($encounter, 'version'),
+                );
+                $synchronizationPersisted = true;
             }
 
             $potionKey = (string) ($synchronized['potion_key'] ?? '');
@@ -610,6 +604,9 @@ final class CombatService
                 $guard->commit();
 
                 return $state;
+            }
+            if (($synchronized['status'] ?? null) !== 'active') {
+                throw new DomainException('Combat is no longer active.');
             }
 
             if (self::integer($character, 'current_hp') <= 0) {
