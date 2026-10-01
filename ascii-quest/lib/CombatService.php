@@ -184,6 +184,12 @@ final class CombatService
 
                 return [];
             }
+            if (($encounter['status'] ?? null) === 'defeated') {
+                $state = $this->projector->project($character, $encounter);
+                $guard->commit();
+
+                return $state;
+            }
 
             $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
             if ($enemy === null) {
@@ -239,6 +245,9 @@ final class CombatService
             $encounter = $decision['active_encounter'];
             if ($encounter === null) {
                 throw new DomainException('No active combat encounter was found.');
+            }
+            if (($encounter['status'] ?? null) !== 'active') {
+                throw new DomainException('Combat is no longer active.');
             }
 
             $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
@@ -415,6 +424,9 @@ final class CombatService
             if ($encounter === null) {
                 throw new DomainException('No active combat encounter was found.');
             }
+            if (($encounter['status'] ?? null) !== 'active') {
+                throw new DomainException('Combat is no longer active.');
+            }
 
             $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));
             if ($enemy === null) {
@@ -551,6 +563,9 @@ final class CombatService
             $encounter = $decision['active_encounter'];
             if ($encounter === null) {
                 throw new DomainException('No active combat encounter was found.');
+            }
+            if (($encounter['status'] ?? null) !== 'active') {
+                throw new DomainException('Combat is no longer active.');
             }
 
             $enemy = $this->definitions->enemy((string) ($encounter['enemy_key'] ?? ''));

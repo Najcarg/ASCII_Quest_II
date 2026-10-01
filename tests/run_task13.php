@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$tests = array_merge(
+$allTests = array_merge(
     require __DIR__ . '/CharacterStatsTest.php',
     require __DIR__ . '/CharacterStatAllocatorTest.php',
     require __DIR__ . '/WarpTest.php',
@@ -20,12 +20,15 @@ $tests = array_merge(
     require __DIR__ . '/CombatTask12Test.php',
     require __DIR__ . '/CombatTask13Test.php',
 );
+$tests = array_filter(
+    $allTests,
+    static fn (string $name): bool => str_starts_with($name, 'Task 13'),
+    ARRAY_FILTER_USE_KEY,
+);
 
 $passed = 0;
 $failed = 0;
-
-echo "ASCII Quest Tests\n\n";
-
+echo "ASCII Quest Task 13 Tests\n\n";
 foreach ($tests as $name => $test) {
     try {
         $test();

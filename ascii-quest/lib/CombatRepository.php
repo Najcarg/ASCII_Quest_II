@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/CombatDeathResult.php';
+
 final class CombatRepository
 {
     private ?int $lockedCharacterId = null;
@@ -252,6 +254,79 @@ final class CombatRepository
         return is_array($encounter) ? $encounter : null;
     }
 
+    public function findLatestDefeatedEncounter(int $characterId): ?array
+    {
+        $stmt = $this->pdo->prepare("SELECT *
+            FROM combat_encounters
+            WHERE character_id = :character_id
+              AND status = 'defeated'
+              AND active_slot IS NULL
+              AND death_processed_at IS NOT NULL
+              AND killer_enemy_key IS NOT NULL
+            ORDER BY death_processed_at DESC, id DESC
+            LIMIT 1");
+        $stmt->execute(['character_id' => $characterId]);
+        $encounter = $stmt->fetch();
+
+        return is_array($encounter) ? $encounter : null;
+    }
+
+    public function lockLatestDefeatedEncounter(int $characterId): ?array
+    {
+        $this->requireChampionLock($characterId);
+        if (!$this->activeEncounterLockChecked || $this->lockedEncounter !== null) {
+            throw new LogicException('Account encounter slot must be locked before defeat history.');
+        }
+        if ($this->detailRowsTouched) {
+            throw new LogicException('Defeat history must be locked before action or event rows.');
+        }
+
+        $stmt = $this->pdo->prepare("SELECT *
+            FROM combat_encounters
+            WHERE character_id = :character_id
+              AND status = 'defeated'
+              AND active_slot IS NULL
+              AND death_processed_at IS NOT NULL
+              AND killer_enemy_key IS NOT NULL
+            ORDER BY death_processed_at DESC, id DESC
+            LIMIT 1
+            FOR UPDATE");
+        $stmt->execute(['character_id' => $characterId]);
+        $encounter = $stmt->fetch();
+
+        $this->lockedEncounter = is_array($encounter) ? $encounter : null;
+        $this->lockedEncounterId = $this->lockedEncounter !== null
+            ? (int) $this->lockedEncounter['id']
+            : null;
+
+        return $this->lockedEncounter;
+    }
+
+    public function findDeathResultForOwnedCharacter(
+        int $userId,
+        int $characterId,
+    ): ?CombatDeathResult {
+        $character = $this->findOwnedCharacter($userId, $characterId);
+        if (
+            $character === null ||
+            ($character['life_state'] ?? null) !== 'dead' ||
+            !is_string($character['died_at'] ?? null)
+        ) {
+            return null;
+        }
+        $encounter = $this->findLatestDefeatedEncounter($characterId);
+        if ($encounter === null) {
+            return null;
+        }
+
+        return new CombatDeathResult(
+            $characterId,
+            (int) $encounter['id'],
+            (string) $encounter['killer_enemy_key'],
+            (string) $character['died_at'],
+        );
+    }
+
     public function updateLockedCharacterPosition(
         int $userId,
         int $characterId,
@@ -308,6 +383,30 @@ final class CombatRepository
             'character_id' => $characterId,
             'user_id' => $userId,
             'expected_current_hp' => $expectedCurrentHp,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    public function markLockedCharacterDead(
+        int $userId,
+        int $characterId,
+        string $diedAt,
+    ): bool {
+        $this->requireChampionLock($characterId);
+
+        $stmt = $this->pdo->prepare("UPDATE characters
+            SET life_state = 'dead',
+                died_at = :died_at
+            WHERE id = :character_id
+              AND user_id = :user_id
+              AND current_hp = 0
+              AND life_state = 'alive'
+              AND died_at IS NULL");
+        $stmt->execute([
+            'died_at' => $diedAt,
+            'character_id' => $characterId,
+            'user_id' => $userId,
         ]);
 
         return $stmt->rowCount() === 1;
@@ -495,6 +594,32 @@ final class CombatRepository
               AND rewards_issued_at IS NULL");
         $stmt->execute([
             'rewards_issued_at' => $rewardsIssuedAt,
+            'encounter_id' => $encounterId,
+        ]);
+
+        return $stmt->rowCount() === 1;
+    }
+
+    public function transitionLockedEncounterToDefeat(
+        int $encounterId,
+        string $killerEnemyKey,
+        string $deathProcessedAt,
+    ): bool {
+        $this->requireEncounterLock($encounterId);
+
+        $stmt = $this->pdo->prepare("UPDATE combat_encounters
+            SET status = 'defeated',
+                active_slot = NULL,
+                death_processed_at = :death_processed_at,
+                killer_enemy_key = :killer_enemy_key
+            WHERE id = :encounter_id
+              AND status = 'active'
+              AND active_slot = 1
+              AND death_processed_at IS NULL
+              AND killer_enemy_key IS NULL");
+        $stmt->execute([
+            'death_processed_at' => $deathProcessedAt,
+            'killer_enemy_key' => $killerEnemyKey,
             'encounter_id' => $encounterId,
         ]);
 

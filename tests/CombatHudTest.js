@@ -151,6 +151,7 @@ function combatDocument() {
         "playerHpBar", "playerHpFill",
         "combatActivePanel", "combatVictoryPanel", "combatVictoryGold",
         "combatVictoryExperience", "combatPhysicalDrops", "combatCloseButton",
+        "combatDefeatState",
     ];
     const elements = Object.fromEntries(ids.map((id) => [id, element()]));
     elements.playerHpBar.attributes["aria-valuemax"] = "200";
@@ -937,6 +938,54 @@ const tests = {
         assert.equal(documentRoot.elements.combatBlockButton.disabled, true);
         assert.equal(documentRoot.elements.combatCloseButton.disabled, false);
         assert.deepEqual(view.lootPhase.physicalDrops, []);
+    },
+
+    async "defeat freezes chronology and disables every combat mutation while tabs remain"() {
+        const documentRoot = combatDocument();
+        const requests = [];
+        const state = combatState({
+            status: "defeated",
+            champion: { ...combatState().champion, current_hp: 0 },
+            player_attack: {
+                ...combatState().player_attack,
+                available: false,
+                disabled_reason: "encounter_inactive",
+            },
+            reaction_prompt: null,
+            loot_phase: null,
+        });
+        const controller = hud.createCombatController({
+            csrfToken: "csrf",
+            fetchImplementation: async (url) => {
+                requests.push(url);
+                return { ok: true, json: async () => state };
+            },
+            initialState: state,
+            requestTokenFactory: () => "13131313-1313-4313-8313-131313131313",
+        });
+        const view = hud.renderCombatHud(
+            documentRoot,
+            state,
+            { attack: false, skill: false, block: false, potion: false, close: false, refresh: false },
+            Date.parse(state.server_observed_at) + 5000,
+        );
+
+        assert.equal(view.timelineMs, 2500, "defeat does not interpolate live combat time");
+        assert.equal(view.champion.currentHp, 0);
+        assert.equal(documentRoot.elements.combatAttackButton.disabled, true);
+        assert.equal(documentRoot.elements.combatSkill1Button.disabled, true);
+        assert.equal(documentRoot.elements.combatPotionButton.disabled, true);
+        assert.equal(documentRoot.elements.combatReactionLayer.hidden, true);
+        assert.equal(documentRoot.elements.combatBlockButton.disabled, true);
+        assert.equal(documentRoot.elements.combatDefeatState.hidden, false);
+        assert.equal(await controller.attack(), false);
+        assert.equal(await controller.skill("skill_1"), false);
+        assert.equal(await controller.block(), false);
+        assert.equal(await controller.potion(), false);
+        assert.deepEqual(requests, []);
+        assert.ok(gameMarkup.includes('id="combat-battle-info"'));
+        assert.ok(gameMarkup.includes('id="combat-server-info"'));
+        assert.ok(gameMarkup.includes('id="combat-chat"'));
     },
 
     async "victory close sends only CSRF then returns to exploration"() {

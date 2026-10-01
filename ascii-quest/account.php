@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 session_start();
 
+require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/lib/CombatBootstrap.php";
+
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
     exit();
@@ -14,6 +17,17 @@ function e(string $value): string
 }
 
 $username = $_SESSION["username"] ?? "Player";
+$activeCombat = null;
+try {
+    $activeCombat = CombatBootstrap::guard(getDb())->accountCombatState(
+        (int) $_SESSION["user_id"],
+    );
+} catch (Throwable $e) {
+    error_log("Main Menu combat lookup failed: " . $e->getMessage());
+}
+$resumeLabel = ($activeCombat["status"] ?? null) === "victory_loot"
+    ? "Resume Loot"
+    : "Resume Battle";
 ?>
 
 <!DOCTYPE html>
@@ -39,6 +53,12 @@ $username = $_SESSION["username"] ?? "Player";
         </div>
 
         <div class="menu-actions">
+            <?php if ($activeCombat !== null): ?>
+                <a class="menu-button" href="character_select.php">
+                    <?= e($resumeLabel) ?>
+                </a>
+            <?php endif; ?>
+
             <a class="menu-button" href="create_character.php">
                 Character Creation
             </a>

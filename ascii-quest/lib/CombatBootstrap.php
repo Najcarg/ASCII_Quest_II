@@ -6,6 +6,7 @@ require_once __DIR__ . '/CombatActionResolver.php';
 require_once __DIR__ . '/CaveBrutePolicy.php';
 require_once __DIR__ . '/CombatClock.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
+require_once __DIR__ . '/CombatDeathResult.php';
 require_once __DIR__ . '/CombatEquipmentProvider.php';
 require_once __DIR__ . '/CombatPlayerActionEvaluator.php';
 require_once __DIR__ . '/CombatRandomSource.php';

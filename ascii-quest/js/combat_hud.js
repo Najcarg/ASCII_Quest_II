@@ -496,13 +496,19 @@
     function renderCombatHud(documentRoot, state, pending, wallNowMs) {
         const view = buildPresentation(state, wallNowMs);
         const isVictoryLoot = view.status === "victory_loot" && view.lootPhase !== null;
+        const isDefeated = view.status === "defeated";
+        const isTerminal = view.status !== "active";
         const activePanel = documentRoot.getElementById("combatActivePanel");
         const victoryPanel = documentRoot.getElementById("combatVictoryPanel");
+        const defeatState = documentRoot.getElementById("combatDefeatState");
         if (activePanel) {
             activePanel.hidden = isVictoryLoot;
         }
         if (victoryPanel) {
             victoryPanel.hidden = !isVictoryLoot;
+        }
+        if (defeatState) {
+            defeatState.hidden = !isDefeated;
         }
         setText(documentRoot, "combatTurnNumber", view.turn.number);
         setText(documentRoot, "combatActionCount", view.turn.actionsRemaining);
@@ -551,7 +557,7 @@
         );
         const attackButton = documentRoot.getElementById("combatAttackButton");
         if (attackButton) {
-            attackButton.disabled = isVictoryLoot || !view.attack.available || pending.attack;
+            attackButton.disabled = isTerminal || !view.attack.available || pending.attack;
             attackButton.dataset.disabledReason = view.attack.disabledReason || "";
         }
 
@@ -571,7 +577,7 @@
                 skill?.cooldownProgressPercent ?? 0,
             );
             if (button) {
-                button.disabled = isVictoryLoot || !skill || !skill.available || pending.skill;
+                button.disabled = isTerminal || !skill || !skill.available || pending.skill;
                 button.dataset.disabledReason = skill?.disabledReason || "";
             }
         }
@@ -579,10 +585,10 @@
         const reactionLayer = documentRoot.getElementById("combatReactionLayer");
         const blockButton = documentRoot.getElementById("combatBlockButton");
         if (reactionLayer) {
-            reactionLayer.hidden = isVictoryLoot || !view.block.visible;
+            reactionLayer.hidden = isTerminal || !view.block.visible;
         }
         if (blockButton) {
-            blockButton.disabled = isVictoryLoot || !view.block.visible || pending.block;
+            blockButton.disabled = isTerminal || !view.block.visible || pending.block;
             blockButton.style.left = String(view.block.xPercent) + "%";
             blockButton.style.top = String(view.block.yPercent) + "%";
             blockButton.setAttribute(
@@ -598,7 +604,7 @@
         );
         const potionButton = documentRoot.getElementById("combatPotionButton");
         if (potionButton) {
-            potionButton.disabled = isVictoryLoot || view.potion.chargesRemaining <= 0 || pending.potion;
+            potionButton.disabled = isTerminal || view.potion.chargesRemaining <= 0 || pending.potion;
         }
 
         setText(documentRoot, "combatVictoryGold", view.lootPhase?.rewards?.gold ?? 0);

@@ -288,6 +288,16 @@ final class CombatSynchronizer
             );
             if (
                 ($encounter['status'] ?? null) === 'active' &&
+                self::integer($lockedCharacter, 'current_hp') === 0
+            ) {
+                [$encounter, $lockedCharacter] = $this->transitionToDefeat(
+                    $encounter,
+                    $lockedCharacter,
+                    $cursorMs,
+                    $serverNow,
+                );
+            } elseif (
+                ($encounter['status'] ?? null) === 'active' &&
                 self::integer($encounter, 'enemy_current_hp') === 0
             ) {
                 [$encounter, $lockedCharacter] = $this->transitionToVictory(
@@ -308,6 +318,18 @@ final class CombatSynchronizer
                 );
                 $encounter = $resolved['encounter'];
                 $lockedCharacter = $resolved['character'];
+                if (
+                    ($encounter['status'] ?? null) === 'active' &&
+                    self::integer($lockedCharacter, 'current_hp') === 0
+                ) {
+                    [$encounter, $lockedCharacter] = $this->transitionToDefeat(
+                        $encounter,
+                        $lockedCharacter,
+                        $cursorMs,
+                        $serverNow,
+                    );
+                    break;
+                }
                 if (
                     ($encounter['status'] ?? null) === 'active' &&
                     self::integer($encounter, 'enemy_current_hp') === 0
@@ -376,6 +398,51 @@ final class CombatSynchronizer
         );
 
         return ['encounter' => $encounter, 'character' => $lockedCharacter];
+    }
+
+    private function transitionToDefeat(
+        array $encounter,
+        array $lockedCharacter,
+        int $timelineMs,
+        DateTimeImmutable $serverNow,
+    ): array {
+        $encounterId = self::positiveInteger($encounter, 'id');
+        $characterId = self::positiveInteger($lockedCharacter, 'id');
+        $userId = self::positiveInteger($lockedCharacter, 'user_id');
+        $killerEnemyKey = (string) ($encounter['enemy_key'] ?? '');
+        $processedAt = $serverNow->format('Y-m-d H:i:s.u');
+
+        if (!$this->repository->markLockedCharacterDead($userId, $characterId, $processedAt)) {
+            throw new RuntimeException('Champion death changed concurrently. Please retry.');
+        }
+        if (!$this->repository->transitionLockedEncounterToDefeat(
+            $encounterId,
+            $killerEnemyKey,
+            $processedAt,
+        )) {
+            throw new RuntimeException('Combat defeat changed concurrently. Please retry.');
+        }
+
+        $this->repository->cancelLockedPendingActionsForEncounter($encounterId, $timelineMs);
+        $enemy = $this->definitions?->enemy($killerEnemyKey);
+        $enemyName = is_array($enemy) ? (string) ($enemy['name'] ?? 'The enemy') : 'The enemy';
+        $this->repository->appendEvent(
+            $encounterId,
+            'champion_defeated',
+            $enemyName . ' has slain the Champion.',
+            'dead',
+        );
+
+        $encounter['status'] = 'defeated';
+        $encounter['active_slot'] = null;
+        $encounter['timeline_elapsed_ms'] = $timelineMs;
+        $encounter['death_processed_at'] = $processedAt;
+        $encounter['killer_enemy_key'] = $killerEnemyKey;
+        $lockedCharacter['current_hp'] = 0;
+        $lockedCharacter['life_state'] = 'dead';
+        $lockedCharacter['died_at'] = $processedAt;
+
+        return [$encounter, $lockedCharacter];
     }
 
     private function transitionToVictory(

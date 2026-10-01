@@ -218,6 +218,25 @@ final class FakeCombatPdo extends PDO
             return ['rows' => [], 'row_count' => 1];
         }
 
+        if (str_starts_with($normalized, 'update characters set life_state')) {
+            $id = (int) $params['character_id'];
+            $character = $this->characters[$id] ?? null;
+            if (
+                $character === null ||
+                (int) $character['user_id'] !== (int) $params['user_id'] ||
+                (int) $character['current_hp'] !== 0 ||
+                ($character['life_state'] ?? null) !== 'alive' ||
+                ($character['died_at'] ?? null) !== null
+            ) {
+                return ['rows' => [], 'row_count' => 0];
+            }
+            $this->characters[$id]['life_state'] = 'dead';
+            $this->characters[$id]['died_at'] = $params['died_at'];
+            $this->writeOrder[] = ['kind' => 'death_character'];
+
+            return ['rows' => [], 'row_count' => 1];
+        }
+
         if (str_starts_with($normalized, 'update characters set gold')) {
             $id = (int) $params['character_id'];
             $character = $this->characters[$id] ?? null;
@@ -278,6 +297,35 @@ final class FakeCombatPdo extends PDO
                 : [];
 
             return ['rows' => $rows, 'row_count' => count($rows)];
+        }
+
+        if (
+            str_starts_with($normalized, 'select') &&
+            str_contains($normalized, 'from combat_encounters') &&
+            str_contains($normalized, "status = 'defeated'")
+        ) {
+            if (str_contains($normalized, 'for update')) {
+                $this->lockOrder[] = 'encounter';
+            }
+            $rows = array_values(array_filter(
+                $this->encounters,
+                static fn (array $row): bool =>
+                    (int) $row['character_id'] === (int) $params['character_id'] &&
+                    ($row['status'] ?? null) === 'defeated' &&
+                    ($row['active_slot'] ?? null) === null &&
+                    ($row['death_processed_at'] ?? null) !== null &&
+                    ($row['killer_enemy_key'] ?? null) !== null,
+            ));
+            usort($rows, static function (array $left, array $right): int {
+                $timestamp = strcmp(
+                    (string) $right['death_processed_at'],
+                    (string) $left['death_processed_at'],
+                );
+
+                return $timestamp !== 0 ? $timestamp : (int) $right['id'] <=> (int) $left['id'];
+            });
+
+            return ['rows' => array_slice($rows, 0, 1), 'row_count' => count($rows) > 0 ? 1 : 0];
         }
 
         if (
@@ -352,7 +400,28 @@ final class FakeCombatPdo extends PDO
             $synchronizationSet = 'timeline_elapsed_ms = :timeline_elapsed_ms, last_synchronized_at = :last_synchronized_at, turn_number = :turn_number, turn_started_timeline_ms = :turn_started_timeline_ms, player_actions_remaining = :player_actions_remaining, enemy_actions_remaining = :enemy_actions_remaining, enemy_current_hp = :enemy_current_hp, next_enemy_decision_timeline_ms = :next_enemy_decision_timeline_ms, enemy_ai_initialized_timeline_ms = :enemy_ai_initialized_timeline_ms, version = version + 1';
             $potionChargeSet = 'potion_charges_remaining = potion_charges_remaining - 1, version = version + 1';
             $victorySet = "status = 'victory_loot', enemy_current_hp = 0, rewards_issued_at = :rewards_issued_at";
+            $defeatSet = "status = 'defeated', active_slot = null, death_processed_at = :death_processed_at, killer_enemy_key = :killer_enemy_key";
             $closeSet = "status = 'closed', active_slot = null, completed_at = :completed_at, version = version + 1";
+            if ($setClause === $defeatSet) {
+                $id = (int) $params['encounter_id'];
+                $encounter = $this->encounters[$id] ?? null;
+                if (
+                    $encounter === null ||
+                    ($encounter['status'] ?? null) !== 'active' ||
+                    ($encounter['active_slot'] ?? null) !== 1 ||
+                    ($encounter['death_processed_at'] ?? null) !== null ||
+                    ($encounter['killer_enemy_key'] ?? null) !== null
+                ) {
+                    return ['rows' => [], 'row_count' => 0];
+                }
+                $this->encounters[$id]['status'] = 'defeated';
+                $this->encounters[$id]['active_slot'] = null;
+                $this->encounters[$id]['death_processed_at'] = $params['death_processed_at'];
+                $this->encounters[$id]['killer_enemy_key'] = $params['killer_enemy_key'];
+                $this->writeOrder[] = ['kind' => 'defeat_encounter'];
+
+                return ['rows' => [], 'row_count' => 1];
+            }
             if ($setClause === $victorySet) {
                 $id = (int) $params['encounter_id'];
                 $encounter = $this->encounters[$id] ?? null;

@@ -121,9 +121,16 @@ $activeCombat = $combatGuard->accountCombatState((int) $_SESSION["user_id"]);
                     }
                     $isFightingChampion = $activeCombat !== null &&
                         (int) $activeCombat["character_id"] === (int) $character["id"];
+                    $isDeadChampion = (string) $character["life_state"] === "dead";
                     $selectionBlocked =
-                        (string) $character["life_state"] !== "alive" ||
+                        $isDeadChampion ||
                         ($activeCombat !== null && !$isFightingChampion);
+                    $selectionLabel = match (true) {
+                        $isDeadChampion => "Enter Dungeon",
+                        $isFightingChampion && ($activeCombat["status"] ?? null) === "victory_loot" => "Resume Loot",
+                        $isFightingChampion => "Resume Battle",
+                        default => "Enter Dungeon",
+                    };
                     ?>
                     <article class="character-card">
                         <div class="character-glyph-frame">
@@ -134,6 +141,10 @@ $activeCombat = $combatGuard->accountCombatState((int) $_SESSION["user_id"]);
 
                         <div class="character-info">
                             <h3><?= e($character["character_name"]) ?></h3>
+
+                            <?php if ($isDeadChampion): ?>
+                                <p class="character-life-state"><strong>DEAD</strong></p>
+                            <?php endif; ?>
 
                             <p class="character-class">
                                 <?= e(
@@ -192,7 +203,7 @@ $activeCombat = $combatGuard->accountCombatState((int) $_SESSION["user_id"]);
                                 >
 
                                 <button type="submit" <?= $selectionBlocked ? "disabled" : "" ?>>
-                                    <?= $isFightingChampion ? "Resume Battle" : "Enter Dungeon" ?>
+                                    <?= e($selectionLabel) ?>
                                 </button>
                                 <!--
                                 |--------------------------------------------------------------------------
@@ -210,7 +221,7 @@ $activeCombat = $combatGuard->accountCombatState((int) $_SESSION["user_id"]);
                                     data-character-name="<?= e(
                                         $character["character_name"],
                                     ) ?>"
-                                    <?= $isFightingChampion ? "disabled" : "" ?>
+                                    <?= ($isFightingChampion || $isDeadChampion) ? "disabled" : "" ?>
                                 >
                                     Delete Character
                                 </button>

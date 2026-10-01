@@ -935,7 +935,7 @@ return [
         assertSameValue(145, $result['character']['current_hp'], 'Synchronization does not heal or recreate Champion HP.');
     },
 
-    'Task 6 stop keeps enemy decision cursor at or after a crossed Turn boundary' => function (): void {
+    'Task 13 death supersedes Task 6 Turn rollover and enemy decisions' => function (): void {
         $pdo = new FakeCombatPdo();
         $pdo->encounters[91] = task4Encounter([
             'timeline_elapsed_ms' => 109761,
@@ -976,11 +976,13 @@ return [
         $result = $synchronizer->synchronize($encounter, $character, 1, 2);
         $repository->rollBack();
 
-        assertSameValue(110000, $result['encounter']['turn_started_timeline_ms'], 'Synchronization crosses the next Turn boundary.');
+        assertSameValue('defeated', $result['encounter']['status'], 'Zero HP transitions before later chronology.');
+        assertSameValue(109761, $result['encounter']['timeline_elapsed_ms'], 'Death stops at the persisted lethal cursor.');
+        assertSameValue(100000, $result['encounter']['turn_started_timeline_ms'], 'No later Turn boundary is processed.');
         assertSameValue(
-            110000,
+            102000,
             $result['encounter']['next_enemy_decision_timeline_ms'],
-            'Stopped enemy decisions cannot leave their cursor behind the advanced Turn start.',
+            'No enemy decision advances after death.',
         );
     },
 
@@ -1294,9 +1296,9 @@ return [
         assertSameValue([], $pdo->actions, 'Neither actor starts an action.');
         assertSameValue(1, $pdo->encounters[91]['player_actions_remaining'], 'Player allowance is unchanged.');
         assertSameValue(2, $pdo->encounters[91]['enemy_actions_remaining'], 'Enemy allowance is unchanged.');
-        assertSameValue('active', $pdo->encounters[91]['status'], 'Task 7 creates no defeated state.');
-        assertSameValue('alive', $pdo->characters[42]['life_state'], 'Task 7 does not process permanent death.');
-        assertSameValue(null, $pdo->characters[42]['died_at'] ?? null, 'Task 7 does not set died_at.');
+        assertSameValue('defeated', $pdo->encounters[91]['status'], 'Task 13 processes terminal defeat before commands.');
+        assertSameValue('dead', $pdo->characters[42]['life_state'], 'Task 13 persists permanent death.');
+        assertSameValue(true, is_string($pdo->characters[42]['died_at'] ?? null), 'Task 13 sets died_at once.');
     },
 
     'Repeated same-time synchronization never reapplies Cave Brute Block or player damage' => function (): void {

@@ -72,6 +72,7 @@ final class CombatStateProjector
             }
             if (
                 $activeEnemyAction !== null ||
+                ($encounter['status'] ?? null) !== 'active' ||
                 ($action['actor'] ?? null) !== 'enemy' ||
                 ($action['state'] ?? null) !== 'pending'
             ) {

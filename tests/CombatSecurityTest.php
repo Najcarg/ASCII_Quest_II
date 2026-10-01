@@ -922,6 +922,45 @@ return [
         );
     },
 
+    'Task 13 dead Champion selection deletion and gameplay reject independently' => function (): void {
+        [$guard, $repository] = task3CombatGuard();
+        $repository->characters[42]['life_state'] = 'dead';
+
+        foreach ([
+            CombatAccessGuard::SELECT_CHARACTER,
+            CombatAccessGuard::DELETE_CHARACTER,
+            CombatAccessGuard::MOVE,
+            CombatAccessGuard::INTERACT,
+            CombatAccessGuard::MAP_SYNC,
+            CombatAccessGuard::WARP_UNLOCK,
+            CombatAccessGuard::WARP_TRAVEL,
+            CombatAccessGuard::STAT_ALLOCATE,
+            CombatAccessGuard::COMBAT_ENTRY,
+        ] as $operation) {
+            assertTask3GuardRejected(
+                fn (): array => $guard->assertAllowed($operation, 7, 42),
+                'Dead Champion ' . $operation,
+            );
+        }
+    },
+
+    'Task 13 selection and main menu retain dead and unresolved lifecycle states' => function (): void {
+        $selection = file_get_contents(__DIR__ . '/../ascii-quest/character_select.php');
+        $account = file_get_contents(__DIR__ . '/../ascii-quest/account.php');
+        if ($selection === false || $account === false) {
+            throw new RuntimeException('Character selection and account pages must be readable.');
+        }
+
+        assertSameValue(true, str_contains($selection, '>DEAD<'), 'Dead card has a clear DEAD label.');
+        assertSameValue(true, str_contains($selection, 'Resume Loot'), 'Victory loot has an explicit resume label.');
+        assertSameValue(true, str_contains($selection, '$isDeadChampion'), 'Dead state controls selection and deletion markup.');
+        assertSameValue(true, str_contains($account, 'CombatBootstrap::guard'), 'Main Menu discovers account combat state.');
+        assertSameValue(true, str_contains($account, 'Resume Battle'), 'Main Menu offers active combat resume.');
+        assertSameValue(true, str_contains($account, 'Resume Loot'), 'Main Menu offers persistent victory loot resume.');
+        assertSameValue(false, str_contains($account, 'UPDATE combat_encounters'), 'Main Menu never mutates combat.');
+        assertSameValue(false, str_contains($account, 'DELETE FROM combat_encounters'), 'Main Menu never clears combat.');
+    },
+
     'Game load never mutates expired overrides after its read-only combat decision' => function (): void {
         $game = file_get_contents(__DIR__ . '/../ascii-quest/game.php');
         $sync = file_get_contents(__DIR__ . '/../ascii-quest/sync_map_state.php');

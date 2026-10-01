@@ -45,11 +45,14 @@ final class CombatAccessGuard
         if ($character === null) {
             throw new OutOfBoundsException('Champion not found.');
         }
-        if (($character['life_state'] ?? null) !== 'alive') {
-            throw new DomainException('This Champion is unavailable.');
-        }
-
         $accountEncounter = $this->repository->findOwnedActiveEncounterForUser($userId);
+        if (
+            $accountEncounter === null &&
+            $operation === self::GAME_LOAD &&
+            ($character['life_state'] ?? null) === 'dead'
+        ) {
+            $accountEncounter = $this->repository->findLatestDefeatedEncounter($characterId);
+        }
 
         return $this->decision($operation, $userId, $character, $accountEncounter);
     }
@@ -75,6 +78,13 @@ final class CombatAccessGuard
                 $userId,
                 $characterId,
             );
+            if (
+                $accountEncounter === null &&
+                $operation === self::GAME_LOAD &&
+                ($character['life_state'] ?? null) === 'dead'
+            ) {
+                $accountEncounter = $this->repository->lockLatestDefeatedEncounter($characterId);
+            }
 
             return $this->decision($operation, $userId, $character, $accountEncounter);
         } catch (Throwable $exception) {
@@ -130,12 +140,18 @@ final class CombatAccessGuard
         if ((int) ($character['user_id'] ?? 0) !== $userId) {
             throw new OutOfBoundsException('Champion not found.');
         }
-        if (($character['life_state'] ?? null) !== 'alive') {
-            throw new DomainException('This Champion is unavailable.');
-        }
-
         $isFighter = $accountEncounter !== null &&
             (int) $accountEncounter['character_id'] === $characterId;
+
+        if (($character['life_state'] ?? null) !== 'alive') {
+            if (
+                $operation !== self::GAME_LOAD ||
+                !$isFighter ||
+                ($accountEncounter['status'] ?? null) !== 'defeated'
+            ) {
+                throw new DomainException('This Champion is unavailable.');
+            }
+        }
 
         if (in_array($operation, self::EXPLORATION_OPERATIONS, true)) {
             if ($accountEncounter !== null) {

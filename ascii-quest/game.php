@@ -159,6 +159,7 @@ try {
 
 $isCombatMode = $combatState !== [];
 $isVictoryLoot = $isCombatMode && ($combatState['status'] ?? null) === 'victory_loot';
+$isDefeated = $isCombatMode && ($combatState['status'] ?? null) === 'defeated';
 $combatSkillOne = null;
 if ($isCombatMode) {
     foreach ($combatState["player_skills"] ?? [] as $combatSkill) {
@@ -660,6 +661,12 @@ $detailStatGroups = [
                     >
                         <div class="map-title">Battle</div>
                         <div id="combatActivePanel" <?= $isVictoryLoot ? "hidden" : "" ?>>
+                        <div
+                            id="combatDefeatState"
+                            class="combat-message"
+                            role="status"
+                            <?= $isDefeated ? "" : "hidden" ?>
+                        >DEAD — this Champion was defeated permanently.</div>
                         <div class="battle-turn-heading">
                             <span>Turn</span>
                             <strong id="combatTurnNumber"><?= e($combatState["turn"]["number"]) ?></strong>
