@@ -105,11 +105,23 @@ function deferredResponse() {
 function combatDocument() {
     function element() {
         const listeners = {};
+        const classes = new Set();
 
         return {
             attributes: {},
             children: [],
             className: "",
+            classList: {
+                add(...names) {
+                    names.forEach((name) => classes.add(name));
+                },
+                contains(name) {
+                    return classes.has(name);
+                },
+                remove(...names) {
+                    names.forEach((name) => classes.delete(name));
+                },
+            },
             dataset: {},
             disabled: false,
             hidden: false,
@@ -513,6 +525,164 @@ const tests = {
             assert.equal(documentRoot.elements[`${prefix}Name`].textContent, "Empty");
             assert.equal(documentRoot.elements[`${prefix}Status`].textContent, "Unavailable");
             assert.equal(documentRoot.elements[`${prefix}Button`].disabled, true);
+            assert.equal(
+                documentRoot.elements[`${prefix}Button`].classList.contains(
+                    "combat-action-unavailable",
+                ),
+                true,
+            );
+        }
+    },
+
+    "ready weapon Flame Strike and Potion render red presentation while enabled"() {
+        const documentRoot = combatDocument();
+        const state = combatState({
+            player_attack: {
+                ...combatState().player_attack,
+                available: true,
+                disabled_reason: null,
+            },
+            player_skills: [
+                {
+                    ...combatState().player_skills[0],
+                    available: true,
+                    disabled_reason: null,
+                },
+            ],
+        });
+
+        hud.renderCombatHud(
+            documentRoot,
+            state,
+            { attack: false, skill: false, block: false, potion: false, refresh: false },
+            Date.parse(state.server_observed_at),
+        );
+
+        for (const id of [
+            "combatAttackButton",
+            "combatSkill1Button",
+            "combatPotionButton",
+        ]) {
+            assert.equal(documentRoot.elements[id].disabled, false);
+            assert.equal(
+                documentRoot.elements[id].classList.contains("combat-action-ready"),
+                true,
+            );
+        }
+    },
+
+    "temporary weapon and skill reasons render gold standby presentation while disabled"() {
+        for (const reason of [
+            "cooldown",
+            "actor_busy",
+            "no_actions",
+            "insufficient_turn_time",
+        ]) {
+            const documentRoot = combatDocument();
+            const state = combatState({
+                player_attack: {
+                    ...combatState().player_attack,
+                    available: false,
+                    disabled_reason: reason,
+                },
+                player_skills: [
+                    {
+                        ...combatState().player_skills[0],
+                        available: false,
+                        disabled_reason: reason,
+                    },
+                ],
+            });
+
+            hud.renderCombatHud(
+                documentRoot,
+                state,
+                { attack: false, skill: false, block: false, potion: false, refresh: false },
+                Date.parse(state.server_observed_at),
+            );
+
+            for (const id of ["combatAttackButton", "combatSkill1Button"]) {
+                assert.equal(documentRoot.elements[id].disabled, true, `${reason} disables ${id}`);
+                assert.equal(
+                    documentRoot.elements[id].classList.contains("combat-action-standby"),
+                    true,
+                    `${reason} marks ${id} as standby`,
+                );
+            }
+        }
+    },
+
+    "Potion without charges renders gray unavailable presentation"() {
+        const documentRoot = combatDocument();
+        const state = combatState({
+            potion: {
+                ...combatState().potion,
+                charges_remaining: 0,
+            },
+        });
+
+        hud.renderCombatHud(
+            documentRoot,
+            state,
+            { attack: false, skill: false, block: false, potion: false, refresh: false },
+            Date.parse(state.server_observed_at),
+        );
+
+        assert.equal(documentRoot.elements.combatPotionButton.disabled, true);
+        assert.equal(
+            documentRoot.elements.combatPotionButton.classList.contains(
+                "combat-action-unavailable",
+            ),
+            true,
+        );
+    },
+
+    "defeat and victory loot render every ordinary combat command unavailable"() {
+        for (const status of ["defeated", "victory_loot"]) {
+            const documentRoot = combatDocument();
+            const state = combatState({
+                status,
+                player_attack: {
+                    ...combatState().player_attack,
+                    available: true,
+                    disabled_reason: null,
+                },
+                player_skills: [
+                    {
+                        ...combatState().player_skills[0],
+                        available: true,
+                        disabled_reason: null,
+                    },
+                ],
+                loot_phase: status === "victory_loot"
+                    ? { rewards: { gold: 25, experience: 40 }, physical_drops: [] }
+                    : null,
+            });
+
+            hud.renderCombatHud(
+                documentRoot,
+                state,
+                { attack: false, skill: false, block: false, potion: false, close: false, refresh: false },
+                Date.parse(state.server_observed_at),
+            );
+
+            for (const id of [
+                "combatAttackButton",
+                "combatSkill1Button",
+                "combatSkill2Button",
+                "combatSkill3Button",
+                "combatUltimateButton",
+                "combatPotionButton",
+            ]) {
+                assert.equal(documentRoot.elements[id].disabled, true, `${status} disables ${id}`);
+                assert.equal(
+                    documentRoot.elements[id].classList.contains(
+                        "combat-action-unavailable",
+                    ),
+                    true,
+                    `${status} marks ${id} unavailable`,
+                );
+            }
         }
     },
 

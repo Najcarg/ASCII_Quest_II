@@ -2068,6 +2068,52 @@ a:hover {
     color: #d9e8b5;
 }
 
+.combat-action-button.combat-action-ready {
+    border-color: #d58b4a;
+    background: linear-gradient(to bottom, #92271d, #6f1d14 52%, #46110d);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 224, 158, 0.2),
+        0 0 12px rgba(173, 49, 31, 0.45);
+    color: #fff0c8;
+    cursor: pointer;
+}
+
+.combat-action-button.combat-action-ready:hover {
+    border-color: #f0d58a;
+    background: linear-gradient(to bottom, #ad3224, #852219 52%, #54150f);
+    color: #fff6dc;
+}
+
+.combat-action-button.combat-action-standby,
+.combat-action-button.combat-action-standby:hover {
+    border-color: #9b7637;
+    background: linear-gradient(to bottom, #4f391d, #392713 52%, #25180d);
+    box-shadow: inset 0 1px 0 rgba(240, 213, 138, 0.1);
+    color: #d9bf7a;
+    cursor: wait;
+}
+
+.combat-action-button.combat-action-unavailable,
+.combat-action-button.combat-action-unavailable:hover {
+    border-color: #49494d;
+    background: linear-gradient(to bottom, #27272a, #1d1d20 52%, #151517);
+    box-shadow: none;
+    color: #747478;
+    cursor: not-allowed;
+}
+
+.combat-action-button.combat-action-ready span,
+.combat-action-button.combat-action-ready strong,
+.combat-action-button.combat-action-ready small,
+.combat-action-button.combat-action-standby span,
+.combat-action-button.combat-action-standby strong,
+.combat-action-button.combat-action-standby small,
+.combat-action-button.combat-action-unavailable span,
+.combat-action-button.combat-action-unavailable strong,
+.combat-action-button.combat-action-unavailable small {
+    color: inherit;
+}
+
 @media (max-width: 720px) {
     .battle-hud {
         min-height: 0;

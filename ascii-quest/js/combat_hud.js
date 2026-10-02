@@ -61,6 +61,37 @@
         { slot: "skill_3", id: "combatSkill3" },
         { slot: "ultimate", id: "combatUltimate" },
     ];
+    const ACTION_PRESENTATION_CLASSES = [
+        "combat-action-ready",
+        "combat-action-standby",
+        "combat-action-unavailable",
+    ];
+    const STANDBY_REASONS = new Set([
+        "cooldown",
+        "actor_busy",
+        "no_actions",
+        "insufficient_turn_time",
+    ]);
+
+    function actionPresentationState(status, available, disabledReason, pending, exists = true) {
+        if (status !== "active" || !exists || pending) {
+            return "unavailable";
+        }
+        if (available) {
+            return "ready";
+        }
+
+        return STANDBY_REASONS.has(disabledReason) ? "standby" : "unavailable";
+    }
+
+    function setActionPresentationState(button, state) {
+        if (!button) {
+            return;
+        }
+
+        button.classList.remove(...ACTION_PRESENTATION_CLASSES);
+        button.classList.add("combat-action-" + state);
+    }
 
     function createRequestToken(cryptoSource) {
         if (typeof cryptoSource?.randomUUID === "function") {
@@ -559,6 +590,15 @@
         if (attackButton) {
             attackButton.disabled = isTerminal || !view.attack.available || pending.attack;
             attackButton.dataset.disabledReason = view.attack.disabledReason || "";
+            setActionPresentationState(
+                attackButton,
+                actionPresentationState(
+                    view.status,
+                    view.attack.available,
+                    view.attack.disabledReason,
+                    pending.attack,
+                ),
+            );
         }
 
         for (const control of SKILL_CONTROLS) {
@@ -579,6 +619,16 @@
             if (button) {
                 button.disabled = isTerminal || !skill || !skill.available || pending.skill;
                 button.dataset.disabledReason = skill?.disabledReason || "";
+                setActionPresentationState(
+                    button,
+                    actionPresentationState(
+                        view.status,
+                        skill?.available === true,
+                        skill?.disabledReason,
+                        pending.skill,
+                        Boolean(skill),
+                    ),
+                );
             }
         }
 
@@ -605,6 +655,15 @@
         const potionButton = documentRoot.getElementById("combatPotionButton");
         if (potionButton) {
             potionButton.disabled = isTerminal || view.potion.chargesRemaining <= 0 || pending.potion;
+            setActionPresentationState(
+                potionButton,
+                actionPresentationState(
+                    view.status,
+                    view.potion.chargesRemaining > 0,
+                    null,
+                    pending.potion,
+                ),
+            );
         }
 
         setText(documentRoot, "combatVictoryGold", view.lootPhase?.rewards?.gold ?? 0);
