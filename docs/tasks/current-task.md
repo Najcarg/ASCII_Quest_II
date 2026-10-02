@@ -2,13 +2,21 @@
 
 ## Status
 
-COMBAT MILESTONE 1 COMPLETE
+TASK 17 ITEM SYSTEM DESIGN
 
-Combat Milestone 1 is implemented and closed after successful automated and
-live verification. The accepted closeout base includes the combat action-state
-colour patch at `465494cf3d6f9dd4843dfe87e54f73b4a8c58e18`.
+READY FOR REVIEW
 
-## Final Verification
+Task 17 defines the authoritative persistent item, physical-drop, inventory,
+equipment, security, migration, and combat-integration rules for Tasks 18–20.
+It changes no production code or database state.
+
+Design specification:
+`docs/superpowers/specs/2026-10-02-item-system-design.md`
+
+Implementation plan:
+`docs/superpowers/plans/2026-10-02-item-system-plan.md`
+
+## Prior Milestone Final Verification
 
 - Server PHP suite: 251 passed, 0 failed.
 - Combat HUD suite: 29 passed, 0 failed.
@@ -48,7 +56,7 @@ fight
 -> equipment affects future combat
 ```
 
-Task 17 is the next planned design task. It has not started.
+Task 17 is ready for review. Tasks 18–20 are planned but not implemented.
 
 ## Intentionally Deferred
 
