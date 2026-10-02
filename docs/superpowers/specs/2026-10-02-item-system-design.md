@@ -140,13 +140,72 @@ An instance has:
 - zero or more immutable affix-roll rows;
 - immutable server-built display name;
 - generated timestamp;
-- source encounter and reward-slot identity;
+- immutable provenance type and source key;
+- source encounter and reward-slot identity for combat drops;
 - optional claim timestamp;
 - no equipment slot column; equipment is a separate relation.
 
 The rendered name is not the identity. The instance ID, definition key, and
 rolled relational rows are authoritative. Core stats are never stored only in
 JSON or only in the browser.
+
+### 5.3 Starter weapon lifecycle
+
+The real equipment system must never depend on the production prototype
+weapon. Four stable item definitions are reserved for deterministic starter
+grants:
+
+| Champion class key | Starter definition key | Base type |
+|---|---|---|
+| `warrior` | `basic_sword` | sword |
+| `mage` | `basic_wand` | wand |
+| `rogue` | `basic_dagger` | dagger |
+| `cleric` | `basic_mace` | mace |
+
+Each starter weapon is a real `character_items` row owned only by its Champion,
+with Normal rarity, item level 1, no affix rows, and immutable provenance:
+
+```text
+source_type = starter
+source_key = initial_weapon
+```
+
+It is created directly from the mapped stable base definition. It uses no
+random source, no rarity or affix roll, and no combat drop row.
+
+After Migration 007 and the equipment services exist, new Champion creation
+must insert the Champion, create the starter instance, and assign it to the
+`weapon` slot in the existing character-creation database transaction. Any
+starter or equipment failure rolls back the entire transaction, including the
+Champion row. Refresh, request retry, or two tabs cannot issue another starter:
+the database uniquely enforces `(character_id, source_type, source_key)`.
+
+Migration 007 does not create gameplay items or equipment rows for existing
+Champions. Task 20 provides a separate reviewed bootstrap operation. For each
+locked existing Champion it applies this policy:
+
+1. DEAD Champion: record a skipped result and create nothing.
+2. Unresolved `active` or `victory_loot` encounter: record a deferred result,
+   create nothing, and allow a later idempotent rerun after closure.
+3. Usable weapon already equipped: leave all items/equipment unchanged.
+4. No equipped weapon but an owned usable weapon exists: create nothing and
+   leave that real item unchanged; the ordinary equipment UI may equip it.
+5. No equipped weapon and no owned usable weapon: create the class starter and
+   equip it atomically in `weapon`.
+
+For this bootstrap, an owned usable weapon means an owned `character_items`
+row whose snapshotted equipment slot is `weapon` and whose definition remains
+valid for historical use; display name is never consulted. The reviewed
+bootstrap is a CLI/maintenance path, defaults to report-only preview, requires
+an explicit apply flag, processes one Champion per transaction, and is never
+invoked by migration SQL or ordinary page load.
+
+The prototype production provider remains active during schema/service rollout
+and bootstrap review. It is removed only after the starter grant service,
+creation integration, bootstrap path, equipment reads, and cutover tests are
+available. After cutover, a Champion with no equipped weapon receives a
+controlled unavailable-weapon result; production combat never silently falls
+back to prototype damage.
 
 ## 6. Item level
 
@@ -337,7 +396,8 @@ mid-action exploit surface for Milestone 2.
 
 ## 14. Combat integration
 
-Task 20 adds a real equipment provider and removes the prototype provider from
+Task 20 adds a real equipment provider and, only after the starter/equipment
+cutover gate in Section 5.3 passes, removes the prototype provider from
 production bootstrap while retaining it only where an explicit test fixture
 needs it.
 
@@ -460,6 +520,9 @@ foreign keys after live-shape preflight.
 - Indexes: category/slot/active and minimum item level.
 - Immutable after an instance uses it except display-only corrections and
   retirement; balance changes require a new definition key/version.
+- Migration 005 seeds `basic_sword`, `basic_wand`, `basic_dagger`, and
+  `basic_mace` as active level-1 Normal-eligible weapon definitions. It creates
+  no item instances and equips nothing.
 
 #### `character_items`
 
@@ -467,9 +530,17 @@ foreign keys after live-shape preflight.
 - FKs: nullable `character_id -> characters(id) ON DELETE CASCADE` and
   `definition_key -> item_definitions(definition_key) ON DELETE RESTRICT`.
 - Fields: item level, rarity, display name, immutable base snapshots,
-  generated/claimed timestamps.
+  non-null ASCII-binary `source_type VARCHAR(24)`, non-null ASCII-binary
+  `source_key VARCHAR(128)`, and generated/claimed timestamps.
+- Initial `source_type` CHECK values are `starter` and `combat_drop`. A combat
+  drop source key is the canonical encounter/reward-slot identity; a starter
+  source key is exactly `initial_weapon`.
 - Constraints: item level positive; rarity allowlist; owner and claim
   timestamp nullability agree.
+- Unique `(character_id, source_type, source_key)` is the durable grant guard.
+  Starter rows use `starter`/`initial_weapon`; combat drops use their distinct
+  drop provenance and retain `combat_item_drops` uniqueness as their primary
+  generation guard. Provenance never depends on display name.
 - Unique composite `(id, character_id)` supports ownership-matching equipment
   foreign keys later.
 - Indexes: `(character_id, claimed_at, id)` and definition/item level.
@@ -599,7 +670,9 @@ internals or items belonging to another Champion.
 
 Task 18 replaces the Inventory note and empty placeholders with a real,
 pointer-selectable 25-item page, safe empty state, details panel/tooltip, and
-pagination when needed. It remains read-only.
+pagination when needed. It remains read-only. Migration 005 also seeds the
+four starter base definitions and makes deterministic provenance representable,
+but Task 18 grants or equips no starter items.
 
 Task 19 renders each victory item with name, rarity, base type, affixes, item
 level, and unclaimed/claimed state. Claim and Close/Continue are pointer
@@ -617,7 +690,8 @@ All text is inserted with safe DOM text APIs or escaped server output.
 Scope:
 
 - Migration 005 and verification SQL;
-- base definitions, owned immutable item rows, mutation receipt foundation;
+- base definitions including four starter weapons, owned immutable item rows,
+  deterministic provenance, and mutation receipt foundation;
 - inventory repository/service/projector and read endpoint;
 - real paged inventory display with persistence across refresh/login;
 - security/ownership/projection tests.
@@ -626,13 +700,15 @@ Likely components: migration SQL and migration test; item catalogue seed;
 `ItemRepository`, `InventoryService`, `ItemProjector`, bootstrap, endpoint;
 `game.php`, a focused item HUD JavaScript module, CSS, and Node tests.
 
-Non-goals: random generation, affixes, victory drops/claim, equipment
-relations or effects, item disposal, capacity, vendors, trading, crafting.
+Non-goals: granting or equipping starter items, random generation, affixes,
+victory drops/claim, equipment relations or effects, item disposal, capacity,
+vendors, trading, crafting.
 
 Acceptance: one selected Champion sees only its durable allowlisted items in
 stable order; another account or Champion cannot enumerate or mutate them;
 empty and more-than-25 states render safely; refresh and logout/login preserve
-state; Migration 005 passes structure tests but is not applied automatically.
+state; all four starter definitions and the provenance uniqueness contract are
+present; Migration 005 passes structure tests but is not applied automatically.
 
 ### Task 19 — Item Generation + Physical Drops
 
@@ -663,25 +739,32 @@ Scope:
 
 - Migration 007 and verification SQL;
 - equipment repository/service/projector and equip/unequip endpoints;
+- atomic starter grant during new Champion creation;
+- reviewed, report-first bootstrap for eligible existing living Champions;
 - pointer-based equipment UI and atomic swap;
 - equipment-aware `CharacterStats` and production combat equipment provider;
 - active modifier subset, action snapshot integration, current defense, and
   HP/Mana clamp behavior.
 
 Likely components: equipment schema/test; `CharacterStats`; item/equipment
-services; `CombatEquipmentProvider` implementation and `CombatBootstrap`;
-the weapon-instance snapshot field; `game.php`, item HUD JavaScript,
-CSS, PHP/JS tests.
+services; `StarterEquipmentService`; `create_character.php`; reviewed bootstrap
+CLI; `CombatEquipmentProvider` implementation and `CombatBootstrap`; the
+weapon-instance snapshot field; `game.php`, item HUD JavaScript, CSS, PHP/JS
+tests.
 
 Non-goals: combat swapping, two-handed weapons, dual wield, class/stat/level
 requirements, final critical/dodge/Block/status formulas, loadout/potion item
 integration, item comparison automation, drag-and-drop requirement.
 
-Acceptance: one compatible owned item occupies each slot; swap is atomic and
-retry-safe; wrong-slot/unowned/cross-Champion/dead/combat mutations fail;
-equipped values affect only future offensive snapshots and resolution-time
-defense; HP/Mana never refill and clamp only downward; prototype production
-equipment is replaced without breaking combat.
+Acceptance: every newly created class receives its mapped Normal level-1
+starter weapon exactly once and already equipped; eligible existing living
+Champions receive at most one starter through the reviewed bootstrap; DEAD,
+equipped, and already-armed Champions remain unchanged; one compatible owned
+item occupies each slot; swap is atomic and retry-safe; wrong-slot/unowned/
+cross-Champion/dead/combat mutations fail; equipped values affect only future
+offensive snapshots and resolution-time defense; HP/Mana never refill and
+clamp only downward; prototype production equipment is removed only after the
+starter/equipment cutover is available and verified.
 
 ## 21. Test strategy
 
@@ -707,6 +790,13 @@ Required coverage includes:
 - offensive snapshot immutability and current-defense resolution read;
 - Attack/Cast Rate duration snapshot semantics and Block Rate inactivity;
 - projection allowlist/privacy and safe item-name rendering;
+- Warrior sword, Mage wand, Rogue dagger, and Cleric mace starter mappings;
+- Normal rarity, item level 1, no affixes, owned/equipped starter state;
+- creation/bootstrap retry and two-tab starter-grant uniqueness;
+- existing equipped/owned usable weapon preservation;
+- existing living no-weapon grant, DEAD skip, and unresolved-combat deferral;
+- creation failure rollback and existing-bootstrap HP/Mana preservation;
+- no production prototype fallback after successful Task 20 cutover;
 - migration prerequisite, partial-install, uniqueness, FK, CHECK, safe rerun,
   and read-only verification structure;
 - full existing PHP, Combat HUD, and Exploration HUD regressions.

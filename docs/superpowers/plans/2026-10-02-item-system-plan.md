@@ -20,15 +20,16 @@
 - Preserve Champion → Account combat mutex → Encounter → item/drop/action rows lock order wherever combat exclusion participates.
 - No equipment mutation is allowed while an encounter is `active` or `victory_loot`, or while the Champion is DEAD.
 - Equipment never refills HP or Mana; increasing a maximum preserves current value and decreasing it clamps downward.
+- Starter grants use `(character_id, source_type = starter, source_key = initial_weapon)` uniqueness and never use display names or random rolls.
 - Use no framework, ORM, Composer package, npm package, or new major dependency.
 - Do not commit, push, deploy, or apply SQL without the approval applicable to that implementation task.
 - Each task stops at `READY FOR TESTING`; Tasks 19 and 20 do not begin automatically.
 
 ## Review Focus
 
+- Concurrent creation/bootstrap retries must converge on one starter item and one weapon-slot row; Task 20 tests unique-grant and equipment constraints under both call paths.
 - A response lost after a committed claim must replay success without a second owner change; Task 19 tests token replay after reloading persisted rows.
 - Close/Continue racing an explicit claim must end with one owner and one closed encounter; Task 19 tests both transaction orders.
-- An item whose definition key is retired must remain readable and usable from its immutable snapshots; Tasks 18 and 20 test inactive-definition instances.
 - Maximum-resource swaps near zero and above the new maximum must never heal or underflow; Task 20 tests increase, decrease, and atomic swap cases.
 - Two tabs equipping different items to the same slot must serialize to one valid row and preserve both item owners; Task 20 tests the database uniqueness/race result.
 
@@ -38,11 +39,12 @@
 
 ### Scope and acceptance boundary
 
-Task 18 creates persistent base definitions and Champion-owned immutable item
-instances, a durable mutation-token foundation, a read-only inventory service,
-and the first real 25-item paged inventory display. Test fixtures may seed
-owned instances directly through fakes or reviewed SQL fixtures; there is no
-random generation or gameplay acquisition yet.
+Task 18 creates persistent base definitions—including the four mapped starter
+weapons—and Champion-owned immutable item instances with deterministic
+provenance, a durable mutation-token foundation, a read-only inventory service,
+and the first real 25-item paged inventory display. Test fixtures may seed owned
+instances directly through fakes or reviewed SQL fixtures; there is no random
+generation, starter grant/equip, or gameplay acquisition yet.
 
 Acceptance requires owner-only durable inventory, stable ordering, safe public
 projection, empty/multi-page rendering, refresh/login persistence, and a
@@ -58,13 +60,17 @@ reviewed but unapplied Migration 005.
 
 **Interfaces:**
 - Consumes: current `schema_migrations` and `characters.id INT UNSIGNED` conventions.
-- Produces: tested SQL contract for `item_definitions`, `character_items`, and `item_mutation_requests`.
+- Produces: tested SQL contract for `item_definitions`, provenance-aware `character_items`, and `item_mutation_requests`.
 
 - [ ] **Step 1: Write failing migration-structure tests**
 
   Add tests named for prerequisites/rerun rejection, live parent-key preflight,
-  table/FK/CHECK/unique/index requirements, seeded definition identity,
+  table/FK/CHECK/unique/index requirements, immutable `source_type`/
+  `source_key`, unique `(character_id, source_type, source_key)`, seeded
+  `basic_sword`, `basic_wand`, `basic_dagger`, and `basic_mace` identities,
   non-destructive behavior, one migration record, and read-only verification.
+  Assert the initial source-type allowlist is exactly `starter` and
+  `combat_drop`, and starter provenance is never derived from display text.
   Assert Migration 005 requires `004_combat_enemy_ai_initialization`, rejects
   any partial target table set without its record, and never updates Champion
   resources.
@@ -77,10 +83,12 @@ reviewed but unapplied Migration 005.
 - [ ] **Step 3: Create Migration 005 and verification SQL**
 
   Implement the three spec tables with exact ownership nullability, immutable
-  snapshot columns, rarity/level checks, `(id, character_id)` uniqueness, and
-  `(character_id, request_token)` uniqueness. Seed only reviewed initial base
-  definitions. Follow the stored-procedure preflight convention and add a
-  separate read-only metadata/count verification file.
+  snapshot/provenance columns, rarity/level checks, `(id, character_id)` and
+  `(character_id, source_type, source_key)` uniqueness, plus
+  `(character_id, request_token)` uniqueness. Seed the reviewed catalogue,
+  including all four level-1 starter weapon definitions, but create no
+  `character_items` or equipment rows. Follow the stored-procedure preflight
+  convention and add a separate read-only metadata/count verification file.
 
 - [ ] **Step 4: Run GREEN and SQL text safety checks**
 
@@ -239,9 +247,10 @@ reviewed but unapplied Migration 005.
   Report files, exact test counts, Migration 005 `NOT APPLIED`, manual checks,
   and `READY FOR TESTING`. Do not begin Task 19.
 
-**Task 18 explicit non-goals:** random generation, affixes, physical drops,
-claim, equipment relations/effects, deletion/discard, finite capacity, vendors,
-crafting, trading, or shared inventory.
+**Task 18 explicit non-goals:** granting/equipping starter items, random
+generation, affixes, physical drops, claim, equipment relations/effects,
+deletion/discard, finite capacity, vendors, crafting, trading, or shared
+inventory.
 
 ---
 
@@ -472,8 +481,10 @@ crafting, trading, legendary/set items.
 ### Scope and acceptance boundary
 
 Task 20 adds one authoritative relation for the ten slots, retry-safe atomic
-equip/unequip/swap, pointer UI, item-aware derived stats, and a production
-equipment provider. It activates only the modifier subset in the spec.
+equip/unequip/swap, creation-time and existing-Champion starter bootstrap,
+pointer UI, item-aware derived stats, and a production equipment provider. It
+activates only the modifier subset in the spec. The prototype provider remains
+in production until the complete starter/equipment cutover gate passes.
 
 ### Task 20.1: Freeze Migration 007 with RED tests
 
@@ -503,7 +514,7 @@ equipment provider. It activates only the modifier subset in the spec.
 - [ ] **Step 3: Implement Migration 007 and verification SQL**
 
   Follow existing procedure convention. Create no equipment for existing
-  Champions and do not alter HP/Mana.
+  Champions, create no starter item instances, and do not alter HP/Mana.
 
 - [ ] **Step 4: Run GREEN and inspect without applying**
 
@@ -611,7 +622,83 @@ equipment provider. It activates only the modifier subset in the spec.
   Run: `php tests/run.php`
   Expected: all tests pass.
 
-### Task 20.4: Replace the production prototype combat provider
+### Task 20.4: Add deterministic starter grants and reviewed bootstrap
+
+**Files:**
+- Create: `ascii-quest/lib/StarterEquipmentService.php`
+- Create: `scripts/bootstrap_starter_equipment.php`
+- Modify: `ascii-quest/create_character.php`
+- Modify: `ascii-quest/lib/ItemRepository.php`
+- Modify: `ascii-quest/lib/EquipmentRepository.php`
+- Modify: `ascii-quest/lib/ItemBootstrap.php`
+- Create: `tests/StarterEquipmentTest.php`
+- Modify: `tests/run.php`
+
+**Interfaces:**
+- Consumes: stable class keys and the four Migration 005 starter definitions.
+- Produces:
+  - `StarterEquipmentService::grantForNewLockedChampion(array $lockedCharacter, string $classKey): array`
+  - `StarterEquipmentService::bootstrapExisting(int $userId, int $characterId, bool $apply): array`
+  - CLI preview/apply summary with `granted`, `unchanged`, `skipped_dead`, `deferred_combat`, and `failed` counts.
+
+- [ ] **Step 1: Write failing class-mapping and item-shape tests**
+
+  Assert a new Warrior receives one `basic_sword`, Mage one `basic_wand`, Rogue
+  one `basic_dagger`, and Cleric one `basic_mace`. For every class assert one
+  real Champion-owned `character_items` row, Normal rarity, item level 1, no
+  affix rows, `starter`/`initial_weapon` provenance, no combat drop row, and one
+  `weapon` equipment row.
+
+- [ ] **Step 2: Write failing transaction/idempotency tests**
+
+  Cover repeated new-grant calls, repeated bootstrap apply, two service
+  instances racing the same grant, and response retry. Require one starter row
+  and one weapon-slot row. Inject item-insert and equipment-insert failures and
+  prove new-character creation rolls back the Champion, item, and equipment;
+  existing-Champion bootstrap rolls back its whole per-Champion transaction.
+
+- [ ] **Step 3: Write failing existing-Champion policy tests**
+
+  Assert an existing living Champion with an equipped real weapon is untouched;
+  an existing living Champion with an owned usable unequipped weapon receives
+  no starter and is unchanged; an existing living Champion with no equipped or
+  owned usable weapon gets exactly one mapped starter equipped; a DEAD Champion
+  gets nothing; unresolved combat returns `deferred_combat`; and bootstrap
+  preserves exact current HP and Mana in every result.
+
+- [ ] **Step 4: Run RED**
+
+  Run: `php tests/run.php`
+  Expected: FAIL because the starter service/bootstrap path is absent.
+
+- [ ] **Step 5: Implement the shared starter service**
+
+  Map by canonical `character_classes.class_key`, never display name or numeric
+  ID. Build the deterministic immutable item from its definition with no random
+  source and no affixes/drop. Use the unique provenance key as the final race
+  guard. Join a caller-owned transaction for new creation; own one transaction
+  per Champion for existing bootstrap.
+
+- [ ] **Step 6: Integrate new Champion creation atomically**
+
+  Extend the current `create_character.php` PDO transaction: insert Champion,
+  obtain/lock its ID and canonical class key, call
+  `grantForNewLockedChampion()`, then commit. Any item/equipment exception must
+  reach the existing rollback path before redirect.
+
+- [ ] **Step 7: Implement the reviewed CLI bootstrap**
+
+  Refuse non-CLI execution. Default to report-only preview; require explicit
+  `--apply` for writes. In apply mode lock and process one Champion transaction
+  at a time using the spec policy. Migration SQL and page loads never invoke
+  this script. Do not run it against production without separate approval.
+
+- [ ] **Step 8: Run GREEN and lint**
+
+  Run: `php tests/run.php && php -l ascii-quest/create_character.php && php -l ascii-quest/lib/StarterEquipmentService.php && php -l scripts/bootstrap_starter_equipment.php`
+  Expected: all tests pass and every file reports no syntax errors.
+
+### Task 20.5: Replace the production prototype combat provider
 
 **Files:**
 - Create: `ascii-quest/lib/PersistentCombatEquipmentProvider.php`
@@ -659,18 +746,21 @@ equipment provider. It activates only the modifier subset in the spec.
   for resolved damage/type/critical inputs. Resolve future player offense only
   from those persisted values and add no duplicate duration or rate column.
 
-- [ ] **Step 5: Wire production bootstrap**
+- [ ] **Step 5: Wire production bootstrap only after starter readiness**
 
   Instantiate the persistent provider from the real PDO/repository. Keep the
-  prototype class only for explicit legacy test fixtures; production must not
-  silently supply a weapon.
+  prototype class only for explicit legacy test fixtures. Remove it from
+  production wiring only after creation grants, existing-Champion preview/
+  bootstrap, equipment reads, and starter tests pass. Production must not
+  silently supply a weapon; missing equipment returns a controlled unavailable
+  state.
 
 - [ ] **Step 6: Run GREEN and focused regressions**
 
   Run: `php tests/run.php`
   Expected: all tests pass, including snapshot/current-defense regressions.
 
-### Task 20.5: Add mutation endpoints and pointer equipment UI
+### Task 20.6: Add mutation endpoints and pointer equipment UI
 
 **Files:**
 - Create: `ascii-quest/equip_item.php`
@@ -722,7 +812,7 @@ equipment provider. It activates only the modifier subset in the spec.
   Run: PHP lint for changed endpoints/PHP and `node --check ascii-quest/js/item_hud.js`
   Expected: zero syntax errors.
 
-### Task 20.6: Full Task 20 and milestone gate
+### Task 20.7: Full Task 20 and milestone gate
 
 - [ ] **Step 1: Run all permanent suites and record exact counts**
 
@@ -741,7 +831,12 @@ equipment provider. It activates only the modifier subset in the spec.
   the item; an already-started action retains old values; incoming damage uses
   current defense; combat/victory/DEAD equipment attempts fail; HP/Mana do not
   refill; refresh/logout/login retain ownership/equipment; two tabs cannot
-  duplicate a slot or item.
+  duplicate a slot or item. Create one Champion of every class and verify its
+  mapped Normal level-1 no-affix weapon is owned/equipped. Preview and, only
+  with approval, apply existing-Champion bootstrap twice; verify eligible
+  living Champions receive one grant, equipped/armed Champions and DEAD
+  Champions remain unchanged, HP/Mana remain exact, and production has no
+  prototype fallback after cutover.
 
 - [ ] **Step 4: Stop for review**
 
