@@ -1253,6 +1253,71 @@ a:hover {
         linear-gradient(135deg, rgba(169, 122, 59, 0.04), transparent),
         rgba(0, 0, 0, 0.42);
     box-shadow: inset 0 0 7px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+    padding: 2px;
+    color: #b8a98b;
+    font: inherit;
+    font-size: 8px;
+    cursor: pointer;
+}
+
+.inventory-slot:empty {
+    cursor: default;
+}
+
+.inventory-slot.is-selected {
+    border-color: #f0d58a;
+    box-shadow: inset 0 0 7px rgba(0, 0, 0, 0.8), 0 0 5px rgba(240, 213, 138, 0.55);
+}
+
+.inventory-rarity-normal { color: #d5d0c5; }
+.inventory-rarity-magic { color: #76a9ff; }
+.inventory-rarity-rare { color: #f0d05f; }
+
+.inventory-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    margin-top: 5px;
+    font-size: 8px;
+}
+
+.inventory-pagination button {
+    border: 1px solid rgba(169, 122, 59, 0.55);
+    background: rgba(0, 0, 0, 0.55);
+    color: #d6c49c;
+    font: inherit;
+    cursor: pointer;
+}
+
+.inventory-pagination button:disabled {
+    color: #625a4d;
+    cursor: default;
+}
+
+.inventory-details {
+    display: grid;
+    gap: 2px;
+    margin-top: 5px;
+    padding: 5px;
+    border: 1px solid rgba(169, 122, 59, 0.45);
+    background: rgba(0, 0, 0, 0.45);
+    font-size: 8px;
+}
+
+.inventory-details[hidden] {
+    display: none;
+}
+
+.inventory-details strong { color: #f0d58a; }
+.inventory-details span { color: #a99c84; }
+
+.inventory-message {
+    min-height: 10px;
+    margin: -3px 0 4px;
+    color: #c46b5a;
+    font-size: 8px;
 }
 
 .map-title {

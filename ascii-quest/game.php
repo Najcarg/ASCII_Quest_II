@@ -24,6 +24,7 @@ require_once __DIR__ . "/map_loader.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
 require_once __DIR__ . "/lib/WarpBootstrap.php";
 require_once __DIR__ . "/lib/CombatBootstrap.php";
+require_once __DIR__ . "/lib/ItemBootstrap.php";
 
 $pdo = getDb();
 
@@ -148,6 +149,11 @@ try {
     $combatState = CombatBootstrap::service($pdo)->state(
         (int) $_SESSION["user_id"],
         (int) $character["id"],
+    );
+    $inventoryState = ItemBootstrap::service($pdo)->state(
+        (int) $_SESSION["user_id"],
+        (int) $character["id"],
+        1,
     );
 } catch (DomainException | OutOfBoundsException $e) {
     unset($_SESSION["character_id"]);
@@ -356,6 +362,7 @@ $explorationHudVersion = (int) filemtime(
 );
 $gameControlsVersion = (int) filemtime(__DIR__ . "/js/game_controls.js");
 $combatHudVersion = (int) filemtime(__DIR__ . "/js/combat_hud.js");
+$itemHudVersion = (int) filemtime(__DIR__ . "/js/item_hud.js");
 
 $mainStatLabels = [
     "strength" => ["short" => "STR", "label" => "Strength"],
@@ -1119,15 +1126,29 @@ $detailStatGroups = [
 
                     <section class="hud-item-section">
                         <h2>Inventory</h2>
-                        <p class="hud-section-note">Visual shell only</p>
-                        <div class="inventory-grid" aria-label="Empty inventory placeholders">
+                        <p id="inventoryEmpty" class="hud-section-note" hidden></p>
+                        <p id="inventoryMessage" class="inventory-message" role="status"></p>
+                        <div class="inventory-grid" aria-label="Champion inventory">
                             <?php for ($slot = 1; $slot <= 25; $slot++): ?>
                                 <div
                                     class="inventory-slot"
+                                    role="button"
+                                    tabindex="0"
+                                    data-inventory-slot="<?= e($slot) ?>"
                                     aria-label="Empty inventory slot <?= e($slot) ?>"
                                 ></div>
                             <?php endfor; ?>
                         </div>
+                        <div class="inventory-pagination" aria-label="Inventory pages">
+                            <button id="inventoryPrevious" type="button">Previous</button>
+                            <span id="inventoryPageLabel">Page 1 of 1</span>
+                            <button id="inventoryNext" type="button">Next</button>
+                        </div>
+                        <section id="inventoryDetails" class="inventory-details" hidden>
+                            <strong id="inventoryDetailName"></strong>
+                            <span id="inventoryDetailMeta"></span>
+                            <span id="inventoryDetailStats"></span>
+                        </section>
                     </section>
                 </section>
 
@@ -1197,6 +1218,7 @@ window.ASCII_QUEST_STATE = {
     currentWarp: <?= json_encode($currentWarp, JSON_UNESCAPED_UNICODE) ?>,
     encounterEnemy: <?= json_encode($encounterEnemy, JSON_UNESCAPED_UNICODE) ?>,
     combat: <?= json_encode($combatState, JSON_UNESCAPED_UNICODE) ?>,
+    inventory: <?= json_encode($inventoryState, JSON_UNESCAPED_UNICODE) ?>,
 
     initialMessages: [
         <?php if ($isCombatMode): ?>
@@ -1213,6 +1235,7 @@ window.ASCII_QUEST_STATE = {
 </script>
 
 <script src="js/exploration_hud.js?v=<?= $explorationHudVersion ?>"></script>
+<script src="js/item_hud.js?v=<?= $itemHudVersion ?>"></script>
 <?php if ($isCombatMode): ?>
 <script src="js/combat_hud.js?v=<?= $combatHudVersion ?>"></script>
 <?php endif; ?>
