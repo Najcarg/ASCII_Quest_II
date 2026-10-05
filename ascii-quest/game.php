@@ -838,9 +838,9 @@ $detailStatGroups = [
                             </div>
                             <section id="combatLootRow" class="combat-loot-row" aria-label="Physical item drops">
                                 <strong>Physical Drops</strong>
-                                <span id="combatPhysicalDrops">No physical item drops.</span>
+                                <div id="combatPhysicalDrops">No physical item drops.</div>
                             </section>
-                            <p>The completed encounter remains open until you continue.</p>
+                            <p>Close / Continue automatically claims any remaining physical drops.</p>
                             <button id="combatCloseButton" class="combat-action-button" type="button">Close / Continue</button>
                         </section>
 

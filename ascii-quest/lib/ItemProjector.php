@@ -13,10 +13,6 @@ final class ItemProjector
         array $affixes = [],
         ?string $equippedSlot = null,
     ): array {
-        if ($affixes !== []) {
-            throw new UnexpectedValueException('Affixes are unavailable in Task 18.');
-        }
-
         $id = $this->positiveInteger($row['id'] ?? null, 'item id');
         $level = $this->positiveInteger($row['item_level'] ?? null, 'item level');
         $name = $this->nonEmptyString($row['display_name'] ?? null, 'display name', 160);
@@ -39,7 +35,27 @@ final class ItemProjector
             throw new UnexpectedValueException('Invalid damage range.');
         }
 
-        return [
+        $publicAffixes = [];
+        $statLines = [];
+        foreach ($affixes as $affix) {
+            $position = $this->allowedString($affix['position'] ?? null, ['prefix', 'suffix'], 'affix position');
+            $fragment = $this->nonEmptyString($affix['display_fragment'] ?? null, 'affix display fragment', 96);
+            $modifier = $this->asciiKey($affix['modifier_type'] ?? null, 'affix modifier', 48);
+            $operation = $this->allowedString($affix['modifier_operation'] ?? null, ['flat', 'additive_percent'], 'affix operation');
+            $value = $this->integer($affix['rolled_value'] ?? null, 'affix value');
+            $tier = $this->positiveInteger($affix['tier'] ?? null, 'affix tier');
+            $publicAffixes[] = [
+                'position' => $position,
+                'display_fragment' => $fragment,
+                'modifier_type' => $modifier,
+                'operation' => $operation,
+                'value' => $value,
+                'tier' => $tier,
+            ];
+            $statLines[] = $this->statLine($modifier, $operation, $value);
+        }
+
+        $projected = [
             'id' => $id,
             'display_name' => $name,
             'rarity' => $rarity,
@@ -60,6 +76,40 @@ final class ItemProjector
             'equipped' => $equippedSlot !== null,
             'equipped_slot' => $equippedSlot,
         ];
+        if ($publicAffixes !== []) {
+            $projected['affixes'] = $publicAffixes;
+            $projected['stat_lines'] = $statLines;
+        }
+        return $projected;
+    }
+
+    private function statLine(string $modifier, string $operation, int $value): string
+    {
+        $label = match ($modifier) {
+            'flat_damage' => 'Damage',
+            'damage_percent_bp' => 'Damage',
+            'maximum_life' => 'Maximum Life',
+            'maximum_mana' => 'Maximum Mana',
+            'strength' => 'Strength',
+            'dexterity' => 'Dexterity',
+            'vitality' => 'Vitality',
+            'energy' => 'Energy',
+            'fate' => 'Fate',
+            'toughness' => 'Toughness',
+            'physical_resistance' => 'Physical Resistance',
+            'fire_resistance' => 'Fire Resistance',
+            'lightning_resistance' => 'Lightning Resistance',
+            'poison_resistance' => 'Poison Resistance',
+            'cold_resistance' => 'Cold Resistance',
+            'attack_rate_bp' => 'Attack Rate',
+            'cast_rate_bp' => 'Cast Rate',
+            default => throw new UnexpectedValueException('Unsupported public item modifier.'),
+        };
+        if ($operation === 'additive_percent') {
+            $absolute = abs($value);
+            return sprintf('%s%d.%02d%% %s', $value >= 0 ? '+' : '-', intdiv($absolute, 100), $absolute % 100, $label);
+        }
+        return sprintf('%+d %s', $value, $label);
     }
 
     private function positiveInteger(mixed $value, string $field): int

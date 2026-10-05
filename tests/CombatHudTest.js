@@ -1284,6 +1284,67 @@ const tests = {
         assert.equal(hudSource.includes("keyup"), false);
         assert.equal(/Arrow(?:Up|Down|Left|Right)|Key[QWER]|Digit[1-9]/.test(hudSource), false);
     },
+
+    "victory physical drop renders safe name rarity level affixes and Claim state"() {
+        const documentRoot = combatDocument();
+        const state = combatState({
+            status: "victory_loot",
+            loot_phase: {
+                rewards: { gold: 25, experience: 40 },
+                physical_drops: [{
+                    id: 7,
+                    claim_state: "unclaimed",
+                    item: {
+                        id: 55,
+                        display_name: "<img src=x> Hunter Axe of Health",
+                        rarity: "rare",
+                        item_level: 10,
+                        base_type: "axe",
+                        affixes: [{ position: "prefix", display_fragment: "Hunter" }],
+                        stat_lines: ["+7 Damage", "+5 Maximum Life"],
+                    },
+                }],
+            },
+        });
+        hud.renderCombatHud(documentRoot, state, { claimDropId: null }, Date.parse(state.server_observed_at));
+        const cards = documentRoot.elements.combatPhysicalDrops.children;
+        assert.equal(cards.length, 1);
+        assert.equal(cards[0].children[0].textContent, "<img src=x> Hunter Axe of Health");
+        assert.equal(cards[0].children[1].textContent, "Rare · Item level 10 · axe");
+        assert.equal(cards[0].children[2].textContent, "+7 Damage · +5 Maximum Life");
+        assert.equal(cards[0].children[3].textContent, "Claim");
+        assert.equal(cards[0].children[3].disabled, false);
+    },
+
+    async "claim retry reuses one request token and reconciles claimed identity"() {
+        const requests = [];
+        let attempts = 0;
+        const state = combatState({
+            status: "victory_loot",
+            loot_phase: { rewards: { gold: 25, experience: 40 }, physical_drops: [{
+                id: 7, claim_state: "unclaimed", item: { id: 55, display_name: "Axe", rarity: "normal", item_level: 1, base_type: "axe" },
+            }] },
+        });
+        const claimed = { id: 7, claim_state: "claimed", item: state.loot_phase.physical_drops[0].item };
+        const controller = hud.createCombatController({
+            csrfToken: "csrf",
+            initialState: state,
+            requestTokenFactory: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            async fetchImplementation(url, options) {
+                requests.push([url, JSON.parse(options.body)]);
+                attempts++;
+                if (attempts === 1) {
+                    throw new Error("lost response");
+                }
+                return { ok: true, json: async () => ({ drop: claimed }) };
+            },
+        });
+        assert.equal(await controller.claim(7), false);
+        assert.equal(await controller.claim(7), true);
+        assert.equal(requests[0][0], "item_claim.php");
+        assert.equal(requests[0][1].request_token, requests[1][1].request_token);
+        assert.equal(controller.state().loot_phase.physical_drops[0].claim_state, "claimed");
+    },
 };
 
 async function runTests() {

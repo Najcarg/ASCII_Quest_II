@@ -37,6 +37,9 @@
             onClosed() {
                 root.location.reload();
             },
+            onInventoryChanged() {
+                root.ASCIIQuestInventoryController?.refresh?.();
+            },
         });
     }
 
@@ -276,7 +279,22 @@
                               experience: Number(lootPhase?.rewards?.experience) || 0,
                           },
                           physicalDrops: Array.isArray(lootPhase?.physical_drops)
-                              ? lootPhase.physical_drops
+                              ? lootPhase.physical_drops.map(function (drop) {
+                                    const item = drop?.item || {};
+                                    return {
+                                        id: Number(drop?.id) || 0,
+                                        claimState: drop?.claim_state === "claimed" ? "claimed" : "unclaimed",
+                                        item: {
+                                            id: Number(item.id) || 0,
+                                            name: String(item.display_name || "Unknown item"),
+                                            rarity: String(item.rarity || "normal"),
+                                            itemLevel: Number(item.item_level) || 0,
+                                            baseType: String(item.base_type || "item"),
+                                            affixes: Array.isArray(item.affixes) ? item.affixes : [],
+                                            statLines: Array.isArray(item.stat_lines) ? item.stat_lines : [],
+                                        },
+                                    };
+                                })
                               : [],
                       }
                     : null,
@@ -293,11 +311,17 @@
             close: false,
             refresh: false,
         };
+        let pendingClaimId = null;
+        const claimTokens = new Map();
         const now = typeof options.now === "function" ? options.now : () => Date.now();
 
         function notifyPending() {
             if (typeof options.onPending === "function") {
-                options.onPending({ ...pendingState });
+                const projected = { ...pendingState };
+                if (pendingClaimId !== null) {
+                    projected.claimDropId = pendingClaimId;
+                }
+                options.onPending(projected);
             }
         }
 
@@ -441,6 +465,60 @@
                     csrf_token: options.csrfToken,
                 });
             },
+            async claim(dropId) {
+                const id = Number(dropId);
+                const drop = authoritativeState?.loot_phase?.physical_drops?.find(
+                    (candidate) => Number(candidate?.id) === id,
+                );
+                if (!drop || drop.claim_state === "claimed" || pendingClaimId !== null
+                    || typeof options.fetchImplementation !== "function") {
+                    return false;
+                }
+                if (!claimTokens.has(id)) {
+                    claimTokens.set(id, options.requestTokenFactory());
+                }
+                pendingClaimId = id;
+                notifyPending();
+                try {
+                    const response = await options.fetchImplementation("item_claim.php", {
+                        method: "POST",
+                        headers: { Accept: "application/json", "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            csrf_token: options.csrfToken,
+                            drop_id: id,
+                            request_token: claimTokens.get(id),
+                        }),
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result?.drop) {
+                        reportError(typeof result?.message === "string" ? result.message : ERROR_FALLBACK);
+                        return false;
+                    }
+                    authoritativeState = {
+                        ...authoritativeState,
+                        loot_phase: {
+                            ...authoritativeState.loot_phase,
+                            physical_drops: authoritativeState.loot_phase.physical_drops.map(
+                                (candidate) => Number(candidate.id) === id ? result.drop : candidate,
+                            ),
+                        },
+                    };
+                    claimTokens.delete(id);
+                    if (typeof options.onState === "function") {
+                        options.onState(authoritativeState);
+                    }
+                    if (typeof options.onInventoryChanged === "function") {
+                        options.onInventoryChanged();
+                    }
+                    return true;
+                } catch (error) {
+                    reportError(ERROR_FALLBACK);
+                    return false;
+                } finally {
+                    pendingClaimId = null;
+                    notifyPending();
+                }
+            },
             refresh() {
                 return request("refresh", "combat_state.php", null);
             },
@@ -451,6 +529,46 @@
         const element = documentRoot.getElementById(id);
         if (element) {
             element.textContent = String(value);
+        }
+    }
+
+    function renderPhysicalDrops(documentRoot, drops, pendingClaimId) {
+        const container = documentRoot.getElementById("combatPhysicalDrops");
+        if (!container) {
+            return;
+        }
+        container.replaceChildren();
+        if (!Array.isArray(drops) || drops.length === 0) {
+            container.textContent = "No physical item drops.";
+            return;
+        }
+        container.textContent = "";
+        for (const drop of drops) {
+            const card = documentRoot.createElement("article");
+            card.className = "combat-item-drop inventory-rarity-" + drop.item.rarity;
+            const title = documentRoot.createElement("strong");
+            title.textContent = drop.item.name;
+            const meta = documentRoot.createElement("span");
+            meta.textContent = drop.item.rarity.charAt(0).toUpperCase() + drop.item.rarity.slice(1)
+                + " · Item level " + drop.item.itemLevel + " · " + drop.item.baseType;
+            const details = documentRoot.createElement("span");
+            const lines = drop.item.statLines.length > 0
+                ? drop.item.statLines
+                : drop.item.affixes.map((affix) => String(affix.display_fragment || ""));
+            details.textContent = lines.length > 0 ? lines.join(" · ") : "No affixes";
+            const button = documentRoot.createElement("button");
+            button.type = "button";
+            button.dataset.claimDropId = String(drop.id);
+            button.className = "combat-item-claim";
+            const isClaimed = drop.claimState === "claimed";
+            const isPending = Number(pendingClaimId) === drop.id;
+            button.disabled = isClaimed || isPending;
+            button.textContent = isClaimed ? "Claimed" : (isPending ? "Claiming…" : "Claim");
+            card.appendChild(title);
+            card.appendChild(meta);
+            card.appendChild(details);
+            card.appendChild(button);
+            container.appendChild(card);
         }
     }
 
@@ -668,12 +786,10 @@
 
         setText(documentRoot, "combatVictoryGold", view.lootPhase?.rewards?.gold ?? 0);
         setText(documentRoot, "combatVictoryExperience", view.lootPhase?.rewards?.experience ?? 0);
-        setText(
+        renderPhysicalDrops(
             documentRoot,
-            "combatPhysicalDrops",
-            view.lootPhase?.physicalDrops?.length > 0
-                ? "Physical item drops are available."
-                : "No physical item drops.",
+            view.lootPhase?.physicalDrops ?? [],
+            pending.claimDropId ?? null,
         );
         const closeButton = documentRoot.getElementById("combatCloseButton");
         if (closeButton) {
@@ -805,6 +921,15 @@
         documentRoot.getElementById("combatCloseButton")?.addEventListener(
             "click",
             () => controller.close(),
+        );
+        documentRoot.getElementById("combatPhysicalDrops")?.addEventListener(
+            "click",
+            (event) => {
+                const dropId = Number(event?.target?.dataset?.claimDropId);
+                if (Number.isSafeInteger(dropId) && dropId > 0) {
+                    controller.claim(dropId);
+                }
+            },
         );
         paint();
 

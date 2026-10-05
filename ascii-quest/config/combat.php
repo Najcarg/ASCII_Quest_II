@@ -12,6 +12,12 @@ return [
     'turn_duration_seconds' => 10.0,
     'max_disconnected_catchup_seconds' => 5.0,
 
+    'item_drops' => [
+        'reward_slots' => 1,
+        'base_drop_chance_bp' => 500,
+        'rarity_weights' => ['normal' => 60, 'magic' => 30, 'rare' => 10],
+    ],
+
     'prototype_encounters' => [
         'deep_cave_01_cave_brute' => [
             'id' => 'deep_cave_01_cave_brute',
@@ -24,6 +30,7 @@ return [
             'stationary' => true,
             'fighting_range' => 1,
             'range_shape' => 'orthogonal',
+            'loot_source_level' => 1,
         ],
     ],
 

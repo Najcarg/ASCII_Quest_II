@@ -23,6 +23,7 @@ final class CombatDefinitionRegistry
 
     /** @var array<string, array<string, mixed>> */
     private array $playerReactions;
+    private array $itemDrops;
 
     public function __construct(array $config)
     {
@@ -38,6 +39,22 @@ final class CombatDefinitionRegistry
             $config,
             'max_disconnected_catchup_seconds',
         );
+        $itemDrops = self::requiredArray($config, 'item_drops');
+        self::positiveInteger($itemDrops, 'reward_slots');
+        $baseChance = $itemDrops['base_drop_chance_bp'] ?? null;
+        if (!is_int($baseChance) || $baseChance < 0 || $baseChance > 10000) {
+            throw new RuntimeException('Item drop chance must use bounded basis points.');
+        }
+        $weights = self::requiredArray($itemDrops, 'rarity_weights');
+        if (array_keys($weights) !== ['normal', 'magic', 'rare']) {
+            throw new RuntimeException('Item rarity weights are invalid.');
+        }
+        foreach ($weights as $weight) {
+            if (!is_int($weight) || $weight < 0) {
+                throw new RuntimeException('Item rarity weights must be non-negative integers.');
+            }
+        }
+        $this->itemDrops = $itemDrops;
 
         $prototypeBalance = self::requiredArray($config, 'prototype_balance');
         $this->playerActions = self::validatePlayerActions(
@@ -112,6 +129,11 @@ final class CombatDefinitionRegistry
     public function encounters(): array
     {
         return array_values($this->encounters);
+    }
+
+    public function itemDropConfiguration(): array
+    {
+        return $this->itemDrops;
     }
 
     private static function validatePlayerActions(array $actions): array
@@ -303,6 +325,7 @@ final class CombatDefinitionRegistry
             if (($encounter['range_shape'] ?? null) !== 'orthogonal') {
                 throw new RuntimeException('Prototype encounter range must be orthogonal.');
             }
+            self::positiveInteger($encounter, 'loot_source_level');
         }
 
         return $encounters;

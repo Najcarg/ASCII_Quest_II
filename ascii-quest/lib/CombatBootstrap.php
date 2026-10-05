@@ -21,6 +21,10 @@ require_once __DIR__ . '/PrototypeEnemyDefenseResolver.php';
 require_once __DIR__ . '/PrototypeBlockResolver.php';
 require_once __DIR__ . '/SystemCombatClock.php';
 require_once __DIR__ . '/SystemCombatRandomSource.php';
+require_once __DIR__ . '/SystemItemRandomSource.php';
+require_once __DIR__ . '/ItemDefinitionRegistry.php';
+require_once __DIR__ . '/ItemGenerator.php';
+require_once __DIR__ . '/ItemDropService.php';
 
 final class CombatBootstrap
 {
@@ -41,7 +45,22 @@ final class CombatBootstrap
 
     public static function service(PDO $pdo): CombatService
     {
-        return self::serviceForRepository(self::repository($pdo));
+        $repository = self::repository($pdo);
+        $definitions = CombatDefinitionRegistry::fromDefaultConfig();
+        $catalogue = $repository->itemGenerationCatalogue();
+        $dropConfig = $definitions->itemDropConfiguration();
+        $itemDropService = new ItemDropService(
+            $repository,
+            new ItemGenerator(new ItemDefinitionRegistry(
+                $catalogue['definitions'],
+                $catalogue['affixes'],
+                $dropConfig['rarity_weights'],
+            )),
+            new SystemItemRandomSource(),
+            (int) $dropConfig['reward_slots'],
+            (int) $dropConfig['base_drop_chance_bp'],
+        );
+        return self::serviceForRepository($repository, null, null, null, $itemDropService);
     }
 
     public static function serviceForRepository(
@@ -49,6 +68,7 @@ final class CombatBootstrap
         ?CombatClock $clock = null,
         ?CombatEquipmentProvider $equipmentProvider = null,
         ?CombatRandomSource $randomSource = null,
+        ?ItemDropService $itemDropService = null,
     ): CombatService
     {
         $definitions = CombatDefinitionRegistry::fromDefaultConfig();
@@ -85,6 +105,7 @@ final class CombatBootstrap
                 new CaveBrutePolicy($turnEngine),
                 $actionResolver,
                 $randomSource,
+                $itemDropService,
             ),
             $equipmentProvider,
             new CombatStateProjector(
@@ -93,6 +114,7 @@ final class CombatBootstrap
                 $playerActionEvaluator,
             ),
             $playerActionEvaluator,
+            $itemDropService,
         );
     }
 

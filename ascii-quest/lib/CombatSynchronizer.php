@@ -7,6 +7,7 @@ require_once __DIR__ . '/CaveBrutePolicy.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatRandomSource.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
+require_once __DIR__ . '/ItemDropService.php';
 
 final class CombatSynchronizer
 {
@@ -17,6 +18,7 @@ final class CombatSynchronizer
     private ?CaveBrutePolicy $caveBrutePolicy;
     private ?CombatActionResolver $actionResolver;
     private ?CombatRandomSource $randomSource;
+    private ?ItemDropService $itemDropService;
 
     public function __construct(
         private CombatClock $clock,
@@ -28,6 +30,7 @@ final class CombatSynchronizer
         ?CaveBrutePolicy $caveBrutePolicy = null,
         ?CombatActionResolver $actionResolver = null,
         ?CombatRandomSource $randomSource = null,
+        ?ItemDropService $itemDropService = null,
     ) {
         if (!is_finite($maxCatchupSeconds) || $maxCatchupSeconds <= 0) {
             throw new InvalidArgumentException('Combat catch-up limit must be positive.');
@@ -43,6 +46,7 @@ final class CombatSynchronizer
         $this->caveBrutePolicy = $caveBrutePolicy;
         $this->actionResolver = $actionResolver;
         $this->randomSource = $randomSource;
+        $this->itemDropService = $itemDropService;
 
         $this->dueEventProcessor = $dueEventProcessor ?? ($repository === null
             ? static fn (array $encounter, int $throughTimelineMs): array => $encounter
@@ -468,6 +472,10 @@ final class CombatSynchronizer
             $experience,
         )) {
             throw new RuntimeException('Champion rewards changed concurrently. Please retry.');
+        }
+
+        if ($this->itemDropService !== null) {
+            $this->itemDropService->generateForVictory($encounter, $issuedAt);
         }
 
         $this->repository->cancelLockedPendingActionsForEncounter($encounterId, $timelineMs);

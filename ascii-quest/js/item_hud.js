@@ -15,7 +15,7 @@
         if (!initialState) {
             return;
         }
-        itemHud.createController({
+        root.ASCIIQuestInventoryController = itemHud.createController({
             document: root.document,
             initialState,
             fetchImplementation: typeof root.fetch === "function" ? root.fetch.bind(root) : null,
@@ -119,7 +119,8 @@
         } else if (Number(stats.toughness) > 0) {
             statLine = "Toughness +" + Number(stats.toughness);
         }
-        byId(document, "inventoryDetailStats").textContent = statLine;
+        const affixLines = Array.isArray(item.stat_lines) ? item.stat_lines : [];
+        byId(document, "inventoryDetailStats").textContent = [statLine, ...affixLines].join(" · ");
     }
 
     function createController(options) {
@@ -197,6 +198,9 @@
         applyState(currentState);
         return {
             applyState,
+            refresh() {
+                return loadPage(Number(currentState?.pagination?.page) || 1);
+            },
             selectedItemId() { return selectedId; },
         };
     }

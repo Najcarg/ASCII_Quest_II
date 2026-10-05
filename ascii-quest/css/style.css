@@ -2271,3 +2271,20 @@ a:hover {
     );
     text-shadow: 0 0 5px rgba(110, 80, 60, 0.45);
 }
+.combat-item-drop {
+    display: grid;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    padding: 0.65rem;
+    border: 1px solid currentColor;
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.combat-item-drop > span {
+    font-size: 0.82rem;
+}
+
+.combat-item-claim {
+    justify-self: start;
+    margin-top: 0.25rem;
+}

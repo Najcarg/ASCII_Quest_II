@@ -2,17 +2,17 @@
 
 ## Status
 
-TASK 18 PERSISTENT INVENTORY FOUNDATION
+TASK 19 ITEM GENERATION + PHYSICAL DROPS
 
 READY FOR REVIEW
 
-Task 18 adds the unapplied Migration 005 schema and starter catalogue,
-Champion-owned immutable item instances, mutation-request receipts, a strictly
-owner-scoped read service and endpoint, and the real 25-item paged Inventory
-HUD. It does not grant starter items, generate drops, or equip items.
+Task 19 adds the unapplied Migration 006 schema, source-level immutable item
+generation, durable physical drop and no-drop outcomes, explicit idempotent
+claim, Close/Continue auto-claim, safe victory projection, and the physical
+drop HUD. It does not grant starter items or equip/apply items.
 
 Migration:
-`005_item_inventory_foundation`
+`006_item_generation_and_drops`
 
 Migration status:
 `NOT APPLIED`
@@ -25,16 +25,14 @@ Implementation plan:
 
 ## Verification
 
-- Server PHP suite: 269 passed, 0 failed.
+- Server PHP suite: 293 passed, 0 failed.
 - Item HUD suite: 10 passed, 0 failed.
-- Combat HUD suite: 29 passed, 0 failed.
+- Combat HUD suite: 31 passed, 0 failed.
 - Exploration HUD suite: 30 passed, 0 failed.
-- Migration 005 was inspected as SQL only and was not applied.
+- Migration 006 was inspected as SQL only and was not applied.
 
 ## Intentionally Deferred
 
-- Starter item grants and equipment
-- Random item generation and affixes
-- Physical drops and claims
+- Starter item grants
 - Equipment relations and combat effects
 - Disposal, finite capacity, vendors, trading, and crafting

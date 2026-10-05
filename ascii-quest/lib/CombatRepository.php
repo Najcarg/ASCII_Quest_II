@@ -454,6 +454,7 @@ final class CombatRepository
             }
         }
 
+        $encounter += ['loot_source_level' => null];
         $params = ['character_id' => $characterId] + $this->requireKeys($encounter, [
             'enemy_key',
             'status',
@@ -473,6 +474,7 @@ final class CombatRepository
             'potion_charges_remaining',
             'reward_gold',
             'reward_experience',
+            'loot_source_level',
             'version',
         ]);
 
@@ -484,7 +486,7 @@ final class CombatRepository
                     next_enemy_decision_timeline_ms, enemy_ai_initialized_timeline_ms,
                     player_actions_remaining,
                     enemy_actions_remaining, potion_key, potion_charge_allowance,
-                    potion_charges_remaining, reward_gold, reward_experience, version
+                    potion_charges_remaining, reward_gold, reward_experience, loot_source_level, version
                 ) VALUES (
                     :character_id, :enemy_key, :status, :active_slot,
                     :enemy_max_hp, :enemy_current_hp, :timeline_elapsed_ms,
@@ -492,7 +494,7 @@ final class CombatRepository
                     :next_enemy_decision_timeline_ms, :enemy_ai_initialized_timeline_ms,
                     :player_actions_remaining,
                     :enemy_actions_remaining, :potion_key, :potion_charge_allowance,
-                    :potion_charges_remaining, :reward_gold, :reward_experience, :version
+                    :potion_charges_remaining, :reward_gold, :reward_experience, :loot_source_level, :version
                 )');
             $stmt->execute($params);
         } catch (PDOException $exception) {
@@ -598,6 +600,182 @@ final class CombatRepository
         ]);
 
         return $stmt->rowCount() === 1;
+    }
+
+    public function itemGenerationCatalogue(): array
+    {
+        $definitions = $this->pdo->query("SELECT * FROM item_definitions WHERE is_active = 1 AND loot_weight > 0 ORDER BY definition_key")->fetchAll(PDO::FETCH_ASSOC);
+        $families = $this->pdo->query('SELECT definition_key, family_key FROM item_definition_affix_families ORDER BY definition_key, family_key')->fetchAll(PDO::FETCH_ASSOC);
+        $familyMap = [];
+        foreach ($families as $row) {
+            $familyMap[(string) $row['definition_key']][] = (string) $row['family_key'];
+        }
+        foreach ($definitions as &$definition) {
+            $definition['allowed_affix_families'] = $familyMap[(string) $definition['definition_key']] ?? [];
+        }
+        unset($definition);
+
+        $affixes = $this->pdo->query('SELECT * FROM item_affix_definitions WHERE is_active = 1 ORDER BY affix_key')->fetchAll(PDO::FETCH_ASSOC);
+        $categories = $this->pdo->query('SELECT affix_key, category FROM item_affix_category_rules ORDER BY affix_key, category')->fetchAll(PDO::FETCH_ASSOC);
+        $tiers = $this->pdo->query('SELECT affix_key, tier, minimum_item_level, minimum_value, maximum_value FROM item_affix_tiers ORDER BY affix_key, tier')->fetchAll(PDO::FETCH_ASSOC);
+        $categoryMap = [];
+        foreach ($categories as $row) {
+            $categoryMap[(string) $row['affix_key']][] = (string) $row['category'];
+        }
+        $tierMap = [];
+        foreach ($tiers as $row) {
+            $tierMap[(string) $row['affix_key']][] = $row;
+        }
+        foreach ($affixes as &$affix) {
+            $key = (string) $affix['affix_key'];
+            $affix['categories'] = $categoryMap[$key] ?? [];
+            $affix['tiers'] = $tierMap[$key] ?? [];
+        }
+        unset($affix);
+
+        return ['definitions' => $definitions, 'affixes' => $affixes];
+    }
+
+    public function createNoItemDrop(
+        int $encounterId,
+        int $rewardSlot,
+        int $baseChanceBp,
+        int $itemFindBonusBp,
+        int $effectiveChanceBp,
+        int $chanceRollBp,
+        string $generatedAt,
+    ): void {
+        $this->requireEncounterLock($encounterId);
+        $stmt = $this->pdo->prepare("INSERT INTO combat_item_drops
+            (encounter_id, reward_slot, outcome, item_id, base_chance_bp, item_find_bonus_bp, effective_chance_bp, chance_roll_bp, generated_at)
+            VALUES (:encounter_id, :reward_slot, 'none', NULL, :base_chance_bp, :item_find_bonus_bp, :effective_chance_bp, :chance_roll_bp, :generated_at)");
+        $stmt->execute([
+            'encounter_id' => $encounterId, 'reward_slot' => $rewardSlot,
+            'base_chance_bp' => $baseChanceBp, 'item_find_bonus_bp' => $itemFindBonusBp,
+            'effective_chance_bp' => $effectiveChanceBp, 'chance_roll_bp' => $chanceRollBp,
+            'generated_at' => $generatedAt,
+        ]);
+    }
+
+    public function createGeneratedItemDrop(
+        int $encounterId,
+        int $rewardSlot,
+        array $item,
+        string $sourceKey,
+        int $baseChanceBp,
+        int $itemFindBonusBp,
+        int $effectiveChanceBp,
+        int $chanceRollBp,
+        string $generatedAt,
+    ): int {
+        $this->requireEncounterLock($encounterId);
+        $columns = [
+            'definition_key', 'item_level', 'rarity', 'display_name',
+            'snapshot_category', 'snapshot_subtype', 'snapshot_equipment_slot',
+            'snapshot_damage_type', 'snapshot_damage_min', 'snapshot_damage_max',
+            'snapshot_toughness', 'snapshot_attack_rate_modifier_bp',
+            'snapshot_cast_rate_modifier_bp', 'snapshot_block_rate_modifier_bp', 'glyph',
+        ];
+        $params = [];
+        foreach ($columns as $column) {
+            if (!array_key_exists($column, $item)) {
+                throw new InvalidArgumentException('Missing generated item field: ' . $column);
+            }
+            $params[$column] = $item[$column];
+        }
+        $params += ['source_type' => 'combat_drop', 'source_key' => $sourceKey, 'generated_at' => $generatedAt];
+        $stmt = $this->pdo->prepare('INSERT INTO character_items
+            (character_id, definition_key, item_level, rarity, display_name,
+             snapshot_category, snapshot_subtype, snapshot_equipment_slot,
+             snapshot_damage_type, snapshot_damage_min, snapshot_damage_max,
+             snapshot_toughness, snapshot_attack_rate_modifier_bp,
+             snapshot_cast_rate_modifier_bp, snapshot_block_rate_modifier_bp,
+             glyph, source_type, source_key, generated_at, claimed_at)
+            VALUES (NULL, :definition_key, :item_level, :rarity, :display_name,
+             :snapshot_category, :snapshot_subtype, :snapshot_equipment_slot,
+             :snapshot_damage_type, :snapshot_damage_min, :snapshot_damage_max,
+             :snapshot_toughness, :snapshot_attack_rate_modifier_bp,
+             :snapshot_cast_rate_modifier_bp, :snapshot_block_rate_modifier_bp,
+             :glyph, :source_type, :source_key, :generated_at, NULL)');
+        $stmt->execute($params);
+        $itemId = (int) $this->pdo->lastInsertId();
+
+        $affixStmt = $this->pdo->prepare('INSERT INTO character_item_affixes
+            (item_id, position, affix_key, tier, family_key, display_fragment, modifier_type, modifier_operation, rolled_value)
+            VALUES (:item_id, :position, :affix_key, :tier, :family_key, :display_fragment, :modifier_type, :modifier_operation, :rolled_value)');
+        foreach ($item['affixes'] ?? [] as $affix) {
+            $affixStmt->execute(['item_id' => $itemId] + $affix);
+        }
+
+        $drop = $this->pdo->prepare("INSERT INTO combat_item_drops
+            (encounter_id, reward_slot, outcome, item_id, base_chance_bp, item_find_bonus_bp, effective_chance_bp, chance_roll_bp, generated_at)
+            VALUES (:encounter_id, :reward_slot, 'unclaimed', :item_id, :base_chance_bp, :item_find_bonus_bp, :effective_chance_bp, :chance_roll_bp, :generated_at)");
+        $drop->execute([
+            'encounter_id' => $encounterId, 'reward_slot' => $rewardSlot,
+            'item_id' => $itemId, 'base_chance_bp' => $baseChanceBp,
+            'item_find_bonus_bp' => $itemFindBonusBp,
+            'effective_chance_bp' => $effectiveChanceBp, 'chance_roll_bp' => $chanceRollBp,
+            'generated_at' => $generatedAt,
+        ]);
+        return $itemId;
+    }
+
+    public function markItemDropsGenerated(int $encounterId, string $generatedAt): bool
+    {
+        $this->requireEncounterLock($encounterId);
+        $stmt = $this->pdo->prepare('UPDATE combat_encounters SET item_drops_generated_at = :generated_at WHERE id = :encounter_id AND item_drops_generated_at IS NULL');
+        $stmt->execute(['generated_at' => $generatedAt, 'encounter_id' => $encounterId]);
+        return $stmt->rowCount() === 1;
+    }
+
+    public function lockUnclaimedItemDrops(int $encounterId): array
+    {
+        $this->requireEncounterLock($encounterId);
+        $stmt = $this->pdo->prepare("SELECT id, item_id FROM combat_item_drops WHERE encounter_id = :encounter_id AND outcome = 'unclaimed' ORDER BY reward_slot FOR UPDATE");
+        $stmt->execute(['encounter_id' => $encounterId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function claimLockedItemDrop(int $dropId, int $itemId, int $characterId, string $claimedAt): bool
+    {
+        $this->requireChampionLock($characterId);
+        $item = $this->pdo->prepare('UPDATE character_items SET character_id = :character_id, claimed_at = :claimed_at WHERE id = :item_id AND character_id IS NULL AND claimed_at IS NULL');
+        $item->execute(['character_id' => $characterId, 'claimed_at' => $claimedAt, 'item_id' => $itemId]);
+        if ($item->rowCount() !== 1) {
+            return false;
+        }
+        $drop = $this->pdo->prepare("UPDATE combat_item_drops SET outcome = 'claimed', claimed_character_id = :character_id, claimed_at = :claimed_at WHERE id = :drop_id AND item_id = :item_id AND outcome = 'unclaimed' AND claimed_character_id IS NULL AND claimed_at IS NULL");
+        $drop->execute(['character_id' => $characterId, 'claimed_at' => $claimedAt, 'drop_id' => $dropId, 'item_id' => $itemId]);
+        return $drop->rowCount() === 1;
+    }
+
+    public function dropsForEncounter(int $encounterId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT d.id AS drop_id, d.outcome AS claim_state,
+            ci.id, ci.item_level, ci.rarity, ci.display_name, ci.snapshot_category,
+            ci.snapshot_subtype, ci.snapshot_equipment_slot, ci.snapshot_damage_type,
+            ci.snapshot_damage_min, ci.snapshot_damage_max, ci.snapshot_toughness,
+            ci.snapshot_attack_rate_modifier_bp, ci.snapshot_cast_rate_modifier_bp,
+            ci.snapshot_block_rate_modifier_bp, ci.glyph
+            FROM combat_item_drops d LEFT JOIN character_items ci ON ci.id = d.item_id
+            WHERE d.encounter_id = :encounter_id ORDER BY d.reward_slot');
+        $stmt->execute(['encounter_id' => $encounterId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function affixesForItems(array $itemIds): array
+    {
+        if ($itemIds === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
+        $stmt = $this->pdo->prepare("SELECT item_id, position, affix_key, tier, display_fragment, modifier_type, modifier_operation, rolled_value FROM character_item_affixes WHERE item_id IN ({$placeholders}) ORDER BY item_id, FIELD(position, 'prefix', 'suffix')");
+        $stmt->execute(array_values($itemIds));
+        $result = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $result[(int) $row['item_id']][] = $row;
+        }
+        return $result;
     }
 
     public function transitionLockedEncounterToDefeat(

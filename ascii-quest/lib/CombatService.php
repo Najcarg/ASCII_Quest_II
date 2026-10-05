@@ -13,6 +13,7 @@ require_once __DIR__ . '/CombatStateProjector.php';
 require_once __DIR__ . '/CombatSynchronizer.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
 require_once __DIR__ . '/PrototypeCombatEquipmentProvider.php';
+require_once __DIR__ . '/ItemDropService.php';
 
 final class CombatService
 {
@@ -21,6 +22,7 @@ final class CombatService
     private CombatEquipmentProvider $equipmentProvider;
     private CombatStateProjector $projector;
     private CombatPlayerActionEvaluator $playerActionEvaluator;
+    private ?ItemDropService $itemDropService;
 
     public function __construct(
         private object $repository,
@@ -30,6 +32,7 @@ final class CombatService
         ?CombatEquipmentProvider $equipmentProvider = null,
         ?CombatStateProjector $projector = null,
         ?CombatPlayerActionEvaluator $playerActionEvaluator = null,
+        ?ItemDropService $itemDropService = null,
     ) {
         $this->turnEngine = new CombatTurnEngine($definitions->turnDurationSeconds());
         $this->playerActionEvaluator = $playerActionEvaluator ??
@@ -49,6 +52,7 @@ final class CombatService
             $definitions,
             $this->playerActionEvaluator,
         );
+        $this->itemDropService = $itemDropService;
     }
 
     public function movementDecision(
@@ -161,6 +165,7 @@ final class CombatService
             'potion_charges_remaining' => (int) $potion['charges'],
             'reward_gold' => (int) $enemy['server_only']['prototype_gold_reward'],
             'reward_experience' => (int) $enemy['server_only']['prototype_raw_exp_reward'],
+            'loot_source_level' => (int) $encounterDefinition['loot_source_level'],
             'version' => 1,
         ]);
 
@@ -733,9 +738,18 @@ final class CombatService
                 throw new RuntimeException('Victory rewards were not issued.');
             }
 
+            $closedAt = $this->clock->now()->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+            if ($this->itemDropService !== null) {
+                $this->itemDropService->autoClaimAll(
+                    self::integer($encounter, 'id'),
+                    $characterId,
+                    $closedAt,
+                );
+            }
+
             if (!$this->repository->closeLockedVictoryEncounter(
                 self::integer($encounter, 'id'),
-                $this->clock->now()->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'),
+                $closedAt,
                 self::integer($encounter, 'version'),
             )) {
                 throw new RuntimeException('Combat close changed concurrently. Please retry.');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatPlayerActionEvaluator.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
+require_once __DIR__ . '/ItemProjector.php';
 
 final class CombatStateProjector
 {
@@ -15,16 +16,19 @@ final class CombatStateProjector
     ];
 
     private CombatPlayerActionEvaluator $playerActionEvaluator;
+    private ItemProjector $itemProjector;
 
     public function __construct(
         private object $repository,
         private CombatDefinitionRegistry $definitions,
         ?CombatPlayerActionEvaluator $playerActionEvaluator = null,
+        ?ItemProjector $itemProjector = null,
     ) {
         $this->playerActionEvaluator = $playerActionEvaluator ??
             new CombatPlayerActionEvaluator(
                 new CombatTurnEngine($definitions->turnDurationSeconds()),
             );
+        $this->itemProjector = $itemProjector ?? new ItemProjector();
     }
 
     public function project(array $character, array $encounter): array
@@ -211,10 +215,38 @@ final class CombatStateProjector
                         'gold' => self::integer($encounter, 'reward_gold'),
                         'experience' => self::integer($encounter, 'reward_experience'),
                     ],
-                    'physical_drops' => [],
+                    'physical_drops' => ($encounter['item_drops_generated_at'] ?? null) === null
+                        ? []
+                        : $this->physicalDrops($encounterId),
                 ]
                 : null,
         ];
+    }
+
+    private function physicalDrops(int $encounterId): array
+    {
+        if (!method_exists($this->repository, 'dropsForEncounter')) {
+            return [];
+        }
+        $rows = array_values(array_filter(
+            $this->repository->dropsForEncounter($encounterId),
+            static fn (array $row): bool => ($row['claim_state'] ?? null) !== 'none',
+        ));
+        $itemIds = array_map(static fn (array $row): int => (int) $row['id'], $rows);
+        $affixes = method_exists($this->repository, 'affixesForItems')
+            ? $this->repository->affixesForItems($itemIds)
+            : [];
+        $drops = [];
+        foreach ($rows as $row) {
+            $dropId = self::integer($row, 'drop_id');
+            $itemId = self::integer($row, 'id');
+            $drops[] = [
+                'id' => $dropId,
+                'claim_state' => (string) $row['claim_state'],
+                'item' => $this->itemProjector->projectItem($row, $affixes[$itemId] ?? []),
+            ];
+        }
+        return $drops;
     }
 
     private static function integer(array $values, string $key): int
