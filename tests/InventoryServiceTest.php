@@ -188,10 +188,10 @@ return [
             42 => ['id' => 42, 'user_id' => 7, 'life_state' => 'alive', 'encounter_status' => null],
         ], [inventoryItem(8, overrides: ['is_active' => 0])]);
         $item = $service->state(7, 42, 1)['items'][0];
-        assertSameValue(['id', 'display_name', 'rarity', 'item_level', 'definition_key', 'base_type', 'category', 'equipment_slot', 'glyph', 'base_stats', 'equipped', 'equipped_slot'], array_keys($item), 'Exact public item fields.');
+        assertSameValue(['id', 'display_name', 'rarity', 'item_level', 'base_type', 'category', 'equipment_slot', 'glyph', 'base_stats', 'equipped', 'equipped_slot'], array_keys($item), 'Exact public item fields.');
         assertSameValue(false, $item['equipped'], 'Task 18 items are unequipped.');
         assertSameValue('Basic Sword 8', $item['display_name'], 'Stored display name remains authoritative.');
-        foreach (['character_id', 'source_type', 'source_key', 'generated_at', 'claimed_at', 'is_active', 'request_fingerprint', 'snapshot_damage_min'] as $hidden) {
+        foreach (['character_id', 'definition_key', 'source_type', 'source_key', 'generated_at', 'claimed_at', 'is_active', 'request_fingerprint', 'snapshot_damage_min'] as $hidden) {
             assertSameValue(false, in_array($hidden, recursiveInventoryKeys($item), true), $hidden . ' stays private.');
         }
     },

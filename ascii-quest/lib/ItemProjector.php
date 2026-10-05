@@ -20,7 +20,6 @@ final class ItemProjector
         $id = $this->positiveInteger($row['id'] ?? null, 'item id');
         $level = $this->positiveInteger($row['item_level'] ?? null, 'item level');
         $name = $this->nonEmptyString($row['display_name'] ?? null, 'display name', 160);
-        $definitionKey = $this->asciiKey($row['definition_key'] ?? null, 'definition key', 64);
         $rarity = $this->allowedString($row['rarity'] ?? null, self::RARITIES, 'rarity');
         $category = $this->allowedString($row['snapshot_category'] ?? null, self::CATEGORIES, 'category');
         $baseType = $this->asciiKey($row['snapshot_subtype'] ?? null, 'base type', 32);
@@ -45,7 +44,6 @@ final class ItemProjector
             'display_name' => $name,
             'rarity' => $rarity,
             'item_level' => $level,
-            'definition_key' => $definitionKey,
             'base_type' => $baseType,
             'category' => $category,
             'equipment_slot' => $slot,
