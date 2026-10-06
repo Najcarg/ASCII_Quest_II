@@ -42,7 +42,8 @@ try {
     $pdo = getDb();
     $result = EquipmentBootstrap::service($pdo)->equip((int) $_SESSION['user_id'], (int) $_SESSION['character_id'], $request['item_id'], $request['slot'], $request['request_token']);
     $state = ItemBootstrap::service($pdo)->state((int) $_SESSION['user_id'], (int) $_SESSION['character_id'], 1);
-    sendEquipJson(['result' => $result, 'state' => $state], 200);
+    $champion = EquipmentBootstrap::publicCharacterState($pdo, (int) $_SESSION['user_id'], (int) $_SESSION['character_id']);
+    sendEquipJson(['result' => $result, 'state' => $state, 'champion' => $champion], 200);
 } catch (OutOfBoundsException|DomainException $exception) {
     error_log('Equipment unavailable: ' . $exception->getMessage()); sendEquipJson(['success' => false, 'message' => 'Equipment unavailable.'], 422);
 } catch (Throwable $exception) {

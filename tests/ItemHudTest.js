@@ -27,6 +27,7 @@ function element() {
         dataset: {},
         classList: classList(),
         attributes: {},
+        style: {},
         setAttribute(name, value) { this.attributes[name] = String(value); },
         addEventListener(name, callback) { listeners[name] = callback; },
         click() { return listeners.click?.({ currentTarget: this }); },
@@ -51,6 +52,8 @@ function documentFixture() {
         inventoryDetailStats: element(),
         equipmentAction: element(),
         equipmentLockReason: element(),
+        playerHp: element(), playerHpBar: element(), playerHpFill: element(),
+        playerMana: element(), playerManaBar: element(), playerManaFill: element(),
     };
     return {
         cells,
@@ -229,7 +232,7 @@ const tests = {
         const updated = state([]); updated.equipment.weapon = { ...item(7), equipped: true, equipped_slot: "weapon" };
         itemHud.createController({
             document, initialState: initial, csrfToken: "csrf", uuidFactory: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-            fetchImplementation: async (url, options) => { requests.push({ url, options }); return { ok: true, json: async () => ({ state: updated }) }; },
+            fetchImplementation: async (url, options) => { requests.push({ url, options }); return { ok: true, json: async () => ({ state: updated, champion: { current_hp: 120, current_mana: 80, stats: { resources: { max_life: 170, max_mana: 190 } } } }) }; },
         });
         document.cells[0].click();
         assert.equal(document.elements.equipmentAction.textContent, "Equip");
@@ -238,6 +241,9 @@ const tests = {
         assert.deepEqual(JSON.parse(requests[0].options.body), { csrf_token: "csrf", item_id: 7, slot: "weapon", request_token: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" });
         assert.equal(document.cells[0].dataset.itemId, undefined);
         assert.equal(document.equipmentSlots[4].dataset.itemId, "7");
+        assert.equal(document.elements.playerHp.textContent, "120/170");
+        assert.equal(document.elements.playerMana.textContent, "80/190");
+        assert.equal(document.elements.playerHpBar.attributes["aria-valuemax"], "170");
     },
 
     async "equipped item unequips and failed retry reuses one mutation token"() {

@@ -54,7 +54,8 @@ final class CombatActionResolver
             $definition === null ||
             !in_array($definition['kind'] ?? null, ['weapon', 'skill'], true) ||
             ($lockedAction['action_kind'] ?? null) !== ($definition['kind'] ?? null) ||
-            ($lockedAction['snapshot_damage_type'] ?? null) !== ($definition['damage_type'] ?? null)
+            (($definition['kind'] ?? null) === 'skill' &&
+                ($lockedAction['snapshot_damage_type'] ?? null) !== ($definition['damage_type'] ?? null))
         ) {
             throw new DomainException('Unsupported player combat action.');
         }

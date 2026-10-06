@@ -93,6 +93,12 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
         ];
     }
 
+    public function characterStats(array $character): array
+    {
+        $modifiers = $this->aggregator->aggregate($this->equippedItems($character));
+        return CharacterStats::calculate($character, $modifiers);
+    }
+
     private function equippedItems(array $lockedCharacter): array
     {
         return $this->repository->lockEquippedItems(self::positiveInteger($lockedCharacter, 'id'));

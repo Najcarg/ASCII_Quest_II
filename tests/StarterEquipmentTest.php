@@ -134,9 +134,8 @@ return [
     'Starter grant retry converges on one provenance row and one weapon slot' => function (): void {
         $character = equipmentCharacter(['class_key' => 'warrior']);
         $store = new FakeStarterStore($character);
-        $service = starterService($store);
-        $first = $service->grantForNewLockedChampion($character, 'warrior');
-        $second = $service->grantForNewLockedChampion($character, 'warrior');
+        $first = starterService($store)->grantForNewLockedChampion($character, 'warrior');
+        $second = starterService($store)->grantForNewLockedChampion($character, 'warrior');
         assertSameValue(1, count($store->items), 'One starter item.');
         assertSameValue(1, count($store->equipment), 'One equipment row.');
         assertSameValue($first['item_id'], $second['item_id'], 'Retry returns same item.');
@@ -204,5 +203,19 @@ return [
         if (!str_contains($source, '$pdo->rollBack()')) {
             throw new RuntimeException('Creation must roll back starter failures.');
         }
+    },
+
+    'New Champion outer transaction rolls back character item and equip together' => function (): void {
+        $character = equipmentCharacter(['class_key' => 'cleric']);
+        $store = new FakeStarterStore($character);
+        $store->beginMutation();
+        try {
+            starterService($store)->grantForNewLockedChampion($character, 'cleric');
+            throw new RuntimeException('Injected failure after starter equip.');
+        } catch (RuntimeException) {
+            $store->rollBackMutation();
+        }
+        assertSameValue([], $store->items, 'Starter item rolls back with creation.');
+        assertSameValue([], $store->equipment, 'Starter equip rolls back with creation.');
     },
 ];

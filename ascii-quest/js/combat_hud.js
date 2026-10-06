@@ -156,6 +156,7 @@
             cooldown: "Weapon recovering",
             no_actions: "No Action available",
             insufficient_turn_time: "Not enough Turn time",
+            weapon_unavailable: "Equip a weapon",
         };
 
         return reason === null || reason === undefined

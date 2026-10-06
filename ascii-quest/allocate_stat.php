@@ -32,6 +32,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/lib/CharacterStatAllocator.php';
 require_once __DIR__ . '/lib/CharacterStats.php';
 require_once __DIR__ . '/lib/CombatBootstrap.php';
+require_once __DIR__ . '/lib/EquipmentBootstrap.php';
 
 function redirectToStatPage(?int $characterId = null): never
 {
@@ -136,7 +137,7 @@ try {
     $character = $decision['character'];
 
     $allocated = CharacterStatAllocator::allocate($character, $userId, $stat);
-    $calculatedStats = CharacterStats::calculate($allocated);
+    $calculatedStats = EquipmentBootstrap::stats($pdo, $allocated, true);
 
     $updateStmt = $pdo->prepare('
         UPDATE characters

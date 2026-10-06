@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatPlayerActionEvaluator.php';
+require_once __DIR__ . '/CombatEquipmentProvider.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
 require_once __DIR__ . '/ItemProjector.php';
 
@@ -23,6 +24,7 @@ final class CombatStateProjector
         private CombatDefinitionRegistry $definitions,
         ?CombatPlayerActionEvaluator $playerActionEvaluator = null,
         ?ItemProjector $itemProjector = null,
+        private ?CombatEquipmentProvider $equipmentProvider = null,
     ) {
         $this->playerActionEvaluator = $playerActionEvaluator ??
             new CombatPlayerActionEvaluator(
@@ -128,22 +130,16 @@ final class CombatStateProjector
         if ($playerAttackDefinition === null) {
             throw new RuntimeException('Player weapon action is unavailable.');
         }
-        $playerAttackState = $this->playerActionEvaluator->evaluate(
-            $encounter,
-            $character,
-            $lockedActions,
-            $playerAttackDefinition,
+        $playerAttackState = $this->playerActionState(
+            $encounter, $character, $lockedActions, $playerAttackDefinition,
         );
         $playerSkills = [];
         foreach ($this->definitions->playerActions() as $definition) {
             if (($definition['kind'] ?? null) !== 'skill') {
                 continue;
             }
-            $skillState = $this->playerActionEvaluator->evaluate(
-                $encounter,
-                $character,
-                $lockedActions,
-                $definition,
+            $skillState = $this->playerActionState(
+                $encounter, $character, $lockedActions, $definition,
             );
             $playerSkills[] = [
                 'slot' => (string) $definition['slot'],
@@ -221,6 +217,38 @@ final class CombatStateProjector
                 ]
                 : null,
         ];
+    }
+
+    private function playerActionState(
+        array $encounter,
+        array $character,
+        array $actions,
+        array $definition,
+    ): array {
+        $baseDurationMs = (int) round((float) ($definition['duration_seconds'] ?? 0) * 1000);
+        try {
+            $durationMs = $this->equipmentProvider !== null && method_exists($this->equipmentProvider, 'effectiveDurationMs')
+                ? $this->equipmentProvider->effectiveDurationMs(
+                    $character,
+                    (string) $definition['key'],
+                    $baseDurationMs,
+                )
+                : $baseDurationMs;
+        } catch (DomainException $exception) {
+            if (($definition['kind'] ?? null) !== 'weapon') {
+                throw $exception;
+            }
+            $state = $this->playerActionEvaluator->evaluate(
+                $encounter, $character, $actions, $definition, $baseDurationMs,
+            );
+            $state['available'] = false;
+            $state['disabled_reason'] = 'weapon_unavailable';
+            return $state;
+        }
+
+        return $this->playerActionEvaluator->evaluate(
+            $encounter, $character, $actions, $definition, $durationMs,
+        );
     }
 
     private function physicalDrops(int $encounterId): array

@@ -26,6 +26,7 @@ function task8Service(
     FakeCombatPdo $pdo,
     ?Task4MutableCombatClock $clock = null,
     ?CombatDefinitionRegistry $definitions = null,
+    ?CombatEquipmentProvider $equipment = null,
 ): CombatService {
     $definitions ??= CombatDefinitionRegistry::fromDefaultConfig();
 
@@ -33,7 +34,19 @@ function task8Service(
         new CombatRepository($pdo),
         $definitions,
         $clock ?? task8Clock(),
+        null,
+        $equipment,
     );
+}
+
+final class Task20PotionEquipment implements CombatEquipmentProvider
+{
+    public function offensiveSnapshot(array $lockedCharacter, string $attackKey): array { return []; }
+    public function currentDefense(array $lockedCharacter): array { return []; }
+    public function characterStats(array $character): array
+    {
+        return CharacterStats::calculate($character, ['maximum_life' => 20]);
+    }
 }
 
 function task8UsePotion(
@@ -396,6 +409,18 @@ return [
         assertSameValue([], task8PotionActions($full), 'Full HP creates no command.');
         assertSameValue([], $full->events, 'Full HP creates no event.');
         assertSameValue($beforeMana, $full->characters[42]['current_mana'], 'Full HP rejection leaves Mana unchanged.');
+    },
+
+    'Task 20 Potion healing uses equipment-aware Maximum Life' => function (): void {
+        $pdo = new FakeCombatPdo();
+        task8Encounter($pdo);
+        $pdo->characters[42]['current_hp'] = 190;
+        task8UsePotion(
+            task8Service($pdo, null, null, new Task20PotionEquipment()),
+            '80808080-8080-4080-8080-808080808080',
+        );
+        assertSameValue(220, $pdo->characters[42]['current_hp'], 'Potion can heal into equipped Maximum Life.');
+        assertSameValue(30, task8PotionActions($pdo)[0]['healing_applied'], 'Healing uses equipped headroom.');
     },
 
     'Potion UUID replay and configuration reload cannot replenish or duplicate use' => function (): void {

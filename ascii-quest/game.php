@@ -129,7 +129,7 @@ if (empty($_SESSION["csrf_token"])) {
 }
 
 try {
-    $characterStats = CharacterStats::calculate($character);
+    $characterStats = EquipmentBootstrap::stats($pdo, $character);
 } catch (InvalidArgumentException $e) {
     error_log(
         "CharacterStats error for character " .

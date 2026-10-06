@@ -120,6 +120,8 @@ final class CombatBootstrap
                 $repository,
                 $definitions,
                 $playerActionEvaluator,
+                null,
+                $equipmentProvider,
             ),
             $playerActionEvaluator,
             $itemDropService,

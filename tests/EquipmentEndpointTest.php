@@ -19,7 +19,12 @@ final class EquipmentEndpointFixtureService {
         return ['result' => $command === 'equip' ? 'equipped' : 'unequipped'];
     }
 }
-final class EquipmentBootstrap { public static function service(PDO $pdo): EquipmentEndpointFixtureService { return new EquipmentEndpointFixtureService(); } }
+final class EquipmentBootstrap {
+    public static function service(PDO $pdo): EquipmentEndpointFixtureService { return new EquipmentEndpointFixtureService(); }
+    public static function publicCharacterState(PDO $pdo, int $userId, int $characterId): array {
+        return ['current_hp' => 120, 'current_mana' => 80, 'stats' => ['resources' => ['max_life' => 170, 'max_mana' => 190]]];
+    }
+}
 PHP);
     file_put_contents($library . '/ItemBootstrap.php', <<<'PHP'
 <?php
@@ -80,6 +85,7 @@ return [
         assertSameValue(200, $status, 'Equip success.');
         assertSameValue(['equip', ['userId' => 7, 'characterId' => 42, 'itemId' => 7, 'slot' => 'weapon', 'requestToken' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa']], $call, 'Equip authority.');
         assertSameValue([], $payload['state']['items'] ?? null, 'Refreshed state.');
+        assertSameValue(170, $payload['champion']['stats']['resources']['max_life'] ?? null, 'Refreshed equipment-aware stats.');
         [$status, $payload, $call] = runEquipmentEndpoint('unequip_item', $session, 'POST', equipmentEndpointBody('unequip_item'));
         assertSameValue(200, $status, 'Unequip success.'); assertSameValue('unequip', $call[0] ?? null, 'Unequip authority.');
         [$status, $payload] = runEquipmentEndpoint('equip_item', $session, 'POST', equipmentEndpointBody('equip_item', ['item_id' => 99]));

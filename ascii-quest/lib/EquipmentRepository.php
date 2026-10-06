@@ -80,7 +80,26 @@ final class EquipmentRepository
 
     public function lockEquippedItems(int $characterId): array
     {
-        $stmt = $this->pdo->prepare('SELECT ci.*, ce.equipment_slot FROM character_equipment ce INNER JOIN character_items ci ON ci.id = ce.item_id AND ci.character_id = ce.character_id WHERE ce.character_id = :character_id ORDER BY ce.equipment_slot FOR UPDATE');
+        return $this->equippedItemsQuery($characterId, true);
+    }
+
+    public function readEquippedItems(int $characterId): array
+    {
+        return $this->equippedItemsQuery($characterId, false);
+    }
+
+    public function ownedCharacterForStats(int $userId, int $characterId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, user_id, strength, dexterity, vitality, energy, fate, current_hp, current_mana FROM characters WHERE id = :character_id AND user_id = :user_id LIMIT 1');
+        $stmt->execute(['character_id' => $characterId, 'user_id' => $userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
+    }
+
+    private function equippedItemsQuery(int $characterId, bool $lock): array
+    {
+        $suffix = $lock ? ' FOR UPDATE' : '';
+        $stmt = $this->pdo->prepare('SELECT ci.*, ce.equipment_slot FROM character_equipment ce INNER JOIN character_items ci ON ci.id = ce.item_id AND ci.character_id = ce.character_id WHERE ce.character_id = :character_id ORDER BY ce.equipment_slot' . $suffix);
         $stmt->execute(['character_id' => $characterId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (!is_array($rows) || $rows === []) {

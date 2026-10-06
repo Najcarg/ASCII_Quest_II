@@ -6,6 +6,7 @@ session_start();
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
 require_once __DIR__ . "/lib/CombatBootstrap.php";
+require_once __DIR__ . "/lib/EquipmentBootstrap.php";
 
 $pdo = getDb();
 /*
@@ -111,7 +112,7 @@ $activeCombat = $combatGuard->accountCombatState((int) $_SESSION["user_id"]);
                 <?php foreach ($characters as $character): ?>
                     <?php
                     try {
-                        $stats = CharacterStats::calculate($character);
+                        $stats = EquipmentBootstrap::stats($pdo, $character);
                     } catch (InvalidArgumentException $e) {
                         error_log(
                             "CharacterStats error for character " .

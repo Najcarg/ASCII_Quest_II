@@ -31,6 +31,7 @@ require_once __DIR__ . "/map_loader.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
 require_once __DIR__ . "/lib/WarpBootstrap.php";
 require_once __DIR__ . "/lib/CombatBootstrap.php";
+require_once __DIR__ . "/lib/EquipmentBootstrap.php";
 
 $combatRepository = null;
 $movementTransactionOpen = false;
@@ -237,7 +238,7 @@ $currentY = (int) $character["pos_y"];
 $currentHp = (int) $character["current_hp"];
 
 try {
-    $characterStats = CharacterStats::calculate($character);
+    $characterStats = EquipmentBootstrap::stats($pdo, $character, $movementTransactionOpen);
 } catch (InvalidArgumentException $e) {
     error_log(
         "CharacterStats movement error for character " .

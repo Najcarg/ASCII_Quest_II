@@ -35,7 +35,7 @@ PHP);
     foreach (['map_loader.php'] as $dependency) {
         file_put_contents($directory . '/' . $dependency, "<?php\ndeclare(strict_types=1);\n");
     }
-    foreach (['CharacterStats.php', 'WarpBootstrap.php', 'CombatBootstrap.php'] as $dependency) {
+    foreach (['CharacterStats.php', 'WarpBootstrap.php', 'CombatBootstrap.php', 'EquipmentBootstrap.php'] as $dependency) {
         file_put_contents($libraryDirectory . '/' . $dependency, "<?php\ndeclare(strict_types=1);\n");
     }
 
@@ -88,6 +88,7 @@ PHP);
         $libraryDirectory . '/CharacterStats.php',
         $libraryDirectory . '/WarpBootstrap.php',
         $libraryDirectory . '/CombatBootstrap.php',
+        $libraryDirectory . '/EquipmentBootstrap.php',
     ] as $file) {
         if (is_file($file)) {
             unlink($file);

@@ -582,6 +582,33 @@ return [
         assertSameValue(10, $pdo->actions[4]['resolved_damage'], 'Resolved result is not rewritten.');
     },
 
+    'Persistent Mage fire weapon snapshot resolves independently of prototype damage type' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        seedActiveCombat($pdo);
+        $pdo->encounters[10]['enemy_current_hp'] = 120;
+        $pdo->actions[4] = task6PendingAction([
+            'snapshot_weapon_item_id' => 77,
+            'snapshot_weapon_key' => 'basic_wand',
+            'snapshot_damage_type' => 'fire',
+            'snapshot_base_damage' => 20,
+        ]);
+        $resolver = task6ActionResolver(
+            $repository,
+            new Task5MutableEquipmentProvider(),
+            new Task6SequenceRandomSource([100]),
+        );
+
+        $repository->beginTransaction();
+        $character = $repository->lockOwnedCharacter(7, 42);
+        $encounter = $repository->lockActiveEncounter(42);
+        $action = $repository->lockPendingActionsForEncounter(10)[0];
+        $result = $resolver->resolvePending($encounter, $character, $action);
+        $repository->commit();
+
+        assertSameValue('resolved', $pdo->actions[4]['state'], 'Mage weapon action resolves.');
+        assertSameValue(100, $result['encounter']['enemy_current_hp'], 'Stored fire damage is applied.');
+    },
+
     'Historical resolved player action is never reprocessed for damage' => function (): void {
         [$repository, $pdo] = combatRepositoryFixture();
         seedActiveCombat($pdo);

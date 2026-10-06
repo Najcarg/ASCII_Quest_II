@@ -321,6 +321,7 @@ const tests = {
                 cooldown: hud.disabledReasonText("cooldown"),
                 no_actions: hud.disabledReasonText("no_actions"),
                 insufficient_turn_time: hud.disabledReasonText("insufficient_turn_time"),
+                weapon_unavailable: hud.disabledReasonText("weapon_unavailable"),
             },
             {
                 encounter_inactive: "Combat unavailable",
@@ -330,6 +331,7 @@ const tests = {
                 cooldown: "Weapon recovering",
                 no_actions: "No Action available",
                 insufficient_turn_time: "Not enough Turn time",
+                weapon_unavailable: "Equip a weapon",
             },
         );
     },

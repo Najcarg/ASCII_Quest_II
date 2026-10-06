@@ -68,6 +68,16 @@ return [
         assertSameValue(909, $provider->effectiveDurationMs(combatEquipmentCharacter(), 'prototype_flame_strike', 1000), 'Skill duration.');
     },
 
+    'Persistent combat provider exposes one equipment-aware CharacterStats boundary' => function (): void {
+        $item = equipmentItem(1, 'ring', [
+            ['modifier_type' => 'maximum_life', 'modifier_operation' => 'flat', 'rolled_value' => 20],
+            ['modifier_type' => 'maximum_mana', 'modifier_operation' => 'flat', 'rolled_value' => 15],
+        ]);
+        $stats = persistentEquipmentProvider([$item])->characterStats(combatEquipmentCharacter());
+        assertSameValue(170, $stats['resources']['max_life'], 'Equipment-aware Maximum Life.');
+        assertSameValue(190, $stats['resources']['max_mana'], 'Equipment-aware Maximum Mana.');
+    },
+
     'Persistent combat defense reads current equipment while deferred mechanics stay inactive' => function (): void {
         $armour = equipmentItem(3, 'chest', [
             ['modifier_type' => 'fire_resistance', 'modifier_operation' => 'flat', 'rolled_value' => 8],

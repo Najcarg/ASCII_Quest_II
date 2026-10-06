@@ -6,6 +6,7 @@ function task9aProjection(
     array $actions = [],
     array $characterOverrides = [],
     ?CombatDefinitionRegistry $definitions = null,
+    ?CombatEquipmentProvider $equipment = null,
 ): array {
     $pdo = new FakeCombatPdo();
     $pdo->encounters[91] = task4Encounter(array_replace([
@@ -29,7 +30,28 @@ function task9aProjection(
     return (new CombatStateProjector(
         new CombatRepository($pdo),
         $definitions ?? CombatDefinitionRegistry::fromDefaultConfig(),
+        null,
+        null,
+        $equipment,
     ))->project($pdo->characters[42], $pdo->encounters[91]);
+}
+
+final class Task20ProjectionEquipment implements CombatEquipmentProvider
+{
+    public function __construct(private bool $hasWeapon = true) {}
+    public function offensiveSnapshot(array $lockedCharacter, string $attackKey): array
+    {
+        if (!$this->hasWeapon) { throw new DomainException('No equipped weapon is available.'); }
+        return [];
+    }
+    public function currentDefense(array $lockedCharacter): array { return []; }
+    public function effectiveDurationMs(array $character, string $actionKey, int $base): int
+    {
+        if ($actionKey === CombatPlayerActionEvaluator::WEAPON_ACTION_KEY && !$this->hasWeapon) {
+            throw new DomainException('No equipped weapon is available.');
+        }
+        return $actionKey === CombatPlayerActionEvaluator::WEAPON_ACTION_KEY ? 943 : 900;
+    }
 }
 
 function task9aPlayerWeaponAction(array $overrides = []): array
@@ -206,5 +228,18 @@ return [
                 $privateKey . ' remains absent from the enemy projection.',
             );
         }
+    },
+
+    'Task 20 projection shares equipment-aware weapon and skill timing and readiness' => function (): void {
+        $provider = new Task20ProjectionEquipment();
+        $state = task9aProjection(['timeline_elapsed_ms' => 9050], [], [], null, $provider);
+        assertSameValue(943, $state['player_attack']['duration_ms'], 'Projected weapon duration is equipment-adjusted.');
+        assertSameValue(true, $state['player_attack']['available'], 'Adjusted weapon fitting 950ms remains available.');
+        assertSameValue(900, $state['player_skills'][0]['duration_ms'], 'Projected skill duration is equipment-adjusted.');
+        assertSameValue(true, $state['player_skills'][0]['available'], 'Adjusted skill fitting 950ms remains available.');
+
+        $missing = task9aProjection([], [], [], null, new Task20ProjectionEquipment(false));
+        assertSameValue(false, $missing['player_attack']['available'], 'Missing weapon is projected unavailable.');
+        assertSameValue('weapon_unavailable', $missing['player_attack']['disabled_reason'], 'Missing weapon has controlled public reason.');
     },
 ];

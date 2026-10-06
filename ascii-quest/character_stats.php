@@ -10,6 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/lib/CharacterStats.php';
+require_once __DIR__ . '/lib/EquipmentBootstrap.php';
 
 function e(mixed $value): string
 {
@@ -74,7 +75,7 @@ if (!$character) {
 }
 
 try {
-    $stats = CharacterStats::calculate($character);
+    $stats = EquipmentBootstrap::stats($pdo, $character);
 } catch (InvalidArgumentException $e) {
     error_log(
         'CharacterStats error for character ' .

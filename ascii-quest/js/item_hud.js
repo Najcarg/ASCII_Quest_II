@@ -50,6 +50,40 @@
         return text === "" ? "" : text[0].toUpperCase() + text.slice(1);
     }
 
+    function updateChampion(document, champion) {
+        if (!champion || !champion.stats || !champion.stats.resources) return;
+        const currentHp = Number(champion.current_hp);
+        const currentMana = Number(champion.current_mana);
+        const maximumLife = Number(champion.stats.resources.max_life);
+        const maximumMana = Number(champion.stats.resources.max_mana);
+        const updateResource = function (valueId, barId, fillId, current, maximum) {
+            if (!Number.isFinite(current) || !Number.isFinite(maximum) || maximum < 0) return;
+            const value = byId(document, valueId);
+            const bar = byId(document, barId);
+            const fill = byId(document, fillId);
+            if (value) value.textContent = current + "/" + maximum;
+            if (bar) {
+                bar.setAttribute("aria-valuenow", String(current));
+                bar.setAttribute("aria-valuemax", String(maximum));
+            }
+            if (fill) fill.style.width = String(maximum > 0 ? Math.max(0, Math.min(100, (current / maximum) * 100)) : 0) + "%";
+        };
+        updateResource("playerHp", "playerHpBar", "playerHpFill", currentHp, maximumLife);
+        updateResource("playerMana", "playerManaBar", "playerManaFill", currentMana, maximumMana);
+
+        for (const node of document.querySelectorAll("[data-character-stat-path]")) {
+            const path = String(node.dataset.characterStatPath || "").split(".");
+            let value = champion.stats;
+            for (const key of path) value = value?.[key];
+            if (value === undefined) continue;
+            node.textContent = node.dataset.characterStatFormat === "rate"
+                ? Number(value).toFixed(2)
+                : node.dataset.characterStatFormat === "percentage"
+                    ? String(value) + "%"
+                    : String(value);
+        }
+    }
+
     function validItems(state) {
         return Array.isArray(state?.items) ? state.items.slice(0, 25) : [];
     }
@@ -227,6 +261,7 @@
                 });
                 const payload = await response.json();
                 if (!response.ok || !payload?.state) throw new Error("Invalid equipment response.");
+                updateChampion(document, payload.champion);
                 pending = false; mutation = null; selectedId = null; selectedItem = null; renderDetails(document, null); applyState(payload.state);
             } catch (error) {
                 pending = false; render(document, currentState, pending); updateAction();

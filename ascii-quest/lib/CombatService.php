@@ -51,6 +51,8 @@ final class CombatService
             $repository,
             $definitions,
             $this->playerActionEvaluator,
+            null,
+            $this->equipmentProvider,
         );
         $this->itemDropService = $itemDropService;
     }
@@ -138,7 +140,7 @@ final class CombatService
             throw new DomainException('Combat encounter is not on this map.');
         }
 
-        $stats = CharacterStats::calculate($lockedCharacter);
+        $stats = $this->characterStats($lockedCharacter);
         $playerActions = (int) $stats['rates']['action'];
         $potion = $this->definitions->potion('prototype_health_potion');
         if ($potion === null) {
@@ -200,7 +202,7 @@ final class CombatService
             if ($enemy === null) {
                 throw new RuntimeException('Stored combat enemy is unavailable.');
             }
-            $stats = CharacterStats::calculate($character);
+            $stats = $this->characterStats($character);
             $synchronization = $this->synchronizer->synchronize(
                 $encounter,
                 $character,
@@ -258,7 +260,7 @@ final class CombatService
                 if ($enemy === null) {
                     throw new RuntimeException('Stored combat enemy is unavailable.');
                 }
-                $stats = CharacterStats::calculate($character);
+                $stats = $this->characterStats($character);
                 $synchronization = $this->synchronizer->synchronize(
                     $encounter,
                     $character,
@@ -446,7 +448,7 @@ final class CombatService
                 if ($enemy === null) {
                     throw new RuntimeException('Stored combat enemy is unavailable.');
                 }
-                $stats = CharacterStats::calculate($character);
+                $stats = $this->characterStats($character);
                 $synchronization = $this->synchronizer->synchronize(
                     $encounter,
                     $character,
@@ -580,7 +582,7 @@ final class CombatService
                 if ($enemy === null) {
                     throw new RuntimeException('Stored combat enemy is unavailable.');
                 }
-                $stats = CharacterStats::calculate($character);
+                $stats = $this->characterStats($character);
                 $synchronization = $this->synchronizer->synchronize(
                     $encounter,
                     $character,
@@ -632,7 +634,7 @@ final class CombatService
                 throw new DomainException('No combat Potion charges remain.');
             }
 
-            $stats = CharacterStats::calculate($character);
+            $stats = $this->characterStats($character);
             $maximumLife = (int) $stats['resources']['max_life'];
             $currentHp = self::integer($character, 'current_hp');
             if ($currentHp >= $maximumLife) {
@@ -775,6 +777,14 @@ final class CombatService
             throw new RuntimeException('Combat state changed concurrently. Please retry.');
         }
         $encounter['version'] = $expectedVersion + 1;
+    }
+
+    private function characterStats(array $character): array
+    {
+        if (method_exists($this->equipmentProvider, 'characterStats')) {
+            return $this->equipmentProvider->characterStats($character);
+        }
+        return CharacterStats::calculate($character);
     }
 
     private static function integer(array $values, string $key): int

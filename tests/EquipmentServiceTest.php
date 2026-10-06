@@ -238,6 +238,19 @@ return [
         throw new RuntimeException('Different payload with the same token must collide.');
     },
 
+    'Two equipment service instances serialize competing same-slot swaps' => function (): void {
+        $store = new FakeEquipmentStore(
+            equipmentCharacter(),
+            [equipmentItem(1, 'weapon'), equipmentItem(2, 'weapon')],
+        );
+        $first = equipmentService($store)->equip(7, 42, 1, 'weapon', equipmentToken(44));
+        $second = equipmentService($store)->equip(7, 42, 2, 'weapon', equipmentToken(45));
+        assertSameValue(null, $first['displaced_item_id'], 'First serialized equip sees an empty slot.');
+        assertSameValue(1, $second['displaced_item_id'], 'Second serialized equip observes and displaces the first.');
+        assertSameValue(['weapon' => 2], $store->equipment, 'Exactly one item owns the slot.');
+        assertSameValue(2, count($store->items), 'Both items remain Champion-owned.');
+    },
+
     'Equipment rejects DEAD active and victory loot mutations but permits closed state' => function (): void {
         foreach ([['dead', null], ['alive', 'active'], ['alive', 'victory_loot']] as $index => [$lifeState, $status]) {
             $store = new FakeEquipmentStore(equipmentCharacter(['life_state' => $lifeState]), [equipmentItem(1, 'weapon')]);
@@ -280,6 +293,34 @@ return [
         equipmentService($store)->unequip(7, 42, 1, equipmentToken(71));
         assertSameValue(0, $store->characters[42]['current_hp'], 'Zero Life stays zero.');
         assertSameValue(0, $store->characters[42]['current_mana'], 'Zero Mana stays zero.');
+    },
+
+    'Equipment resource-item swap clamps against only the final equipped item' => function (): void {
+        $large = equipmentItem(1, 'ring', [
+            ['modifier_type' => 'maximum_life', 'modifier_operation' => 'flat', 'rolled_value' => 100],
+            ['modifier_type' => 'maximum_mana', 'modifier_operation' => 'flat', 'rolled_value' => 100],
+        ]);
+        $small = equipmentItem(2, 'ring', [
+            ['modifier_type' => 'maximum_life', 'modifier_operation' => 'flat', 'rolled_value' => 10],
+            ['modifier_type' => 'maximum_mana', 'modifier_operation' => 'flat', 'rolled_value' => 5],
+        ]);
+        $store = new FakeEquipmentStore(
+            equipmentCharacter(['current_hp' => 240, 'current_mana' => 230]),
+            [$large, $small],
+            ['ring' => 1],
+        );
+        equipmentService($store)->equip(7, 42, 2, 'ring', equipmentToken(72));
+        assertSameValue(160, $store->characters[42]['current_hp'], 'Life clamps to final swapped maximum.');
+        assertSameValue(180, $store->characters[42]['current_mana'], 'Mana clamps to final swapped maximum.');
+
+        $store = new FakeEquipmentStore(
+            equipmentCharacter(['current_hp' => 1, 'current_mana' => 2]),
+            [$large, $small],
+            ['ring' => 1],
+        );
+        equipmentService($store)->equip(7, 42, 2, 'ring', equipmentToken(73));
+        assertSameValue(1, $store->characters[42]['current_hp'], 'Near-zero Life is not refilled.');
+        assertSameValue(2, $store->characters[42]['current_mana'], 'Near-zero Mana is not refilled.');
     },
 
     'Equipment write failure rolls back slot resources and receipt' => function (): void {
