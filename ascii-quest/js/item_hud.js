@@ -19,6 +19,7 @@
             document: root.document,
             initialState,
             fetchImplementation: typeof root.fetch === "function" ? root.fetch.bind(root) : null,
+            csrfToken: root.ASCII_QUEST_STATE?.csrfToken || "",
         });
     }
 
@@ -37,6 +38,8 @@
         "inventory-rarity-rare",
     ];
     const ERROR_MESSAGE = "Unable to load inventory. Please try again.";
+    const EQUIPMENT_ERROR_MESSAGE = "Unable to change equipment. Please try again.";
+    const EQUIPMENT_LABELS = { helm: "Helm", gloves: "Gloves", chest: "Chest", ring: "Ring", weapon: "Weapon", "off-hand": "Off-Hand", amulet: "Amulet", belt: "Belt", charm: "Charm", boots: "Boots" };
 
     function byId(document, id) {
         return document.getElementById(id);
@@ -95,6 +98,31 @@
         if (next) {
             next.disabled = pending || pagination.has_next !== true;
         }
+
+        const equipment = state?.equipment || {};
+        for (const slot of document.querySelectorAll("[data-equipment-slot]")) {
+            const slotKey = String(slot.dataset.equipmentSlot || "");
+            const item = equipment[slotKey] || null;
+            slot.classList.remove(...RARITY_CLASSES, "is-selected");
+            delete slot.dataset.itemId;
+            slot.textContent = EQUIPMENT_LABELS[slotKey] || slotKey;
+            if (item) {
+                const rarity = RARITIES.has(item.rarity) ? item.rarity : "normal";
+                slot.dataset.itemId = String(item.id);
+                slot.textContent = String(item.glyph || "?") + " " + String(item.display_name || "Unknown item");
+                slot.classList.add("inventory-rarity-" + rarity);
+            }
+        }
+        const lockReason = byId(document, "equipmentLockReason");
+        if (lockReason) {
+            lockReason.textContent = state?.mutation_disabled_reason === "champion_dead"
+                ? "A DEAD Champion cannot change equipment."
+                : state?.mutation_disabled_reason === "victory_loot_pending"
+                    ? "Equipment cannot change while victory loot is open."
+                    : state?.mutation_disabled_reason === "combat_active"
+                        ? "Equipment cannot change during combat."
+                        : "";
+        }
     }
 
     function renderDetails(document, item) {
@@ -127,29 +155,83 @@
         const document = options.document;
         const fetchImplementation = options.fetchImplementation || null;
         const endpoint = options.endpoint || "inventory_state.php";
+        const equipEndpoint = options.equipEndpoint || "equip_item.php";
+        const unequipEndpoint = options.unequipEndpoint || "unequip_item.php";
+        const csrfToken = options.csrfToken || "";
+        const uuidFactory = options.uuidFactory || function () {
+            if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+            const bytes = new Uint8Array(16); globalThis.crypto.getRandomValues(bytes);
+            bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+            return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("").replace(/^(........)(....)(....)(....)(............)$/, "$1-$2-$3-$4-$5");
+        };
         let currentState = options.initialState || { items: [], pagination: {} };
         let selectedId = null;
+        let selectedItem = null;
         let pending = false;
+        let mutation = null;
+
+        function allItems(state) {
+            return validItems(state).concat(Object.values(state?.equipment || {}).filter(Boolean));
+        }
+
+        function updateAction() {
+            const button = byId(document, "equipmentAction");
+            if (!button) return;
+            button.hidden = !selectedItem;
+            button.textContent = selectedItem?.equipped ? "Unequip" : (currentState?.equipment?.[selectedItem?.equipment_slot] ? "Swap" : "Equip");
+            button.disabled = !selectedItem || pending || currentState?.equipment_locked === true;
+        }
 
         function applyState(nextState) {
             currentState = nextState || { items: [], pagination: {} };
-            if (!validItems(currentState).some((item) => Number(item.id) === selectedId)) {
+            if (!allItems(currentState).some((item) => Number(item.id) === selectedId)) {
                 selectedId = null;
+                selectedItem = null;
                 renderDetails(document, null);
             }
             render(document, currentState, pending);
+            updateAction();
         }
 
         function select(itemId) {
-            const item = validItems(currentState).find((candidate) => Number(candidate.id) === itemId) || null;
+            const item = allItems(currentState).find((candidate) => Number(candidate.id) === itemId) || null;
             selectedId = item ? Number(item.id) : null;
+            selectedItem = item;
+            mutation = null;
             render(document, currentState, pending);
             for (const cell of document.querySelectorAll("[data-inventory-slot]")) {
                 if (Number(cell.dataset.itemId) === selectedId) {
                     cell.classList.add("is-selected");
                 }
             }
+            for (const slot of document.querySelectorAll("[data-equipment-slot]")) {
+                if (Number(slot.dataset.itemId) === selectedId) slot.classList.add("is-selected");
+            }
             renderDetails(document, item);
+            updateAction();
+        }
+
+        async function mutateEquipment() {
+            if (!selectedItem || pending || currentState?.equipment_locked === true || typeof fetchImplementation !== "function") return;
+            const command = selectedItem.equipped ? "unequip" : "equip";
+            if (!mutation || mutation.command !== command || mutation.itemId !== Number(selectedItem.id)) {
+                mutation = { command, itemId: Number(selectedItem.id), slot: selectedItem.equipment_slot, token: uuidFactory() };
+            }
+            pending = true; updateAction();
+            const body = { csrf_token: csrfToken, item_id: mutation.itemId, request_token: mutation.token };
+            if (command === "equip") body.slot = mutation.slot;
+            try {
+                const response = await fetchImplementation(command === "equip" ? equipEndpoint : unequipEndpoint, {
+                    method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+                    cache: "no-store", body: JSON.stringify(body),
+                });
+                const payload = await response.json();
+                if (!response.ok || !payload?.state) throw new Error("Invalid equipment response.");
+                pending = false; mutation = null; selectedId = null; selectedItem = null; renderDetails(document, null); applyState(payload.state);
+            } catch (error) {
+                pending = false; render(document, currentState, pending); updateAction();
+                const message = byId(document, "inventoryMessage"); if (message) message.textContent = EQUIPMENT_ERROR_MESSAGE;
+            }
         }
 
         async function loadPage(page) {
@@ -188,6 +270,13 @@
                 }
             });
         }
+        for (const slot of document.querySelectorAll("[data-equipment-slot]")) {
+            slot.addEventListener("click", function () {
+                const itemId = Number(slot.dataset.itemId);
+                if (Number.isSafeInteger(itemId) && itemId > 0) select(itemId);
+            });
+        }
+        byId(document, "equipmentAction")?.addEventListener("click", mutateEquipment);
         byId(document, "inventoryPrevious")?.addEventListener("click", function () {
             return loadPage((Number(currentState?.pagination?.page) || 1) - 1);
         });

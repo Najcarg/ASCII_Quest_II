@@ -48,8 +48,10 @@ final class ItemRepository implements ItemInventoryReader
             'SELECT COUNT(*)
              FROM character_items AS ci
              INNER JOIN characters AS c ON c.id = ci.character_id
+             LEFT JOIN character_equipment AS ce ON ce.item_id = ci.id
              WHERE c.user_id = :user_id
-               AND c.id = :character_id',
+               AND c.id = :character_id
+               AND ce.item_id IS NULL',
         );
         $statement->execute([
             'user_id' => $userId,
@@ -91,8 +93,10 @@ final class ItemRepository implements ItemInventoryReader
                  ci.claimed_at
              FROM character_items AS ci
              INNER JOIN characters AS c ON c.id = ci.character_id
+             LEFT JOIN character_equipment AS ce ON ce.item_id = ci.id
              WHERE c.user_id = :user_id
                AND c.id = :character_id
+               AND ce.item_id IS NULL
              ORDER BY ci.claimed_at DESC, ci.id DESC
              LIMIT :item_limit OFFSET :item_offset',
         );
@@ -124,6 +128,30 @@ final class ItemRepository implements ItemInventoryReader
         $row = $statement->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? $row : null;
+    }
+
+    public function equippedItems(int $userId, int $characterId): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT ci.id, ci.character_id, ci.definition_key, ci.item_level,
+                    ci.rarity, ci.display_name, ci.snapshot_category,
+                    ci.snapshot_subtype, ci.snapshot_equipment_slot,
+                    ci.snapshot_damage_type, ci.snapshot_damage_min,
+                    ci.snapshot_damage_max, ci.snapshot_toughness,
+                    ci.snapshot_attack_rate_modifier_bp,
+                    ci.snapshot_cast_rate_modifier_bp,
+                    ci.snapshot_block_rate_modifier_bp, ci.glyph,
+                    ce.equipment_slot
+             FROM character_equipment ce
+             INNER JOIN character_items ci
+                ON ci.id = ce.item_id AND ci.character_id = ce.character_id
+             INNER JOIN characters c ON c.id = ce.character_id
+             WHERE c.user_id = :user_id AND c.id = :character_id
+             ORDER BY ce.equipment_slot',
+        );
+        $statement->execute(['user_id' => $userId, 'character_id' => $characterId]);
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        return is_array($rows) ? $rows : [];
     }
 
     public function beginMutation(): void

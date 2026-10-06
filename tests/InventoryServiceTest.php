@@ -37,14 +37,14 @@ function inventoryItem(int $id, string $claimedAt = '2026-10-04 12:00:00.000000'
     ], $overrides);
 }
 
-function inventoryServiceFixture(array $characters, array $items): object
+function inventoryServiceFixture(array $characters, array $items, array $equipment = []): object
 {
     if (!interface_exists('ItemInventoryReader') || !class_exists('InventoryService') || !class_exists('ItemProjector')) {
         throw new RuntimeException('Inventory domain classes must exist.');
     }
 
-    $reader = new class($characters, $items) implements ItemInventoryReader {
-        public function __construct(private array $characters, private array $items) {}
+    $reader = new class($characters, $items, $equipment) implements ItemInventoryReader {
+        public function __construct(private array $characters, private array $items, private array $equipment) {}
 
         public function ownedCharacter(int $userId, int $characterId): ?array
         {
@@ -61,7 +61,8 @@ function inventoryServiceFixture(array $characters, array $items): object
             }
             return count(array_filter(
                 $this->items,
-                static fn (array $item): bool => (int) ($item['character_id'] ?? 0) === $characterId,
+                fn (array $item): bool => (int) ($item['character_id'] ?? 0) === $characterId
+                    && !in_array((int) $item['id'], $this->equipment, true),
             ));
         }
 
@@ -72,7 +73,8 @@ function inventoryServiceFixture(array $characters, array $items): object
             }
             $owned = array_values(array_filter(
                 $this->items,
-                static fn (array $item): bool => (int) ($item['character_id'] ?? 0) === $characterId,
+                fn (array $item): bool => (int) ($item['character_id'] ?? 0) === $characterId
+                    && !in_array((int) $item['id'], $this->equipment, true),
             ));
             usort($owned, static function (array $left, array $right): int {
                 return [$right['claimed_at'], (int) $right['id']] <=> [$left['claimed_at'], (int) $left['id']];
@@ -88,6 +90,23 @@ function inventoryServiceFixture(array $characters, array $items): object
                 }
             }
             return null;
+        }
+
+        public function equippedItems(int $userId, int $characterId): array
+        {
+            if ($this->ownedCharacter($userId, $characterId) === null) {
+                return [];
+            }
+            $rows = [];
+            foreach ($this->equipment as $slot => $itemId) {
+                foreach ($this->items as $item) {
+                    if ((int) $item['id'] === $itemId && (int) $item['character_id'] === $characterId) {
+                        $item['equipment_slot'] = $slot;
+                        $rows[] = $item;
+                    }
+                }
+            }
+            return $rows;
         }
     };
 
@@ -193,6 +212,22 @@ return [
         assertSameValue('Basic Sword 8', $item['display_name'], 'Stored display name remains authoritative.');
         foreach (['character_id', 'definition_key', 'source_type', 'source_key', 'generated_at', 'claimed_at', 'is_active', 'request_fingerprint', 'snapshot_damage_min'] as $hidden) {
             assertSameValue(false, in_array($hidden, recursiveInventoryKeys($item), true), $hidden . ' stays private.');
+        }
+    },
+
+    'Inventory projection separates equipped items into the exact ten slots' => function (): void {
+        $service = inventoryServiceFixture([
+            42 => ['id' => 42, 'user_id' => 7, 'life_state' => 'alive', 'encounter_status' => null],
+        ], [inventoryItem(1), inventoryItem(2)], ['weapon' => 1]);
+        $state = $service->state(7, 42, 1);
+        assertSameValue([2], array_column($state['items'], 'id'), 'Equipped item is absent from inventory.');
+        assertSameValue(['helm', 'gloves', 'chest', 'ring', 'weapon', 'off-hand', 'amulet', 'belt', 'charm', 'boots'], array_keys($state['equipment']), 'Exact paper-doll slots.');
+        assertSameValue(1, $state['equipment']['weapon']['id'], 'Weapon projection.');
+        assertSameValue(true, $state['equipment']['weapon']['equipped'], 'Equipped flag.');
+        assertSameValue('weapon', $state['equipment']['weapon']['equipped_slot'], 'Equipped slot.');
+        assertSameValue(null, $state['equipment']['ring'], 'Empty slot.');
+        foreach (['character_id', 'definition_key', 'source_type', 'source_key', 'request_fingerprint'] as $hidden) {
+            assertSameValue(false, in_array($hidden, recursiveInventoryKeys($state['equipment']), true), $hidden . ' stays private.');
         }
     },
 

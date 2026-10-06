@@ -76,6 +76,7 @@ $stmt = $pdo->query("
     SELECT
         id,
         class_name,
+        class_key,
         glyph,
         ascii_fallback,
         description,
@@ -139,6 +140,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             SELECT
                 id,
                 class_name,
+                class_key,
                 start_strength_bonus,
                 start_dexterity_bonus,
                 start_vitality_bonus,
@@ -245,6 +247,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         "pos_x" => $startingMap["start_x"],
                         "pos_y" => $startingMap["start_y"],
                     ]);
+
+                    $characterId = (int) $pdo->lastInsertId();
+                    require_once __DIR__ . "/lib/EquipmentRepository.php";
+                    require_once __DIR__ . "/lib/StarterEquipmentService.php";
+                    $starterService = new StarterEquipmentService(new EquipmentRepository($pdo));
+                    $starterService->grantForNewLockedChampion([
+                        'id' => $characterId,
+                        'user_id' => (int) $_SESSION['user_id'],
+                        'life_state' => 'alive',
+                    ], (string) $selectedClass['class_key']);
 
                     $pdo->commit();
 

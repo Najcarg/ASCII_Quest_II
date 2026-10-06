@@ -1039,7 +1039,7 @@ $detailStatGroups = [
                 >
                     <section class="hud-item-section">
                         <h2>Equipment</h2>
-                        <div class="paper-doll" aria-label="Empty equipment paper doll">
+                        <div class="paper-doll" aria-label="Champion equipment paper doll">
                             <div class="equipment-slot equipment-slot-helm" data-equipment-slot="helm">
                                 <span class="equipment-slot-glyph" aria-hidden="true">◇</span>
                                 <span>Helm</span>
@@ -1087,6 +1087,8 @@ $detailStatGroups = [
                                 <span>Boots</span>
                             </div>
                         </div>
+                        <p id="equipmentLockReason" class="inventory-message" role="status"></p>
+                        <button id="equipmentAction" class="equipment-action" type="button" hidden disabled></button>
 
                         <div class="equipment-gold">
                             <span>Gold</span>

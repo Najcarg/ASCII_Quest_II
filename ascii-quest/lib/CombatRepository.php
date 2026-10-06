@@ -911,6 +911,7 @@ final class CombatRepository
             'snapshot_critical_damage',
         ]);
         $values += [
+            'snapshot_weapon_item_id' => $action['snapshot_weapon_item_id'] ?? null,
             'parent_action_id' => $action['parent_action_id'] ?? null,
             'completed_timeline_ms' => $action['completed_timeline_ms'] ?? null,
             'block_token' => $action['block_token'] ?? null,
@@ -938,6 +939,7 @@ final class CombatRepository
                     active_slot, state, started_timeline_ms, resolves_timeline_ms,
                     cooldown_ready_timeline_ms, completed_timeline_ms,
                     snapshot_weapon_key,
+                    snapshot_weapon_item_id,
                     snapshot_damage_type, snapshot_base_damage, snapshot_accuracy,
                     snapshot_critical_chance, snapshot_critical_damage,
                     block_token, block_expires_timeline_ms,
@@ -949,6 +951,7 @@ final class CombatRepository
                     :active_slot, :state, :started_timeline_ms, :resolves_timeline_ms,
                     :cooldown_ready_timeline_ms, :completed_timeline_ms,
                     :snapshot_weapon_key,
+                    :snapshot_weapon_item_id,
                     :snapshot_damage_type, :snapshot_base_damage, :snapshot_accuracy,
                     :snapshot_critical_chance, :snapshot_critical_damage,
                     :block_token, :block_expires_timeline_ms,

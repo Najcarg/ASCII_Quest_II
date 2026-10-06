@@ -36,6 +36,9 @@ function element() {
 function documentFixture() {
     const cells = Array.from({ length: 25 }, element);
     cells.forEach((cell, index) => { cell.dataset.inventorySlot = String(index + 1); });
+    const equipmentSlots = ["helm", "gloves", "chest", "ring", "weapon", "off-hand", "amulet", "belt", "charm", "boots"].map((slot) => {
+        const node = element(); node.dataset.equipmentSlot = slot; return node;
+    });
     const elements = {
         inventoryEmpty: element(),
         inventoryMessage: element(),
@@ -46,14 +49,19 @@ function documentFixture() {
         inventoryDetailName: element(),
         inventoryDetailMeta: element(),
         inventoryDetailStats: element(),
+        equipmentAction: element(),
+        equipmentLockReason: element(),
     };
     return {
         cells,
         elements,
         querySelectorAll(selector) {
-            return selector === "[data-inventory-slot]" ? cells : [];
+            if (selector === "[data-inventory-slot]") return cells;
+            if (selector === "[data-equipment-slot]") return equipmentSlots;
+            return [];
         },
         getElementById(id) { return elements[id] || null; },
+        equipmentSlots,
     };
 }
 
@@ -79,8 +87,10 @@ function item(id, name = `Sword ${id}`, rarity = "normal") {
 }
 
 function state(items, page = 1, totalPages = 1) {
+    const equipment = Object.fromEntries(["helm", "gloves", "chest", "ring", "weapon", "off-hand", "amulet", "belt", "charm", "boots"].map((slot) => [slot, null]));
     return {
         items,
+        equipment,
         pagination: {
             page, per_page: 25, total_items: items.length + (page - 1) * 25,
             total_pages: totalPages, has_previous: page > 1, has_next: page < totalPages,
@@ -190,12 +200,74 @@ const tests = {
         assert.equal(document.elements.inventoryDetails.hidden, true);
     },
 
-    "Task 18 markup has no inventory mutation controls"() {
+    "Task 20 markup activates pointer equipment controls without claim or drag behavior"() {
         assert.equal(typeof itemHud.createController, "function");
         assert.ok(gameMarkup.includes("data-inventory-slot"));
+        assert.ok(gameMarkup.includes("data-equipment-slot"));
+        assert.ok(gameMarkup.includes('id="equipmentAction"'));
         assert.ok(gameMarkup.includes('id="inventoryPrevious"'));
         assert.ok(gameMarkup.includes('id="inventoryNext"'));
-        assert.equal(/data-(equip|unequip|claim)(?:=|\s)|>\s*(Equip|Unequip|Claim)\s*</.test(gameMarkup), false);
+        assert.equal(/data-claim(?:=|\s)|>\s*Claim\s*</.test(gameMarkup), false);
+        assert.equal(/dragstart|drop\s*\(/.test(itemHud.createController.toString()), false);
+    },
+
+    "ten-slot paper doll renders equipped items with safe text"() {
+        const document = documentFixture();
+        const initial = state([]);
+        initial.equipment.weapon = { ...item(7, "<img onerror=alert(1)>"), equipped: true, equipped_slot: "weapon" };
+        itemHud.render(document, initial);
+        assert.equal(document.equipmentSlots.length, 10);
+        assert.equal(document.equipmentSlots[4].textContent, "/ <img onerror=alert(1)>");
+        assert.equal(document.equipmentSlots[4].dataset.itemId, "7");
+        assert.equal(document.equipmentSlots[3].textContent, "Ring");
+    },
+
+    async "selected inventory item equips and refreshes authoritative inventory and equipment"() {
+        const document = documentFixture();
+        const requests = [];
+        const initial = state([item(7)]);
+        const updated = state([]); updated.equipment.weapon = { ...item(7), equipped: true, equipped_slot: "weapon" };
+        itemHud.createController({
+            document, initialState: initial, csrfToken: "csrf", uuidFactory: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            fetchImplementation: async (url, options) => { requests.push({ url, options }); return { ok: true, json: async () => ({ state: updated }) }; },
+        });
+        document.cells[0].click();
+        assert.equal(document.elements.equipmentAction.textContent, "Equip");
+        await document.elements.equipmentAction.click();
+        assert.equal(requests[0].url, "equip_item.php");
+        assert.deepEqual(JSON.parse(requests[0].options.body), { csrf_token: "csrf", item_id: 7, slot: "weapon", request_token: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" });
+        assert.equal(document.cells[0].dataset.itemId, undefined);
+        assert.equal(document.equipmentSlots[4].dataset.itemId, "7");
+    },
+
+    async "equipped item unequips and failed retry reuses one mutation token"() {
+        const document = documentFixture();
+        const initial = state([]); initial.equipment.weapon = { ...item(7), equipped: true, equipped_slot: "weapon" };
+        const requests = []; let attempt = 0;
+        itemHud.createController({
+            document, initialState: initial, csrfToken: "csrf", uuidFactory: () => "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            fetchImplementation: async (url, options) => {
+                requests.push({ url, options }); attempt++;
+                if (attempt === 1) throw new Error("lost response");
+                const updated = state([item(7)]); return { ok: true, json: async () => ({ state: updated }) };
+            },
+        });
+        document.equipmentSlots[4].click();
+        assert.equal(document.elements.equipmentAction.textContent, "Unequip");
+        await document.elements.equipmentAction.click();
+        await document.elements.equipmentAction.click();
+        assert.equal(requests.length, 2);
+        assert.equal(JSON.parse(requests[0].options.body).request_token, JSON.parse(requests[1].options.body).request_token);
+        assert.equal(document.cells[0].dataset.itemId, "7");
+    },
+
+    "server lock reason disables equipment mutation controls"() {
+        const document = documentFixture(); const initial = state([item(7)]);
+        initial.equipment_locked = true; initial.mutation_disabled_reason = "combat_active";
+        itemHud.createController({ document, initialState: initial });
+        document.cells[0].click();
+        assert.equal(document.elements.equipmentAction.disabled, true);
+        assert.equal(document.elements.equipmentLockReason.textContent, "Equipment cannot change during combat.");
     },
 };
 

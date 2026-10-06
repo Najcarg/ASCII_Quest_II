@@ -303,11 +303,16 @@ final class CombatService
             }
 
             $timeline = self::integer($synchronized, 'timeline_elapsed_ms');
+            $baseDurationMs = (int) round((float) ($definition['duration_seconds'] ?? 0) * 1000);
+            $effectiveDurationMs = method_exists($this->equipmentProvider, 'effectiveDurationMs')
+                ? $this->equipmentProvider->effectiveDurationMs($character, $actionKey, $baseDurationMs)
+                : $baseDurationMs;
             $availability = $this->playerActionEvaluator->evaluate(
                 $synchronized,
                 $character,
                 $this->repository->lockActionsForEncounter($encounterId),
                 $definition,
+                $effectiveDurationMs,
             );
             if (!$availability['available']) {
                 throw new DomainException(self::playerActionDisabledMessage(
@@ -389,6 +394,7 @@ final class CombatService
     private static function skillOffensiveSnapshot(array $definition): array
     {
         return [
+            'snapshot_weapon_item_id' => null,
             'snapshot_weapon_key' => null,
             'snapshot_damage_type' => (string) ($definition['damage_type'] ?? ''),
             'snapshot_base_damage' => self::integer($definition, 'prototype_damage'),

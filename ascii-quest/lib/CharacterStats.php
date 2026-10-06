@@ -18,32 +18,40 @@ final class CharacterStats
         ];
     }
 
-    public static function calculate(array $character): array
+    public static function calculate(array $character, array $equipmentModifiers = []): array
     {
         $config = self::config();
         $base = $config['base'];
 
-        $strength = self::readNonNegativeInt($character, 'strength');
-        $dexterity = self::readNonNegativeInt($character, 'dexterity');
-        $vitality = self::readNonNegativeInt($character, 'vitality');
-        $energy = self::readNonNegativeInt($character, 'energy');
-        $fate = self::readNonNegativeInt($character, 'fate');
+        $modifier = static function (string $key) use ($equipmentModifiers): int {
+            $value = $equipmentModifiers[$key] ?? 0;
+            if (!is_int($value)) {
+                throw new InvalidArgumentException("Invalid equipment modifier: {$key}");
+            }
+            return $value;
+        };
 
-        $maxLife = $base['life'] + ($vitality * $config['per_point']['vitality']['life']);
-        $maxMana = $base['mana'] + ($energy * $config['per_point']['energy']['mana']);
+        $strength = max(0, self::readNonNegativeInt($character, 'strength') + $modifier('strength'));
+        $dexterity = max(0, self::readNonNegativeInt($character, 'dexterity') + $modifier('dexterity'));
+        $vitality = max(0, self::readNonNegativeInt($character, 'vitality') + $modifier('vitality'));
+        $energy = max(0, self::readNonNegativeInt($character, 'energy') + $modifier('energy'));
+        $fate = max(0, self::readNonNegativeInt($character, 'fate') + $modifier('fate'));
+
+        $maxLife = max(0, $base['life'] + ($vitality * $config['per_point']['vitality']['life']) + $modifier('maximum_life'));
+        $maxMana = max(0, $base['mana'] + ($energy * $config['per_point']['energy']['mana']) + $modifier('maximum_mana'));
 
         $meleeDamage = $base['melee_damage'] + ($strength * $config['per_point']['strength']['melee_damage']);
-        $toughness = $base['toughness'] + ($strength * $config['per_point']['strength']['toughness']);
-        $dodging = self::cap('dodging', $base['dodging'] + ($dexterity * $config['per_point']['dexterity']['dodging']));
-        $accuracy = self::cap('accuracy', $base['accuracy'] + ($dexterity * $config['per_point']['dexterity']['accuracy']));
-        $criticalDamage = $base['critical_damage'] + ($dexterity * $config['per_point']['dexterity']['critical_damage']);
-        $criticalChance = self::cap('critical_chance', $base['critical_chance'] + ($fate * $config['per_point']['fate']['critical_chance']));
+        $toughness = max(0, $base['toughness'] + ($strength * $config['per_point']['strength']['toughness']) + $modifier('toughness'));
+        $dodging = self::cap('dodging', max(0.0, $base['dodging'] + ($dexterity * $config['per_point']['dexterity']['dodging']) + $modifier('dodging')));
+        $accuracy = self::cap('accuracy', max(0.0, $base['accuracy'] + ($dexterity * $config['per_point']['dexterity']['accuracy']) + $modifier('accuracy')));
+        $criticalDamage = max(0, $base['critical_damage'] + ($dexterity * $config['per_point']['dexterity']['critical_damage']) + $modifier('critical_damage'));
+        $criticalChance = self::cap('critical_chance', max(0.0, $base['critical_chance'] + ($fate * $config['per_point']['fate']['critical_chance']) + $modifier('critical_chance')));
         $spellPower = $base['spell_power'] + ($energy * $config['per_point']['energy']['spell_power']);
 
-        $fireResistance = self::cap('fire_resistance', $base['fire_resistance'] + ($strength * $config['per_point']['strength']['fire_resistance']));
-        $lightningResistance = self::cap('lightning_resistance', $base['lightning_resistance'] + ($dexterity * $config['per_point']['dexterity']['lightning_resistance']));
-        $poisonResistance = self::cap('poison_resistance', $base['poison_resistance'] + ($vitality * $config['per_point']['vitality']['poison_resistance']));
-        $coldResistance = self::cap('cold_resistance', $base['cold_resistance'] + ($energy * $config['per_point']['energy']['cold_resistance']));
+        $fireResistance = self::cap('fire_resistance', max(0.0, $base['fire_resistance'] + ($strength * $config['per_point']['strength']['fire_resistance']) + $modifier('fire_resistance')));
+        $lightningResistance = self::cap('lightning_resistance', max(0.0, $base['lightning_resistance'] + ($dexterity * $config['per_point']['dexterity']['lightning_resistance']) + $modifier('lightning_resistance')));
+        $poisonResistance = self::cap('poison_resistance', max(0.0, $base['poison_resistance'] + ($vitality * $config['per_point']['vitality']['poison_resistance']) + $modifier('poison_resistance')));
+        $coldResistance = self::cap('cold_resistance', max(0.0, $base['cold_resistance'] + ($energy * $config['per_point']['energy']['cold_resistance']) + $modifier('cold_resistance')));
 
         $lootChance = self::cap('loot_chance', $base['loot_chance'] + ($fate * $config['per_point']['fate']['loot_chance']));
         $goldFind = $base['gold_find'] + ($fate * $config['per_point']['fate']['gold_find']);
@@ -51,18 +59,18 @@ final class CharacterStats
         $utility = [
             'life_regeneration' => 0,
             'mana_regeneration' => 0,
-            'life_on_hit' => 0,
+            'life_on_hit' => max(0, $modifier('life_on_hit')),
             'mana_on_hit' => 0,
             'life_per_kill' => 0,
             'mana_per_kill' => 0,
-            'fire_damage' => 0,
-            'lightning_damage' => 0,
-            'cold_damage' => 0,
-            'poison_damage' => 0,
-            'bleed_damage' => 0,
-            'burn_damage' => 0,
-            'freeze_damage' => 0,
-            'shock_damage' => 0,
+            'fire_damage' => max(0, $modifier('fire_damage')),
+            'lightning_damage' => max(0, $modifier('lightning_damage')),
+            'cold_damage' => max(0, $modifier('cold_damage')),
+            'poison_damage' => max(0, $modifier('poison_damage')),
+            'bleed_damage' => max(0, $modifier('bleed_damage')),
+            'burn_damage' => max(0, $modifier('burn_damage')),
+            'freeze_damage' => max(0, $modifier('freeze_damage')),
+            'shock_damage' => max(0, $modifier('shock_damage')),
         ];
 
         $utility['status_effect_chance'] = self::statusEffectChance([
@@ -102,9 +110,9 @@ final class CharacterStats
             ],
             'rates' => [
                 'action' => (int) $base['action'],
-                'attack_rate' => (float) $base['attack_rate'],
-                'cast_rate' => (float) $base['cast_rate'],
-                'block_rate' => (float) $base['block_rate'],
+                'attack_rate' => (float) $base['attack_rate'] * max(0.10, 1 + ($modifier('attack_rate_bp') / 10000)),
+                'cast_rate' => (float) $base['cast_rate'] * max(0.10, 1 + ($modifier('cast_rate_bp') / 10000)),
+                'block_rate' => (float) $base['block_rate'] * max(0.10, 1 + ($modifier('block_rate_bp') / 10000)),
             ],
             'fortune' => [
                 'loot_chance' => $lootChance,

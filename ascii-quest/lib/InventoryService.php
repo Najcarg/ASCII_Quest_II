@@ -4,6 +4,7 @@ declare(strict_types=1);
 final class InventoryService
 {
     public const PAGE_SIZE = 25;
+    private const EQUIPMENT_SLOTS = ['helm', 'gloves', 'chest', 'ring', 'weapon', 'off-hand', 'amulet', 'belt', 'charm', 'boots'];
 
     public function __construct(
         private ItemInventoryReader $repository,
@@ -43,10 +44,29 @@ final class InventoryService
             fn (array $row): array => $this->projector->projectItem($row, $affixes[(int) $row['id']] ?? []),
             $rows,
         );
+        $equipment = array_fill_keys(self::EQUIPMENT_SLOTS, null);
+        if (method_exists($this->repository, 'equippedItems')) {
+            $equippedRows = $this->repository->equippedItems($userId, $characterId);
+            $equippedAffixes = method_exists($this->repository, 'affixesForItems')
+                ? $this->repository->affixesForItems(array_map(static fn (array $row): int => (int) $row['id'], $equippedRows))
+                : [];
+            foreach ($equippedRows as $row) {
+                $slot = $row['equipment_slot'] ?? null;
+                if (!is_string($slot) || !array_key_exists($slot, $equipment)) {
+                    throw new UnexpectedValueException('Invalid equipped item slot.');
+                }
+                $equipment[$slot] = $this->projector->projectItem(
+                    $row,
+                    $equippedAffixes[(int) $row['id']] ?? [],
+                    $slot,
+                );
+            }
+        }
         [$locked, $reason] = $this->mutationLock($character);
 
         return [
             'items' => $items,
+            'equipment' => $equipment,
             'pagination' => [
                 'page' => $page,
                 'per_page' => self::PAGE_SIZE,

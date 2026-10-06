@@ -21,6 +21,7 @@ final class CombatPlayerActionEvaluator
         array $character,
         array $actions,
         array $definition,
+        ?int $durationOverrideMs = null,
     ): array {
         $definitionKey = (string) ($definition['key'] ?? '');
         if (
@@ -30,7 +31,8 @@ final class CombatPlayerActionEvaluator
             throw new InvalidArgumentException('Player combat action definition is invalid.');
         }
 
-        $durationMs = (int) round((float) ($definition['duration_seconds'] ?? 0) * 1000);
+        $durationMs = $durationOverrideMs
+            ?? (int) round((float) ($definition['duration_seconds'] ?? 0) * 1000);
         if ($durationMs <= 0) {
             throw new InvalidArgumentException('Player combat action duration is invalid.');
         }

@@ -17,6 +17,9 @@ require_once __DIR__ . '/CombatSynchronizer.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
 require_once __DIR__ . '/PrototypeChampionDamageResolver.php';
 require_once __DIR__ . '/PrototypeCombatEquipmentProvider.php';
+require_once __DIR__ . '/PersistentCombatEquipmentProvider.php';
+require_once __DIR__ . '/EquipmentRepository.php';
+require_once __DIR__ . '/EquipmentStatAggregator.php';
 require_once __DIR__ . '/PrototypeEnemyDefenseResolver.php';
 require_once __DIR__ . '/PrototypeBlockResolver.php';
 require_once __DIR__ . '/SystemCombatClock.php';
@@ -60,7 +63,12 @@ final class CombatBootstrap
             (int) $dropConfig['reward_slots'],
             (int) $dropConfig['base_drop_chance_bp'],
         );
-        return self::serviceForRepository($repository, null, null, null, $itemDropService);
+        $equipmentProvider = new PersistentCombatEquipmentProvider(
+            new EquipmentRepository($pdo),
+            $definitions,
+            new EquipmentStatAggregator(),
+        );
+        return self::serviceForRepository($repository, null, $equipmentProvider, null, $itemDropService);
     }
 
     public static function serviceForRepository(
