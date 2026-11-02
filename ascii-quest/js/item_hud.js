@@ -312,10 +312,12 @@
             });
         }
         byId(document, "equipmentAction")?.addEventListener("click", mutateEquipment);
-        byId(document, "inventoryPrevious")?.addEventListener("click", function () {
+        byId(document, "inventoryPrevious")?.addEventListener("click", function (event) {
+            if (event.currentTarget.disabled) return;
             return loadPage((Number(currentState?.pagination?.page) || 1) - 1);
         });
-        byId(document, "inventoryNext")?.addEventListener("click", function () {
+        byId(document, "inventoryNext")?.addEventListener("click", function (event) {
+            if (event.currentTarget.disabled) return;
             return loadPage((Number(currentState?.pagination?.page) || 1) + 1);
         });
 

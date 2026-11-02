@@ -136,6 +136,54 @@ const tests = {
         assert.equal(document.elements.inventoryPageLabel.textContent, "Page 1 of 2");
     },
 
+    "single-page pagination disables both controls"() {
+        const document = documentFixture();
+        itemHud.render(document, state([item(1)], 1, 1));
+        assert.equal(document.elements.inventoryPrevious.disabled, true);
+        assert.equal(document.elements.inventoryNext.disabled, true);
+    },
+
+    "first-page pagination disables only Previous"() {
+        const document = documentFixture();
+        itemHud.render(document, state([item(51)], 1, 3));
+        assert.equal(document.elements.inventoryPrevious.disabled, true);
+        assert.equal(document.elements.inventoryNext.disabled, false);
+    },
+
+    "middle-page pagination enables both controls and renders one-line position"() {
+        const document = documentFixture();
+        itemHud.render(document, state([item(26)], 2, 3));
+        assert.equal(document.elements.inventoryPrevious.disabled, false);
+        assert.equal(document.elements.inventoryNext.disabled, false);
+        assert.equal(document.elements.inventoryPageLabel.textContent, "Page 2 of 3");
+        assert.equal(document.elements.inventoryPageLabel.textContent.includes("\n"), false);
+    },
+
+    "last-page pagination disables only Next"() {
+        const document = documentFixture();
+        itemHud.render(document, state([item(1)], 3, 3));
+        assert.equal(document.elements.inventoryPrevious.disabled, false);
+        assert.equal(document.elements.inventoryNext.disabled, true);
+    },
+
+    async "dispatched clicks on disabled pagination controls request and change nothing"() {
+        const document = documentFixture();
+        const requests = [];
+        itemHud.createController({
+            document,
+            initialState: state([item(1)], 1, 1),
+            fetchImplementation: async (url) => {
+                requests.push(url);
+                return { ok: true, json: async () => state([item(99)], 2, 2) };
+            },
+        });
+        await document.elements.inventoryPrevious.click();
+        await document.elements.inventoryNext.click();
+        assert.deepEqual(requests, []);
+        assert.equal(document.cells[0].dataset.itemId, "1");
+        assert.equal(document.elements.inventoryPageLabel.textContent, "Page 1 of 1");
+    },
+
     "pointer selection renders selected item details"() {
         const document = documentFixture();
         const controller = itemHud.createController({ document, initialState: state([item(7, "Basic Sword")]) });
