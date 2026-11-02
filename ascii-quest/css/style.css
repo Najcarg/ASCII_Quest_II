@@ -1291,7 +1291,7 @@ a:hover {
 
 .inventory-pagination {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
     gap: 8px;
     margin-top: 5px;
@@ -1305,6 +1305,7 @@ a:hover {
 
 .inventory-pagination button {
     width: 100%;
+    min-width: 0;
     border: 1px solid rgba(169, 122, 59, 0.55);
     background: rgba(0, 0, 0, 0.55);
     color: #d6c49c;

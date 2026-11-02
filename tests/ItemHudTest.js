@@ -7,6 +7,17 @@ const path = require("node:path");
 const modulePath = path.join(__dirname, "..", "ascii-quest", "js", "item_hud.js");
 const itemHud = fs.existsSync(modulePath) ? require(modulePath) : {};
 const gameMarkup = fs.readFileSync(path.join(__dirname, "..", "ascii-quest", "game.php"), "utf8");
+const gameStyles = fs.readFileSync(path.join(__dirname, "..", "ascii-quest", "css", "style.css"), "utf8");
+
+function cssDeclarations(selector) {
+    const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = gameStyles.match(new RegExp(escapedSelector + "\\s*\\{([^}]*)\\}"));
+    assert.ok(match, `Missing CSS rule for ${selector}`);
+    return Object.fromEntries(match[1].split(";").map((declaration) => declaration.trim()).filter(Boolean).map((declaration) => {
+        const separator = declaration.indexOf(":");
+        return [declaration.slice(0, separator).trim(), declaration.slice(separator + 1).trim()];
+    }));
+}
 
 function classList() {
     const values = new Set();
@@ -157,6 +168,16 @@ const tests = {
         assert.equal(document.elements.inventoryNext.disabled, false);
         assert.equal(document.elements.inventoryPageLabel.textContent, "Page 2 of 3");
         assert.equal(document.elements.inventoryPageLabel.textContent.includes("\n"), false);
+    },
+
+    "pagination CSS keeps the label track visible in the narrow HUD panel"() {
+        const pagination = cssDeclarations(".inventory-pagination");
+        const label = cssDeclarations("#inventoryPageLabel");
+        const button = cssDeclarations(".inventory-pagination button");
+        assert.equal(pagination.display, "grid");
+        assert.equal(pagination["grid-template-columns"], "minmax(0, 1fr) auto minmax(0, 1fr)");
+        assert.equal(label["white-space"], "nowrap");
+        assert.equal(button["min-width"], "0");
     },
 
     "last-page pagination disables only Next"() {
