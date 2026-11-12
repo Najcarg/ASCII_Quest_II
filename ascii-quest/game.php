@@ -22,6 +22,7 @@ session_start();
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/map_loader.php";
 require_once __DIR__ . "/lib/CharacterStats.php";
+require_once __DIR__ . "/lib/EquipmentBootstrap.php";
 require_once __DIR__ . "/lib/WarpBootstrap.php";
 require_once __DIR__ . "/lib/CombatBootstrap.php";
 require_once __DIR__ . "/lib/ItemBootstrap.php";
