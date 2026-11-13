@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/BlockResolver.php';
+require_once __DIR__ . '/CharacterStats.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatEquipmentProvider.php';
 require_once __DIR__ . '/CombatRepository.php';
@@ -70,6 +71,11 @@ final class CombatActionResolver
             'resolves_timeline_ms',
         );
 
+        $encounter['enemy_current_hp'] = max(0, $enemyCurrentHp - $appliedDamage);
+        $oldCurrentHp = self::requiredNonNegativeInteger($lockedCharacter, 'current_hp');
+        $lockedCharacter = $this->applyLifeOnHit($lockedCharacter, $definition, $damage);
+        $healed = self::requiredNonNegativeInteger($lockedCharacter, 'current_hp') - $oldCurrentHp;
+
         if (!$this->repository->resolveLockedActionWithDamage(
             self::requiredPositiveInteger($encounter, 'id'),
             self::requiredPositiveInteger($lockedAction, 'id'),
@@ -81,6 +87,14 @@ final class CombatActionResolver
         }
 
         $this->recordOutcome($encounter, $damage, true);
+        if ($healed > 0) {
+            $this->repository->appendEvent(
+                self::requiredPositiveInteger($encounter, 'id'),
+                'player_life_on_hit',
+                "You recover {$healed} Life.",
+                null,
+            );
+        }
 
         if (($definition['kind'] ?? null) === 'skill') {
             $this->createResolvedEffect(
@@ -91,12 +105,51 @@ final class CombatActionResolver
             );
         }
 
-        $encounter['enemy_current_hp'] = max(0, $enemyCurrentHp - $appliedDamage);
-
         return [
             'encounter' => $encounter,
             'character' => $lockedCharacter,
         ];
+    }
+
+    private function applyLifeOnHit(array $character, array $definition, array $damage): array
+    {
+        $currentHp = self::requiredNonNegativeInteger($character, 'current_hp');
+        if (
+            ($definition['kind'] ?? null) !== 'weapon' ||
+            ($character['life_state'] ?? null) !== 'alive' ||
+            $currentHp === 0 ||
+            !in_array($damage['outcome'] ?? null, ['HIT', 'CRITICAL', 'BLOCK'], true)
+        ) {
+            return $character;
+        }
+
+        // Resolution-time utility, using the same equipment-aware authority as
+        // CombatService. Equipment mutations are blocked in unresolved combat.
+        // Offensive snapshots remain immutable; percentage Block is landed contact
+        // even when its rounding leaves zero applied damage.
+        $stats = method_exists($this->equipment, 'characterStats')
+            ? $this->equipment->characterStats($character)
+            : CharacterStats::calculate($character);
+        $lifeOnHit = self::requiredNonNegativeInteger($stats['utility'], 'life_on_hit');
+        $maxLife = self::requiredNonNegativeInteger($stats['resources'], 'max_life');
+        // Subtract before adding: never overflow the cap, or damage an already
+        // over-cap Champion. Normal equipment HP clamping remains unchanged.
+        $healed = min($lifeOnHit, max(0, $maxLife - $currentHp));
+        if ($healed === 0) {
+            return $character;
+        }
+        $newCurrentHp = $currentHp + $healed;
+        if (!$this->repository->updateLockedCharacterCurrentHp(
+            self::requiredPositiveInteger($character, 'user_id'),
+            self::requiredPositiveInteger($character, 'id'),
+            $currentHp,
+            $newCurrentHp,
+        )) {
+            throw new RuntimeException('Champion current HP changed before Life on Hit resolution.');
+        }
+        $character['current_hp'] = $newCurrentHp;
+
+        return $character;
     }
 
     private function createResolvedEffect(
