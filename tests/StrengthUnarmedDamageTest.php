@@ -82,8 +82,8 @@ return [
         assertFloatValue(8.0, $unarmed['resistances']['fire'], 'Resistance preserved.');
     },
     'Zero attack damage resolves normally but negative damage remains invalid' => function (): void {
-        $resolver = new PrototypeEnemyDefenseResolver(new Task6SequenceRandomSource([1]));
-        assertSameValue(['incoming_damage' => 0, 'prevented_damage' => 0, 'applied_damage' => 0, 'blocked' => true], $resolver->resolve(['snapshot_base_damage' => 0], task6CaveBruteDefinition()), 'Zero damage remains zero when blocked.');
+        $resolver = new PrototypeEnemyDefenseResolver(new Task6SequenceRandomSource([1, 1, 100]));
+        assertSameValue(['incoming_damage' => 0, 'prevented_damage' => 0, 'applied_damage' => 0, 'blocked' => true, 'outcome' => 'BLOCK'], $resolver->resolve(['snapshot_base_damage' => 0, 'snapshot_accuracy' => 0, 'snapshot_critical_chance' => 0, 'snapshot_critical_damage' => 0], task6CaveBruteDefinition()), 'Zero damage remains zero when blocked.');
         task6AssertRejected(fn (): array => $resolver->resolve(['snapshot_base_damage' => -1], task6CaveBruteDefinition()), 'Negative damage.');
     },
     'Unarmed action starts persists resolves and replays through existing normal attack architecture' => function (): void {
@@ -92,7 +92,7 @@ return [
             $pdo->characters[42]['strength'] = $strength;
             $pdo->encounters[91] = task4Encounter(['player_actions_remaining' => 1, 'next_enemy_decision_timeline_ms' => 9000, 'enemy_ai_initialized_timeline_ms' => 0]);
             $clock = new Task4MutableCombatClock(new DateTimeImmutable('2026-09-01 12:00:00.000000', new DateTimeZone('UTC')));
-            $random = new Task6SequenceRandomSource([100]);
+            $random = new Task6SequenceRandomSource([1, 100, 100]);
             $ring = equipmentItem(90, 'ring', [
                 ['modifier_type' => 'damage_percent_bp', 'modifier_operation' => 'additive_percent', 'rolled_value' => $percent],
             ]) + ['equipment_slot' => 'ring_1'];

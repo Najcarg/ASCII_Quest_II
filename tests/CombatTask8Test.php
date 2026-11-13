@@ -495,7 +495,7 @@ return [
             new CombatRepository($pdo),
             task8Clock('2026-09-01 12:00:01.000000'),
             new Task5MutableEquipmentProvider(),
-            new Task7SequenceRandomSource(),
+            new Task7SequenceRandomSource([], [100]),
         );
         task8UsePotion($service, '87878787-8787-4787-8787-878787878787');
         assertSameValue(200, $pdo->characters[42]['current_hp'], 'Potion caps the post-hit HP at Maximum Life.');

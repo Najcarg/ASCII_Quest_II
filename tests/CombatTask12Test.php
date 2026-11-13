@@ -37,7 +37,7 @@ function task12VictoryFixture(): array
         '2026-09-01 12:00:01.000000',
         new DateTimeZone('UTC'),
     ));
-    $random = new Task6SequenceRandomSource([21, 100]);
+    $random = new Task6SequenceRandomSource([1, 21, 100, 1, 21, 100]);
 
     return [$pdo, $clock, task6ChronologicalService($pdo, $clock, null, $random)];
 }
@@ -234,7 +234,7 @@ return [
         assertSameValue(true, str_contains($victoryEvents[0]['message'] ?? '', '25 Gold'), 'Event uses configured Gold.');
         assertSameValue(true, str_contains($victoryEvents[0]['message'] ?? '', '40 EXP'), 'Event uses configured EXP.');
         assertSameValue(true, str_contains(
-            $first['battle_events'][0]['message'] ?? '',
+            $first['battle_events'][1]['message'] ?? '',
             '25 Gold and 40 EXP',
         ), 'Victory reward event is visible through the Battle Info projection.');
 
@@ -256,6 +256,7 @@ return [
         $beforeEncounter = $pdo->encounters[91];
         $beforeActions = $pdo->actions;
         $pdo->failEventInsert = true;
+        $pdo->failEventType = 'victory_rewards';
         try {
             $service->state(7, 42);
             throw new RuntimeException('Injected reward-event failure was not raised.');
@@ -272,7 +273,7 @@ return [
         assertSameValue('victory_loot', $state['status'] ?? null, 'Retry reaches victory.');
         assertSameValue(125, $pdo->characters[42]['gold'], 'Retry issues Gold once.');
         assertSameValue(120, $pdo->characters[42]['experience'], 'Retry issues EXP once.');
-        assertSameValue(1, count($pdo->events), 'Retry appends one event.');
+        assertSameValue(['player_attack_hit', 'victory_rewards'], array_column(array_values($pdo->events), 'event_type'), 'Retry appends one hit and one reward event.');
     },
 
     'Task 12 loot projection separates rewards from empty physical drops' => function (): void {
@@ -380,7 +381,7 @@ return [
         assertSameValue($completedAt, $pdo->encounters[91]['completed_at'], 'Second tab does not rewrite completion time.');
         assertSameValue(125, $pdo->characters[42]['gold'], 'One Gold reward set.');
         assertSameValue(120, $pdo->characters[42]['experience'], 'One EXP reward set.');
-        assertSameValue(1, count($pdo->events), 'One victory event.');
+        assertSameValue(['player_attack_hit', 'victory_rewards'], array_column(array_values($pdo->events), 'event_type'), 'One hit and one victory event.');
     },
 
     'Task 12 close endpoint requires session POST JSON and valid CSRF' => function (): void {

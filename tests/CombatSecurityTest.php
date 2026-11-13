@@ -1152,7 +1152,7 @@ return [
             'resolves_timeline_ms' => 1000,
             'cooldown_ready_timeline_ms' => 2500,
             'snapshot_accuracy' => 0.0,
-            'snapshot_critical_chance' => 100.0,
+            'snapshot_critical_chance' => 0.0,
             'snapshot_critical_damage' => 999,
         ]);
         $pdo->actions[51] = task6EnemyAction('smash', [
@@ -1173,7 +1173,7 @@ return [
                 'cold' => 0.0,
             ],
         ];
-        $random = new Task6SequenceRandomSource([20]);
+        $random = new Task6SequenceRandomSource([1, 20, 100, 100]);
         $clock = new Task4MutableCombatClock(new DateTimeImmutable(
             '2026-09-01 12:00:01.000000',
             new DateTimeZone('UTC'),
@@ -1186,9 +1186,9 @@ return [
             $random,
         )->state(7, 42);
 
-        assertSameValue(10, $pdo->encounters[91]['enemy_current_hp'], 'Automatic Block applies stored base damage without Accuracy or Critical branches.');
-        assertSameValue(127, $pdo->characters[42]['current_hp'], 'One Smash applies despite 100 percent Dodging.');
-        assertSameValue(1, $random->integerCalls, 'The only random choice is the one automatic Cave Brute Block roll.');
+        assertSameValue(10, $pdo->encounters[91]['enemy_current_hp'], 'Hit and enemy Block use stored damage; deliberate non-critical roll.');
+        assertSameValue(127, $pdo->characters[42]['current_hp'], 'One Smash applies on a failed capped dodge.');
+        assertSameValue(4, $random->integerCalls, 'One player hit/Block/critical and one enemy dodge roll.');
         assertSameValue(1, $equipment->defensiveReads, 'Current defense is read once at enemy-hit resolution.');
         assertSameValue(1, $pdo->encounters[91]['potion_charges_remaining'], 'Potion charges do not mutate.');
         assertSameValue([77, 88], [
@@ -1202,7 +1202,7 @@ return [
         assertSameValue('active', $pdo->encounters[91]['status'], 'No victory_loot or defeated status is introduced.');
         assertSameValue('alive', $pdo->characters[42]['life_state'], 'Champion life_state is unchanged.');
         assertSameValue(null, $pdo->characters[42]['died_at'] ?? null, 'No died_at value is introduced.');
-        assertSameValue([], $pdo->events, 'No Slayer or deferred combat event is created.');
+        assertSameValue(['player_attack_block', 'enemy_attack_hit'], array_column(array_values($pdo->events), 'event_type'), 'Only resolved attack events; no deferred combat event.');
         assertSameValue(null, $state['reaction_prompt'], 'No player Block reaction prompt is created.');
         assertSameValue(true, array_key_exists('cooldown_ready_timeline_ms', $state['player_actions'][0]), 'Player cooldown timing remains intentionally public.');
         foreach (['reaction_token', 'block_token', 'slayer', 'hit_result', 'critical_result'] as $forbidden) {

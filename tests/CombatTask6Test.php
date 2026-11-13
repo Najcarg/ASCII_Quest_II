@@ -223,7 +223,7 @@ function task6ChronologicalService(
     $repository = new CombatRepository($pdo);
     $definitions = CombatDefinitionRegistry::fromDefaultConfig();
     $equipment ??= new Task5MutableEquipmentProvider();
-    $random ??= new Task6SequenceRandomSource([]);
+    $random ??= new Task6SequenceRandomSource([100, 100]); // Fire Slam and Smash: failed dodge, no Block attempt.
     $turnEngine = new CombatTurnEngine($definitions->turnDurationSeconds());
     $resolver = task6ActionResolver($repository, $equipment, $random);
     $synchronizer = new CombatSynchronizer(
@@ -349,13 +349,13 @@ return [
         );
     },
 
-    'Cave Brute Block succeeds on roll 20 with one authoritative roll' => function (): void {
-        $random = new Task6SequenceRandomSource([20]);
+    'Cave Brute Block succeeds on roll 20 after accuracy and before critical' => function (): void {
+        $random = new Task6SequenceRandomSource([1, 20, 100]);
         $result = task6EnemyDefenseResolver($random)->resolve(
             [
                 'snapshot_base_damage' => 20,
                 'snapshot_accuracy' => 5.0,
-                'snapshot_critical_chance' => 99.0,
+                'snapshot_critical_chance' => 0.0,
                 'snapshot_critical_damage' => 999,
             ],
             task6CaveBruteDefinition(),
@@ -366,12 +366,13 @@ return [
             'prevented_damage' => 10,
             'applied_damage' => 10,
             'blocked' => true,
+            'outcome' => 'BLOCK',
         ], $result, 'Configured 20 percent Block succeeds at boundary roll 20.');
-        assertSameValue(1, $random->integerCalls, 'One Block roll per player hit.');
+        assertSameValue(3, $random->integerCalls, 'One hit, Block, and critical roll.');
     },
 
-    'Cave Brute Block fails on roll 21 and ignores Accuracy and Critical fields' => function (): void {
-        $firstRandom = new Task6SequenceRandomSource([21]);
+    'Cave Brute Block fails on roll 21 and critical scales remaining damage' => function (): void {
+        $firstRandom = new Task6SequenceRandomSource([1, 21, 100]);
         $first = task6EnemyDefenseResolver($firstRandom)->resolve(
             [
                 'snapshot_base_damage' => 20,
@@ -381,7 +382,7 @@ return [
             ],
             task6CaveBruteDefinition(),
         );
-        $secondRandom = new Task6SequenceRandomSource([21]);
+        $secondRandom = new Task6SequenceRandomSource([1, 21, 100]);
         $second = task6EnemyDefenseResolver($secondRandom)->resolve(
             [
                 'snapshot_base_damage' => 20,
@@ -397,10 +398,11 @@ return [
             'prevented_damage' => 0,
             'applied_damage' => 20,
             'blocked' => false,
+            'outcome' => 'HIT',
         ], $first, 'Roll 21 fails configured 20 percent Block.');
-        assertSameValue($first, $second, 'Accuracy and Critical snapshots are deliberately unused.');
-        assertSameValue(1, $firstRandom->integerCalls, 'First hit rolls once.');
-        assertSameValue(1, $secondRandom->integerCalls, 'Second hit rolls once.');
+        assertSameValue(['incoming_damage' => 20, 'prevented_damage' => 0, 'applied_damage' => 220, 'blocked' => false, 'outcome' => 'CRITICAL'], $second, 'Immutable critical snapshot scales normal damage once.');
+        assertSameValue(3, $firstRandom->integerCalls, 'First hit rolls once.');
+        assertSameValue(3, $secondRandom->integerCalls, 'Second hit rolls once.');
     },
 
     'Champion physical damage uses current Toughness and ignores Dodging' => function (): void {
@@ -529,7 +531,7 @@ return [
             'cooldown_ready_timeline_ms' => 2600,
             'snapshot_base_damage' => 20,
             'snapshot_accuracy' => 0.0,
-            'snapshot_critical_chance' => 100.0,
+            'snapshot_critical_chance' => 0.0,
             'snapshot_critical_damage' => 999,
         ]);
         $snapshotBefore = array_intersect_key($pdo->actions[4], array_flip([
@@ -542,7 +544,7 @@ return [
             'cooldown_ready_timeline_ms',
         ]));
         $equipment = new Task5MutableEquipmentProvider();
-        $random = new Task6SequenceRandomSource([20]);
+        $random = new Task6SequenceRandomSource([1, 20, 100]);
         $resolver = task6ActionResolver($repository, $equipment, $random);
 
         $repository->beginTransaction();
@@ -554,7 +556,7 @@ return [
 
         assertSameValue(110, $result['encounter']['enemy_current_hp'], 'Blocked stored damage reduces current aggregate enemy HP once.');
         assertSameValue($character, $result['character'], 'Player resolution does not change Champion resources.');
-        assertSameValue(1, $random->integerCalls, 'Exactly one authoritative Block roll.');
+        assertSameValue(3, $random->integerCalls, 'One hit, Block, and critical roll.');
         assertSameValue('resolved', $pdo->actions[4]['state'], 'Player action resolves.');
         assertSameValue(null, $pdo->actions[4]['active_slot'], 'Player action releases its active slot.');
         assertSameValue(1100, $pdo->actions[4]['completed_timeline_ms'], 'Completion uses the stored resolve position.');
@@ -577,7 +579,7 @@ return [
         );
         $repository->rollBack();
 
-        assertSameValue(1, $random->integerCalls, 'A resolved action never rolls Block again.');
+        assertSameValue(3, $random->integerCalls, 'A resolved action never rerolls.');
         assertSameValue(110, $result['encounter']['enemy_current_hp'], 'A resolved action cannot damage again.');
         assertSameValue(10, $pdo->actions[4]['resolved_damage'], 'Resolved result is not rewritten.');
     },
@@ -595,7 +597,7 @@ return [
         $resolver = task6ActionResolver(
             $repository,
             new Task5MutableEquipmentProvider(),
-            new Task6SequenceRandomSource([100]),
+            new Task6SequenceRandomSource([1, 100, 100]),
         );
 
         $repository->beginTransaction();
@@ -656,7 +658,7 @@ return [
         $resolver = task6ActionResolver(
             $repository,
             $equipment,
-            new Task6SequenceRandomSource([]),
+            new Task6SequenceRandomSource([100]),
         );
         $equipment->defense['toughness'] = 20;
 
@@ -695,7 +697,7 @@ return [
         $resolver = task6ActionResolver(
             $repository,
             $equipment,
-            new Task6SequenceRandomSource([]),
+            new Task6SequenceRandomSource([100]),
         );
 
         $repository->beginTransaction();
@@ -1075,14 +1077,14 @@ return [
             '2026-09-01 12:00:01.000000',
             new DateTimeZone('UTC'),
         ));
-        $random = new Task6SequenceRandomSource([21]);
+        $random = new Task6SequenceRandomSource([1, 21, 100]);
 
         task6ChronologicalService($pdo, $clock, null, $random)->state(7, 42);
 
         assertSameValue('resolved', $pdo->actions[50]['state'], 'Boundary player action resolves.');
         assertSameValue(10000, $pdo->actions[50]['completed_timeline_ms'], 'Resolution retains the exact boundary position.');
         assertSameValue(100, $pdo->encounters[91]['enemy_current_hp'], 'Boundary damage is applied exactly once.');
-        assertSameValue(1, $random->integerCalls, 'Boundary hit performs exactly one Cave Brute Block roll.');
+        assertSameValue(3, $random->integerCalls, 'Boundary hit performs one hit, Block and critical roll.');
         assertSameValue(1, $pdo->resolutionObservations[0]['turn_number'], 'Action persistence observes the old Turn before reset.');
         assertSameValue(2, $pdo->encounters[91]['turn_number'], 'Turn resets after resolution.');
         $enemyStarts = array_values(array_filter(
@@ -1124,7 +1126,7 @@ return [
             '2026-09-01 12:00:05.000000',
             new DateTimeZone('UTC'),
         ));
-        $random = new Task6SequenceRandomSource([21]);
+        $random = new Task6SequenceRandomSource([1, 21, 100, 100, 100]);
 
         $state = task6ChronologicalService($pdo, $clock, null, $random)->state(7, 42);
 
@@ -1271,7 +1273,7 @@ return [
             $pdo,
             $clock,
             null,
-            new Task6SequenceRandomSource([21]),
+            new Task6SequenceRandomSource([1, 21, 100]),
         );
 
         assertTask3CombatRejected(
@@ -1352,7 +1354,7 @@ return [
                 '2026-09-01 12:00:01.000000',
                 new DateTimeZone('UTC'),
             ));
-            $random = new Task6SequenceRandomSource([$roll]);
+            $random = new Task6SequenceRandomSource([1, $roll, 100]);
             $service = task6ChronologicalService($pdo, $clock, null, $random);
 
             $service->state(7, 42);
@@ -1363,7 +1365,7 @@ return [
             ];
             $service->state(7, 42);
 
-            assertSameValue(1, $random->integerCalls, 'Roll ' . $roll . ' performs one Block roll across repeated synchronization.');
+            assertSameValue(3, $random->integerCalls, 'Roll ' . $roll . ' performs one Block roll across repeated synchronization.');
             assertSameValue($expectedEnemyHp, $pdo->encounters[91]['enemy_current_hp'], 'Roll ' . $roll . ' decrements enemy HP once.');
             assertSameValue($afterFirst, $pdo->actions, 'Roll ' . $roll . ' neither recompletes nor creates an action.');
             assertSameValue($allowances, [
@@ -1408,7 +1410,7 @@ return [
             '2026-09-01 12:00:01.500000',
             new DateTimeZone('UTC'),
         ));
-        $random = new Task6SequenceRandomSource([]);
+        $random = new Task6SequenceRandomSource([100]);
         $service = task6ChronologicalService($pdo, $clock, null, $random);
 
         $service->state(7, 42);
@@ -1419,7 +1421,7 @@ return [
         assertSameValue(129, $firstChampionHp, 'Cave Brute Smash damages the Champion once.');
         assertSameValue($firstChampionHp, $pdo->characters[42]['current_hp'], 'Repeated synchronization causes no second Champion HP decrement.');
         assertSameValue($firstActions, $pdo->actions, 'Enemy completion and action schedule are not duplicated.');
-        assertSameValue(0, $random->integerCalls, 'Historical resolved player action causes no Block roll.');
+        assertSameValue(1, $random->integerCalls, 'Only the enemy dodge roll is consumed; historical player results do not reroll.');
         assertSameValue(87, $pdo->encounters[91]['enemy_current_hp'], 'Historical resolved player action manufactures no damage.');
         assertSameValue(null, $pdo->actions[51]['resolved_damage'], 'Historical result damage remains null.');
         assertSameValue(null, $pdo->actions[51]['prevented_damage'], 'Historical prevented damage remains null.');
@@ -1461,7 +1463,7 @@ return [
             '2026-09-01 12:00:05.000000',
             new DateTimeZone('UTC'),
         ));
-        $random = new Task6SequenceRandomSource([21]);
+        $random = new Task6SequenceRandomSource([1, 21, 100, 100, 100]);
 
         task6ChronologicalService($pdo, $clock, null, $random)->state(7, 42);
 
@@ -1489,6 +1491,6 @@ return [
         assertSameValue(0, $pdo->encounters[91]['enemy_actions_remaining'], 'Unused old allowance is lost and the reset allowance is consumed without carry.');
         assertSameValue(13500, $pdo->encounters[91]['timeline_elapsed_ms'], 'Only the permitted five-second logical window is processed.');
         assertSameValue('pending', $enemyActions[2]['state'], 'The action resolving beyond the capped target remains pending.');
-        assertSameValue(1, $random->integerCalls, 'The one player resolution performs one automatic Block roll.');
+        assertSameValue(5, $random->integerCalls, 'One player hit/Block/critical and two enemy dodge rolls.');
     },
 ];

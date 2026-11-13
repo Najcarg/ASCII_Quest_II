@@ -237,7 +237,7 @@ return [
             '2026-09-01 12:00:00.000000',
             new DateTimeZone('UTC'),
         ));
-        $first = task6ChronologicalService($pdo, $clock, null, new Task6SequenceRandomSource([21]));
+        $first = task6ChronologicalService($pdo, $clock, null, new Task6SequenceRandomSource([1, 21, 100]));
         $second = task6ChronologicalService($pdo, $clock, null, new Task6SequenceRandomSource([]));
         $token = '14141414-1414-4414-8414-141414141414';
 
@@ -356,7 +356,7 @@ return [
                 $pdo,
                 $clock,
                 null,
-                new Task6SequenceRandomSource([21]),
+                new Task6SequenceRandomSource([1, 21, 100]),
             );
 
             $service->startPlayerAction(7, 42, $actionKey, $requestToken);

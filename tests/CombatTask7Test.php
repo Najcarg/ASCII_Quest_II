@@ -64,6 +64,7 @@ if (interface_exists('BlockResolver')) {
             $this->defenses[] = $currentDefense;
 
             return [
+                'outcome' => $attempted ? 'BLOCK' : 'HIT',
                 'blocked' => $attempted,
                 'incoming_damage' => (int) $incomingAction['snapshot_base_damage'],
                 'prevented_damage' => $attempted ? 8 : 0,
@@ -277,9 +278,9 @@ return [
         assertSameValue(true, $bounds['x_min_thousandths'] < $bounds['x_max_thousandths'], 'X bounds are ordered.');
         assertSameValue(true, $bounds['y_min_thousandths'] < $bounds['y_max_thousandths'], 'Y bounds are ordered.');
 
-        $missedRandom = new Task7SequenceRandomSource();
-        $successRandom = new Task7SequenceRandomSource([], [20]);
-        $failedRandom = new Task7SequenceRandomSource([], [21]);
+        $missedRandom = new Task7SequenceRandomSource([], [100]);
+        $successRandom = new Task7SequenceRandomSource([], [100, 20]);
+        $failedRandom = new Task7SequenceRandomSource([], [100, 21]);
         $missedResolver = new PrototypeBlockResolver(
             new PrototypeChampionDamageResolver(),
             $missedRandom,
@@ -296,18 +297,18 @@ return [
             $definition,
         );
         $action = task7EnemyAction();
-        $defense = ['toughness' => 0, 'resistances' => ['fire' => 0.0]];
+        $defense = ['dodging' => 0, 'toughness' => 0, 'resistances' => ['fire' => 0.0]];
         $missed = $missedResolver->resolve($action, $defense, false);
         $successful = $successResolver->resolve($action, $defense, true);
         $failed = $failedResolver->resolve($action, $defense, true);
         assertSameValue(false, $missed['blocked'], 'Missed prompt has no active Block.');
-        assertSameValue(0, $missedRandom->integerCalls, 'Missed prompt performs no unnecessary Block roll.');
+        assertSameValue(1, $missedRandom->integerCalls, 'Missed prompt performs no unnecessary Block roll.');
         assertSameValue(true, $successful['blocked'], 'Accepted roll 20 succeeds provisionally.');
         assertSameValue(12, $successful['applied_damage'], 'Successful Block applies the provisional 50 percent reduction.');
-        assertSameValue(1, $successRandom->integerCalls, 'Accepted successful Block rolls exactly once.');
+        assertSameValue(2, $successRandom->integerCalls, 'Accepted successful Block rolls exactly once.');
         assertSameValue(false, $failed['blocked'], 'Accepted roll 21 fails provisionally.');
         assertSameValue($missed['applied_damage'], $failed['applied_damage'], 'Failed Block applies no active reduction.');
-        assertSameValue(1, $failedRandom->integerCalls, 'Accepted failed Block rolls exactly once.');
+        assertSameValue(2, $failedRandom->integerCalls, 'Accepted failed Block rolls exactly once.');
         assertSameValue($missed['incoming_damage'], $successful['incoming_damage'], 'Block does not rewrite incoming offense.');
     },
 
@@ -321,14 +322,14 @@ return [
         ];
         $playerDefinition = (new CombatDefinitionRegistry($enemyChanged))
             ->playerReaction('basic_block');
-        $playerRandom = new Task7SequenceRandomSource([], [20]);
+        $playerRandom = new Task7SequenceRandomSource([], [100, 20]);
         $playerResult = (new PrototypeBlockResolver(
             new PrototypeChampionDamageResolver(),
             $playerRandom,
             $playerDefinition,
         ))->resolve(
             task7EnemyAction(),
-            ['toughness' => 0, 'resistances' => ['fire' => 0.0]],
+            ['dodging' => 0, 'toughness' => 0, 'resistances' => ['fire' => 0.0]],
             true,
         );
         assertSameValue(true, $playerResult['blocked'], 'Changing enemy Block does not change player reaction chance.');
@@ -340,9 +341,9 @@ return [
             'prototype_reduction_percent' => 1,
         ];
         $enemyDefinition = (new CombatDefinitionRegistry($playerChanged))->enemy('cave_brute');
-        $enemyRandom = new Task7SequenceRandomSource([], [20]);
+        $enemyRandom = new Task7SequenceRandomSource([], [1, 20, 100]);
         $enemyResult = (new PrototypeEnemyDefenseResolver($enemyRandom))->resolve(
-            ['snapshot_base_damage' => 20],
+            ['snapshot_base_damage' => 20, 'snapshot_accuracy' => 0, 'snapshot_critical_chance' => 0, 'snapshot_critical_damage' => 0],
             $enemyDefinition,
         );
         assertSameValue(true, $enemyResult['blocked'], 'Changing player reaction Block does not change enemy Block chance.');
@@ -585,7 +586,7 @@ return [
             new CombatRepository($pdo),
             $clock,
             new Task5MutableEquipmentProvider(),
-            new Task7SequenceRandomSource([str_repeat('d', 64)], [300, 700]),
+            new Task7SequenceRandomSource([str_repeat('d', 64)], [100, 300, 700]),
         );
         task7AssertDomainRejected(
             fn (): array => $service->attemptBlock(
@@ -679,9 +680,9 @@ return [
 
     'Player reaction Block applies passive Champion defense exactly once' => function (): void {
         foreach ([
-            'missed' => [null, [], 18, 6, 0],
-            'failed' => [500, [21], 18, 6, 1],
-            'successful' => [500, [20], 9, 15, 1],
+            'missed' => [null, [100], 18, 6, 1],
+            'failed' => [500, [100, 21], 18, 6, 2],
+            'successful' => [500, [100, 20], 9, 15, 2],
         ] as $label => [$attemptedAt, $rolls, $expectedDamage, $expectedPrevented, $expectedRolls]) {
             $pdo = new FakeCombatPdo();
             $pdo->encounters[91] = task4Encounter([

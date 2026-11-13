@@ -602,6 +602,10 @@
             element.className = emphasisClass
                 ? classPrefix + " " + emphasisClass
                 : classPrefix;
+            // Outcome is an explicit server decision, never inferred from damage or text.
+            if (["HIT", "MISS", "CRITICAL", "DODGE", "BLOCK"].includes(entry.outcome)) {
+                element.dataset.outcome = entry.outcome;
+            }
             element.textContent = String(entry.message ?? entry.name ?? entry.key ?? "");
             return element;
         });

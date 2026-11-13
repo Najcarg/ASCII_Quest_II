@@ -53,7 +53,7 @@ function task13DeathFixture(): array
             $pdo,
             $clock,
             $equipment,
-            new Task6SequenceRandomSource([100]),
+            new Task6SequenceRandomSource([100, 100]),
         ),
     ];
 }
@@ -177,6 +177,7 @@ return [
         $beforeEncounter = $pdo->encounters[91];
         $beforeActions = $pdo->actions;
         $pdo->failEventInsert = true;
+        $pdo->failEventType = 'champion_defeated';
 
         try {
             $service->state(7, 42);

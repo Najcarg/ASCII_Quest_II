@@ -149,7 +149,7 @@ return [
             $pdo,
             $clock,
             null,
-            new Task6SequenceRandomSource([21]),
+            new Task6SequenceRandomSource([1, 21, 100]),
         );
 
         $state = $service->startPlayerAction(
@@ -205,7 +205,7 @@ return [
             '2026-09-01 12:00:00.000000',
             new DateTimeZone('UTC'),
         ));
-        $random = new Task6SequenceRandomSource([21]);
+        $random = new Task6SequenceRandomSource([1, 21, 100]);
         $service = task6ChronologicalService($pdo, $clock, null, $random);
         $service->startPlayerAction(
             7,
@@ -259,7 +259,7 @@ return [
             static fn (array $action): bool => ($action['actor'] ?? null) === 'system',
         )), 'Repeated synchronization creates no duplicate effect.');
         assertSameValue(96, $pdo->encounters[91]['enemy_current_hp'], 'Repeated synchronization applies no duplicate damage.');
-        assertSameValue(1, $random->integerCalls, 'Repeated synchronization performs no duplicate defensive roll.');
+        assertSameValue(3, $random->integerCalls, 'Repeated synchronization performs no duplicate hit, Block or critical roll.');
     },
 
     'Task 10 active effect projection supports multiple windows and expiry' => function (): void {

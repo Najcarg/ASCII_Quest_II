@@ -80,6 +80,8 @@ final class CombatActionResolver
             throw new RuntimeException('Pending player action resolution could not be persisted.');
         }
 
+        $this->recordOutcome($encounter, $damage, true);
+
         if (($definition['kind'] ?? null) === 'skill') {
             $this->createResolvedEffect(
                 self::requiredPositiveInteger($encounter, 'id'),
@@ -185,12 +187,50 @@ final class CombatActionResolver
             throw new RuntimeException('Pending enemy action resolution could not be persisted.');
         }
 
+        $this->recordOutcome($encounter, $damage, false);
         $lockedCharacter['current_hp'] = $newCurrentHp;
 
         return [
             'encounter' => $encounter,
             'character' => $lockedCharacter,
         ];
+    }
+
+    private function recordOutcome(array $encounter, array $damage, bool $player): void
+    {
+        $outcome = $damage['outcome'] ?? null;
+        if (!in_array($outcome, ['HIT', 'MISS', 'CRITICAL', 'DODGE', 'BLOCK'], true)) {
+            throw new DomainException('Combat damage outcome is unavailable.');
+        }
+        $enemyName = self::requiredString($this->enemyDefinition($encounter), 'name');
+        $applied = self::requiredNonNegativeInteger($damage, 'applied_damage');
+        $blocked = ($damage['blocked'] ?? false) === true;
+        $message = $player
+            ? match ($outcome) {
+                'MISS' => "You miss {$enemyName}.",
+                'CRITICAL' => "CRITICAL! You hit {$enemyName} for {$applied} damage.",
+                'BLOCK' => "BLOCK! {$enemyName} blocks your attack; you deal {$applied} damage.",
+                default => "You hit {$enemyName} for {$applied} damage.",
+            }
+            : match ($outcome) {
+                'DODGE' => "DODGE! You dodge {$enemyName}'s attack.",
+                'BLOCK' => "BLOCK! You block {$enemyName}'s attack and take {$applied} damage.",
+                default => "{$enemyName} hits you for {$applied} damage.",
+            };
+        if ($player && $outcome === 'CRITICAL' && $blocked) {
+            $message .= " {$enemyName} partially blocks the attack.";
+        }
+        $this->repository->appendEvent(
+            self::requiredPositiveInteger($encounter, 'id'),
+            ($player ? 'player_attack_' : 'enemy_attack_') . strtolower($outcome) .
+                ($outcome === 'CRITICAL' && $blocked ? '_block' : ''),
+            $message,
+            match ($outcome) {
+                'CRITICAL' => 'critical',
+                'BLOCK' => 'blocked',
+                default => null,
+            },
+        );
     }
 
     private function enemyDefinition(array $encounter): array

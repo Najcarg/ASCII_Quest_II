@@ -31,6 +31,7 @@ final class FakeCombatPdo extends PDO
     public bool $failCharacterHpUpdate = false;
     public bool $failPotionChargeUpdate = false;
     public bool $failEventInsert = false;
+    public ?string $failEventType = null;
 
     private bool $transactionActive = false;
     private ?array $snapshot = null;
@@ -674,7 +675,7 @@ final class FakeCombatPdo extends PDO
         }
 
         if (str_starts_with($normalized, 'insert into combat_events')) {
-            if ($this->failEventInsert) {
+            if ($this->failEventInsert && ($this->failEventType === null || $this->failEventType === ($params['event_type'] ?? null))) {
                 throw new RuntimeException('Injected combat event insert failure.');
             }
             $id = $this->nextEventId++;

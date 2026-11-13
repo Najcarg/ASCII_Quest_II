@@ -16,6 +16,18 @@ final class CombatStateProjector
         'dead',
     ];
 
+    // Event types persist the server decision without adding snapshot/schema columns.
+    private const ATTACK_RESULTS = [
+        'player_attack_hit' => ['outcome' => 'HIT', 'blocked' => false],
+        'player_attack_miss' => ['outcome' => 'MISS', 'blocked' => false],
+        'player_attack_critical' => ['outcome' => 'CRITICAL', 'blocked' => false],
+        'player_attack_critical_block' => ['outcome' => 'CRITICAL', 'blocked' => true],
+        'player_attack_block' => ['outcome' => 'BLOCK', 'blocked' => true],
+        'enemy_attack_hit' => ['outcome' => 'HIT', 'blocked' => false],
+        'enemy_attack_dodge' => ['outcome' => 'DODGE', 'blocked' => false],
+        'enemy_attack_block' => ['outcome' => 'BLOCK', 'blocked' => true],
+    ];
+
     private CombatPlayerActionEvaluator $playerActionEvaluator;
     private ItemProjector $itemProjector;
 
@@ -121,7 +133,7 @@ final class CombatStateProjector
                     self::EVENT_EMPHASIS,
                     true,
                 ) ? $emphasis : null,
-            ];
+            ] + (self::ATTACK_RESULTS[$event['event_type'] ?? ''] ?? []);
         }
 
         $playerAttackDefinition = $this->definitions->playerAction(

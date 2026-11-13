@@ -1318,6 +1318,26 @@ const tests = {
         assert.equal(cards[0].children[3].disabled, false);
     },
 
+    "Task25 renders server outcomes literally and never infers zero damage outcomes"() {
+        const documentRoot = combatDocument();
+        const outcomes = ["HIT", "MISS", "CRITICAL", "DODGE", "BLOCK"];
+        const events = outcomes.map((outcome, index) => ({
+            sequence_number: index + 1,
+            outcome,
+            blocked: outcome === "BLOCK",
+            message: outcome + " <img src=x onerror=alert(1)> for 0 damage",
+            emphasis: outcome === "CRITICAL" ? "critical" : (outcome === "BLOCK" ? "blocked" : null),
+        }));
+        const state = combatState({ battle_events: events });
+        hud.renderCombatHud(documentRoot, state, {}, Date.parse(state.server_observed_at));
+        const rows = documentRoot.elements.combatBattleEvents.children;
+        assert.deepEqual(rows.map((row) => row.dataset.outcome), outcomes);
+        assert.deepEqual(rows.map((row) => row.textContent), events.map((event) => event.message));
+        assert.equal(rows[2].className, "game-log-entry game-log-entry-critical");
+        assert.equal(rows[4].className, "game-log-entry game-log-entry-blocked");
+        assert.doesNotMatch(hudSource, /Math\.random|innerHTML/);
+    },
+
     async "claim retry reuses one request token and reconciles claimed identity"() {
         const requests = [];
         let attempts = 0;

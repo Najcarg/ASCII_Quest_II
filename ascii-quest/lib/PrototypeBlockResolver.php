@@ -35,6 +35,22 @@ final class PrototypeBlockResolver implements BlockResolver
         array $currentDefense,
         bool $attempted,
     ): array {
+        $dodging = $currentDefense['dodging'] ?? null;
+        if (!is_numeric($dodging) || !is_finite((float) $dodging)) {
+            throw new InvalidArgumentException('Champion Dodging must be finite numeric data.');
+        }
+        $dodgeChance = max(0, min(75, (float) $dodging));
+        if ($this->random->integer(1, 100) <= $dodgeChance) {
+            $incomingDamage = self::nonNegativeInteger($incomingAction, 'snapshot_base_damage');
+            return [
+                'outcome' => 'DODGE',
+                'blocked' => false,
+                'incoming_damage' => $incomingDamage,
+                'prevented_damage' => $incomingDamage,
+                'applied_damage' => 0,
+            ];
+        }
+
         $damage = $this->championDamage->resolve($incomingAction, $currentDefense);
         $incomingDamage = self::nonNegativeInteger($damage, 'incoming_damage');
         $passiveAppliedDamage = self::nonNegativeInteger($damage, 'applied_damage');
@@ -44,6 +60,7 @@ final class PrototypeBlockResolver implements BlockResolver
             $this->random->integer(1, 100) <= $this->chancePercent;
         if (!$blocked) {
             return [
+                'outcome' => 'HIT',
                 'blocked' => false,
                 'incoming_damage' => $incomingDamage,
                 'prevented_damage' => $incomingDamage - $passiveAppliedDamage,
@@ -59,6 +76,7 @@ final class PrototypeBlockResolver implements BlockResolver
         );
 
         return [
+            'outcome' => 'BLOCK',
             'blocked' => true,
             'incoming_damage' => $incomingDamage,
             'prevented_damage' => $incomingDamage - $appliedDamage,

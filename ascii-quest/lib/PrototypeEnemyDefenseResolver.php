@@ -17,6 +17,17 @@ final class PrototypeEnemyDefenseResolver implements EnemyDefenseResolver
             'snapshot_base_damage',
             'Player action base damage',
         );
+        $hitChance = max(5, min(95, 50 + self::snapshotNumber($playerAction, 'snapshot_accuracy')));
+        if ($this->random->integer(1, 100) > $hitChance) {
+            return [
+                'incoming_damage' => $incomingDamage,
+                'prevented_damage' => 0,
+                'applied_damage' => 0,
+                'blocked' => false,
+                'outcome' => 'MISS',
+            ];
+        }
+
         $block = $enemyDefinition['block']['server_only'] ?? null;
         if (!is_array($block)) {
             throw new InvalidArgumentException('Enemy Block configuration is required.');
@@ -37,12 +48,41 @@ final class PrototypeEnemyDefenseResolver implements EnemyDefenseResolver
             ? (int) round($incomingDamage * $reductionPercent / 100)
             : 0;
 
+        // Preserve enemy Block on normal damage, then scale the remainder once.
+        $normalDamage = max(0, $incomingDamage - $preventedDamage);
+        $criticalChance = max(0, min(100, self::snapshotNumber($playerAction, 'snapshot_critical_chance')));
+        $critical = $this->random->integer(1, 100) <= $criticalChance;
+        $appliedDamage = $critical
+            ? max(0, (int) round($normalDamage * (1 + self::snapshotNumber($playerAction, 'snapshot_critical_damage') / 100)))
+            : $normalDamage;
+
         return [
             'incoming_damage' => $incomingDamage,
             'prevented_damage' => $preventedDamage,
-            'applied_damage' => max(0, $incomingDamage - $preventedDamage),
+            'applied_damage' => $appliedDamage,
             'blocked' => $blocked,
+            'outcome' => $critical ? 'CRITICAL' : ($blocked ? 'BLOCK' : 'HIT'),
         ];
+    }
+
+    private static function snapshotNumber(array $action, string $key): float
+    {
+        if (!array_key_exists($key, $action)) {
+            throw new InvalidArgumentException("Player action {$key} snapshot is required.");
+        }
+        $value = $action[$key];
+        if ($value === null) {
+            // Approved compatibility for legacy pending SQL NULL snapshots only.
+            // Never backfill them or substitute current Champion/equipment stats.
+            if (($action['state'] ?? null) !== 'pending') {
+                throw new InvalidArgumentException('Legacy NULL offense requires a pending action.');
+            }
+            return 0.0;
+        }
+        if (!is_numeric($value) || !is_finite((float) $value)) {
+            throw new InvalidArgumentException("Player action {$key} must be finite numeric data.");
+        }
+        return (float) $value;
     }
 
     private static function requiredNonNegativeInteger(

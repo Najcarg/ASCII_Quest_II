@@ -101,6 +101,9 @@ final class Task5MutableEquipmentProvider implements CombatEquipmentProvider
     public function offensiveSnapshot(array $lockedCharacter, string $attackKey): array
     {
         $this->offensiveReads++;
+        if ($attackKey === 'prototype_flame_strike') {
+            return (new PrototypeCombatEquipmentProvider(CombatDefinitionRegistry::fromDefaultConfig()))->offensiveSnapshot($lockedCharacter, $attackKey);
+        }
 
         return [
             'snapshot_weapon_key' => $attackKey,
@@ -523,8 +526,8 @@ return [
         $changed['strength'] = 11;
         assertSameValue(24, $provider->currentDefense($changed)['toughness'], 'Defense is recalculated for the current Champion.');
         assertTask3CombatRejected(
-            fn (): array => $provider->offensiveSnapshot($character, 'prototype_flame_strike'),
-            'Prototype provider rejects non-weapon action.',
+            fn (): array => $provider->offensiveSnapshot($character, 'prototype_unavailable_skill'),
+            'Prototype provider rejects unavailable action.',
         );
     },
 
@@ -1733,7 +1736,7 @@ return [
             new CombatRepository($pdo),
             $clock,
             $provider,
-            new Task6SequenceRandomSource([]),
+            new Task6SequenceRandomSource([100]),
         );
 
         $service->state(7, 42);

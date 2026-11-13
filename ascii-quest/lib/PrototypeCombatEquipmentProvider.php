@@ -14,14 +14,14 @@ final class PrototypeCombatEquipmentProvider implements CombatEquipmentProvider
     public function offensiveSnapshot(array $lockedCharacter, string $attackKey): array
     {
         $definition = $this->definitions->playerAction($attackKey);
-        if ($definition === null || ($definition['kind'] ?? null) !== 'weapon') {
+        if ($definition === null || !in_array($definition['kind'] ?? null, ['weapon', 'skill'], true)) {
             throw new DomainException('Combat weapon action is unavailable.');
         }
 
         $stats = CharacterStats::calculate($lockedCharacter);
 
         return [
-            'snapshot_weapon_key' => (string) $definition['key'],
+            'snapshot_weapon_key' => ($definition['kind'] ?? null) === 'weapon' ? (string) $definition['key'] : null,
             'snapshot_damage_type' => (string) $definition['damage_type'],
             'snapshot_base_damage' => (int) $definition['prototype_damage'],
             'snapshot_accuracy' => (float) $stats['combat']['accuracy'],

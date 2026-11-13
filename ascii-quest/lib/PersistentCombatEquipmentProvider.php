@@ -17,13 +17,24 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
     public function offensiveSnapshot(array $lockedCharacter, string $attackKey): array
     {
         $definition = $this->definitions->playerAction($attackKey);
-        if ($definition === null || ($definition['kind'] ?? null) !== 'weapon') {
+        if ($definition === null || !in_array($definition['kind'] ?? null, ['weapon', 'skill'], true)) {
             throw new DomainException('Combat weapon action is unavailable.');
         }
         $items = $this->equippedItems($lockedCharacter);
         $weapon = EffectiveWeaponDamage::equippedWeapon($items);
         $modifiers = $this->aggregator->aggregate($items);
         $stats = CharacterStats::calculate($lockedCharacter, $modifiers, $weapon);
+        if (($definition['kind'] ?? null) === 'skill') {
+            return [
+                'snapshot_weapon_item_id' => null,
+                'snapshot_weapon_key' => null,
+                'snapshot_damage_type' => (string) $definition['damage_type'],
+                'snapshot_base_damage' => (int) $definition['prototype_damage'],
+                'snapshot_accuracy' => (float) $stats['combat']['accuracy'],
+                'snapshot_critical_chance' => (float) $stats['combat']['critical_chance'],
+                'snapshot_critical_damage' => (int) $stats['combat']['critical_damage'],
+            ];
+        }
         $range = $stats['combat']['attack_damage'];
         // Preserve deterministic combat resolution, derived from the displayed effective range.
         $damage = (int) round(($range['min'] + $range['max']) / 2);
