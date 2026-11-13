@@ -25,6 +25,7 @@ final class EquipmentBootstrap
         return CharacterStats::calculate(
             $character,
             (new EquipmentStatAggregator())->aggregate($items),
+            EffectiveWeaponDamage::equippedWeapon($items),
         );
     }
 

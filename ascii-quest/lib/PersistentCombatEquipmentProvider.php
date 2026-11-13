@@ -21,27 +21,15 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
             throw new DomainException('Combat weapon action is unavailable.');
         }
         $items = $this->equippedItems($lockedCharacter);
-        $weapon = null;
-        foreach ($items as $item) {
-            if (($item['equipment_slot'] ?? null) === 'weapon') {
-                $weapon = $item;
-                break;
-            }
-        }
+        $weapon = EffectiveWeaponDamage::equippedWeapon($items);
         if ($weapon === null || ($weapon['snapshot_equipment_slot'] ?? null) !== 'weapon') {
             throw new DomainException('No equipped weapon is available.');
         }
         $modifiers = $this->aggregator->aggregate($items);
-        $stats = CharacterStats::calculate($lockedCharacter, $modifiers);
-        $minimum = self::nonNegativeInteger($weapon, 'snapshot_damage_min');
-        $maximum = self::nonNegativeInteger($weapon, 'snapshot_damage_max');
-        if ($minimum > $maximum) {
-            throw new DomainException('Equipped weapon damage is invalid.');
-        }
-        $baseDamage = (int) round(($minimum + $maximum) / 2);
-        $flatDamage = $modifiers['flat_damage'];
-        $percent = max(-10000, $modifiers['damage_percent_bp']);
-        $damage = max(0, (int) round(($baseDamage + $flatDamage) * (1 + ($percent / 10000))));
+        $stats = CharacterStats::calculate($lockedCharacter, $modifiers, $weapon);
+        $range = $stats['combat']['attack_damage'];
+        // Preserve deterministic combat resolution, derived from the displayed effective range.
+        $damage = (int) round(($range['min'] + $range['max']) / 2);
         $itemId = self::positiveInteger($weapon, 'id');
         $definitionKey = $weapon['definition_key'] ?? null;
         $damageType = $weapon['snapshot_damage_type'] ?? null;
@@ -95,8 +83,9 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
 
     public function characterStats(array $character): array
     {
-        $modifiers = $this->aggregator->aggregate($this->equippedItems($character));
-        return CharacterStats::calculate($character, $modifiers);
+        $items = $this->equippedItems($character);
+        $modifiers = $this->aggregator->aggregate($items);
+        return CharacterStats::calculate($character, $modifiers, EffectiveWeaponDamage::equippedWeapon($items));
     }
 
     private function equippedItems(array $lockedCharacter): array
@@ -109,14 +98,6 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
         $value = $row[$key] ?? null;
         if (is_string($value) && ctype_digit($value)) { $value = (int) $value; }
         if (!is_int($value) || $value < 1) { throw new DomainException('Invalid equipment identity.'); }
-        return $value;
-    }
-
-    private static function nonNegativeInteger(array $row, string $key): int
-    {
-        $value = $row[$key] ?? null;
-        if (is_string($value) && ctype_digit($value)) { $value = (int) $value; }
-        if (!is_int($value) || $value < 0) { throw new DomainException('Invalid weapon damage.'); }
         return $value;
     }
 }

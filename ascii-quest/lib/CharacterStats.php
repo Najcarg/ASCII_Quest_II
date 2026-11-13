@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/EffectiveWeaponDamage.php';
+
 final class CharacterStats
 {
     private static ?array $config = null;
@@ -18,7 +20,7 @@ final class CharacterStats
         ];
     }
 
-    public static function calculate(array $character, array $equipmentModifiers = []): array
+    public static function calculate(array $character, array $equipmentModifiers = [], ?array $weapon = null): array
     {
         $config = self::config();
         $base = $config['base'];
@@ -81,6 +83,8 @@ final class CharacterStats
             'shock' => $utility['shock_damage'],
         ]);
 
+        $attackDamage = EffectiveWeaponDamage::calculate($weapon, $meleeDamage, $modifier('flat_damage'), $modifier('damage_percent_bp'));
+
         return [
             'main' => [
                 'strength' => $strength,
@@ -95,6 +99,8 @@ final class CharacterStats
             ],
             'combat' => [
                 'melee_damage' => $meleeDamage,
+                'attack_damage' => $attackDamage,
+                'attack_damage_display' => EffectiveWeaponDamage::display($attackDamage),
                 'toughness' => $toughness,
                 'dodging' => $dodging,
                 'accuracy' => $accuracy,

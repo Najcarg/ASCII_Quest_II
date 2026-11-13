@@ -169,8 +169,8 @@ $hasStatPoints = (int) $character['stat_points'] > 0;
                 <strong><?= e($character['current_mana']) ?>/<?= e($stats['resources']['max_mana']) ?></strong>
             </div>
             <div>
-                <span>Melee Damage</span>
-                <strong><?= e($stats['combat']['melee_damage']) ?></strong>
+                <span>Attack Damage</span>
+                <strong><?= e($stats['combat']['attack_damage_display']) ?></strong>
             </div>
             <div>
                 <span>Toughness</span>

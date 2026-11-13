@@ -45,7 +45,7 @@ return [
         assertSameValue(77, $snapshot['snapshot_weapon_item_id'], 'Weapon item identity.');
         assertSameValue('worn_axe', $snapshot['snapshot_weapon_key'], 'Weapon definition identity.');
         assertSameValue('physical', $snapshot['snapshot_damage_type'], 'Damage type.');
-        assertSameValue(13, $snapshot['snapshot_base_damage'], 'Base flat and percentage damage are resolved once.');
+        assertSameValue(46, $snapshot['snapshot_base_damage'], 'Weapon, melee contribution, flat and percentage damage are resolved once.');
         assertFloatValue(18.0, $snapshot['snapshot_critical_chance'], 'Equipped critical value is snapshotted for future use only.');
     },
 

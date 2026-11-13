@@ -65,13 +65,16 @@ function documentFixture() {
         equipmentLockReason: element(),
         playerHp: element(), playerHpBar: element(), playerHpFill: element(),
         playerMana: element(), playerManaBar: element(), playerManaFill: element(),
+        attackDamage: element(),
     };
+    elements.attackDamage.dataset = { characterStatPath: "combat.attack_damage_display", characterStatFormat: "number" };
     return {
         cells,
         elements,
         querySelectorAll(selector) {
             if (selector === "[data-inventory-slot]") return cells;
             if (selector === "[data-equipment-slot]") return equipmentSlots;
+            if (selector === "[data-character-stat-path]") return [elements.attackDamage];
             return [];
         },
         getElementById(id) { return elements[id] || null; },
@@ -334,6 +337,35 @@ const tests = {
         assert.equal(requests.length, 2);
         assert.equal(JSON.parse(requests[0].options.body).request_token, JSON.parse(requests[1].options.body).request_token);
         assert.equal(document.cells[0].dataset.itemId, "7");
+    },
+
+    async "Attack Damage shows server range after equip and explicit no weapon after unequip"() {
+        assert.ok(gameMarkup.includes('["Attack Damage", "combat.attack_damage_display"'));
+        const document = documentFixture();
+        const equipped = state([]);
+        equipped.equipment.weapon = { ...item(7), equipped: true, equipped_slot: "weapon" };
+        const displays = ["8–10 Physical", "No weapon"];
+        let calls = 0;
+        itemHud.createController({
+            document, initialState: state([item(7)]), csrfToken: "csrf",
+            uuidFactory: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            fetchImplementation: async () => {
+                const index = calls++;
+                return { ok: true, json: async () => ({
+                    state: index === 0 ? equipped : state([item(7)]),
+                    champion: { current_hp: 100, current_mana: 100, stats: {
+                        combat: { attack_damage_display: displays[index] },
+                        resources: { max_life: 150, max_mana: 175 },
+                    } },
+                }) };
+            },
+        });
+        document.cells[0].click();
+        await document.elements.equipmentAction.click();
+        assert.equal(document.elements.attackDamage.textContent, "8–10 Physical");
+        document.equipmentSlots[4].click();
+        await document.elements.equipmentAction.click();
+        assert.equal(document.elements.attackDamage.textContent, "No weapon");
     },
 
     "server lock reason disables equipment mutation controls"() {

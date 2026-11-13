@@ -377,7 +377,7 @@ $detailStatGroups = [
     "Core" => [
         ["Maximum Life", "resources.max_life", $characterStats["resources"]["max_life"], "number"],
         ["Maximum Mana", "resources.max_mana", $characterStats["resources"]["max_mana"], "number"],
-        ["Melee Damage", "combat.melee_damage", $characterStats["combat"]["melee_damage"], "number"],
+        ["Attack Damage", "combat.attack_damage_display", $characterStats["combat"]["attack_damage_display"], "number"],
         ["Toughness", "combat.toughness", $characterStats["combat"]["toughness"], "number"],
         ["Spell Power", "combat.spell_power", $characterStats["combat"]["spell_power"], "number"],
         ["Action", "rates.action", $characterStats["rates"]["action"], "number"],
