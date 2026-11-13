@@ -37,7 +37,7 @@ return [
 
         assertSameValue(200, $stats['resources']['max_life'], 'Warrior Life.');
         assertSameValue(175, $stats['resources']['max_mana'], 'Warrior Mana.');
-        assertSameValue(55, $stats['combat']['melee_damage'], 'Warrior Melee Damage.');
+        assertSameValue(10, $stats['combat']['melee_damage'], 'Warrior Melee Damage.');
         assertSameValue(22, $stats['combat']['toughness'], 'Warrior Toughness.');
         assertSameValue(30, $stats['combat']['spell_power'], 'Warrior Spell Power.');
         assertFloatValue(12.0, $stats['combat']['dodging'], 'Warrior Dodging.');
@@ -63,7 +63,7 @@ return [
 
         assertSameValue(150, $stats['resources']['max_life'], 'Mage Life.');
         assertSameValue(250, $stats['resources']['max_mana'], 'Mage Mana.');
-        assertSameValue(30, $stats['combat']['melee_damage'], 'Mage Melee Damage.');
+        assertSameValue(5, $stats['combat']['melee_damage'], 'Mage Melee Damage.');
         assertSameValue(12, $stats['combat']['toughness'], 'Mage Toughness.');
         assertSameValue(55, $stats['combat']['spell_power'], 'Mage Spell Power.');
         assertFloatValue(25.0, $stats['combat']['critical_chance'], 'Mage Critical Chance.');

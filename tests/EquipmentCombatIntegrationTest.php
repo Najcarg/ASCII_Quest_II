@@ -45,17 +45,16 @@ return [
         assertSameValue(77, $snapshot['snapshot_weapon_item_id'], 'Weapon item identity.');
         assertSameValue('worn_axe', $snapshot['snapshot_weapon_key'], 'Weapon definition identity.');
         assertSameValue('physical', $snapshot['snapshot_damage_type'], 'Damage type.');
-        assertSameValue(46, $snapshot['snapshot_base_damage'], 'Weapon, melee contribution, flat and percentage damage are resolved once.');
+        assertSameValue(19, $snapshot['snapshot_base_damage'], 'Weapon, melee contribution, flat and percentage damage are resolved once.');
         assertFloatValue(18.0, $snapshot['snapshot_critical_chance'], 'Equipped critical value is snapshotted for future use only.');
     },
 
-    'Persistent combat provider rejects weapon actions without a real equipped weapon' => function (): void {
-        try {
-            persistentEquipmentProvider([])->offensiveSnapshot(combatEquipmentCharacter(), 'prototype_weapon_attack');
-        } catch (DomainException) {
-            return;
-        }
-        throw new RuntimeException('Missing real weapon must not fall back to prototype damage.');
+    'Persistent combat provider supports real unarmed physical attacks without item identity' => function (): void {
+        $snapshot = persistentEquipmentProvider([])->offensiveSnapshot(combatEquipmentCharacter(), 'prototype_weapon_attack');
+        assertSameValue(null, $snapshot['snapshot_weapon_item_id'], 'No synthetic item ID.');
+        assertSameValue(null, $snapshot['snapshot_weapon_key'], 'No prototype or fake weapon key.');
+        assertSameValue('physical', $snapshot['snapshot_damage_type'], 'Unarmed is physical.');
+        assertSameValue(5, $snapshot['snapshot_base_damage'], 'Unarmed uses Strength, not prototype damage.');
     },
 
     'Persistent combat provider applies attack and cast rate to action duration snapshots' => function (): void {

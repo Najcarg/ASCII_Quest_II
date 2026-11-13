@@ -153,10 +153,10 @@ function createAllocationDocument() {
     const derivedStats = [
         {
             dataset: {
-                characterStatPath: "combat.melee_damage",
+                characterStatPath: "combat.attack_damage_display",
                 characterStatFormat: "number",
             },
-            textContent: "55",
+            textContent: "10 Physical",
         },
         {
             dataset: {
@@ -506,7 +506,8 @@ function authoritativeAllocationState(stat = "strength") {
             },
             resources: { max_life: 200, max_mana: 175 },
             combat: {
-                melee_damage: 60,
+                melee_damage: 11,
+                attack_damage_display: "11 Physical",
                 toughness: 24,
                 dodging: 12,
                 accuracy: 15,
@@ -551,7 +552,8 @@ function authoritativeAllocationState(stat = "strength") {
         state.stats.main.strength = 10;
         state.stats.main.vitality = 11;
         state.stats.resources.max_life = 210;
-        state.stats.combat.melee_damage = 55;
+        state.stats.combat.melee_damage = 10;
+        state.stats.combat.attack_damage_display = "10 Physical";
         state.stats.combat.toughness = 22;
         state.stats.resistances.fire = 10;
         state.stats.resistances.poison = 11;
@@ -561,7 +563,8 @@ function authoritativeAllocationState(stat = "strength") {
         state.stats.main.strength = 10;
         state.stats.main.energy = 6;
         state.stats.resources.max_mana = 190;
-        state.stats.combat.melee_damage = 55;
+        state.stats.combat.melee_damage = 10;
+        state.stats.combat.attack_damage_display = "10 Physical";
         state.stats.combat.toughness = 22;
         state.stats.combat.spell_power = 35;
         state.stats.resistances.fire = 10;
@@ -571,7 +574,8 @@ function authoritativeAllocationState(stat = "strength") {
     if (stat === "dexterity") {
         state.stats.main.strength = 10;
         state.stats.main.dexterity = 6;
-        state.stats.combat.melee_damage = 55;
+        state.stats.combat.melee_damage = 10;
+        state.stats.combat.attack_damage_display = "10 Physical";
         state.stats.combat.toughness = 22;
         state.stats.combat.dodging = 14;
         state.stats.combat.accuracy = 17;
@@ -1144,7 +1148,7 @@ const tests = {
             gameDocument.elements["mainStat-strength"].textContent,
             "11",
         );
-        assert.equal(gameDocument.derivedStats[0].textContent, "60");
+        assert.equal(gameDocument.derivedStats[0].textContent, "11 Physical");
         assert.equal(gameDocument.derivedStats[1].textContent, "1.00");
         assert.equal(gameDocument.derivedStats[2].textContent, "15%");
         assert.equal(

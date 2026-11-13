@@ -17,14 +17,12 @@ final class EffectiveWeaponDamage
         return null;
     }
 
-    public static function calculate(?array $weapon, int $meleeDamage, int $flatDamage, int $percentBp): ?array
+    public static function calculate(?array $weapon, int $meleeDamage, int $flatDamage, int $percentBp): array
     {
-        if ($weapon === null) {
-            return null; // No unarmed/prototype attack is implied.
-        }
-        $minimum = self::damage($weapon, 'snapshot_damage_min');
-        $maximum = self::damage($weapon, 'snapshot_damage_max');
-        $type = $weapon['snapshot_damage_type'] ?? null;
+        // A missing real weapon is explicitly unarmed, not a synthetic item snapshot.
+        $minimum = $weapon === null ? 0 : self::damage($weapon, 'snapshot_damage_min');
+        $maximum = $weapon === null ? 0 : self::damage($weapon, 'snapshot_damage_max');
+        $type = $weapon === null ? 'physical' : ($weapon['snapshot_damage_type'] ?? null);
         if ($minimum > $maximum || !is_string($type) || $type === '') {
             throw new DomainException('Equipped weapon damage is invalid.');
         }
@@ -34,9 +32,10 @@ final class EffectiveWeaponDamage
         return ['min' => $apply($minimum), 'max' => $apply($maximum), 'type' => $type];
     }
 
-    public static function display(?array $range): string
+    public static function display(array $range): string
     {
-        return $range === null ? 'No weapon' : $range['min'] . '–' . $range['max'] . ' ' . ucfirst($range['type']);
+        $damage = $range['min'] === $range['max'] ? (string) $range['min'] : $range['min'] . '–' . $range['max'];
+        return $damage . ' ' . ucfirst($range['type']);
     }
 
     private static function damage(array $weapon, string $key): int

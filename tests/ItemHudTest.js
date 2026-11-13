@@ -339,12 +339,12 @@ const tests = {
         assert.equal(document.cells[0].dataset.itemId, "7");
     },
 
-    async "Attack Damage shows server range after equip and explicit no weapon after unequip"() {
+    async "Attack Damage shows server range after equip and unarmed damage after unequip"() {
         assert.ok(gameMarkup.includes('["Attack Damage", "combat.attack_damage_display"'));
         const document = documentFixture();
         const equipped = state([]);
         equipped.equipment.weapon = { ...item(7), equipped: true, equipped_slot: "weapon" };
-        const displays = ["8–10 Physical", "No weapon"];
+        const displays = ["10–12 Physical", "5 Physical"];
         let calls = 0;
         itemHud.createController({
             document, initialState: state([item(7)]), csrfToken: "csrf",
@@ -362,10 +362,10 @@ const tests = {
         });
         document.cells[0].click();
         await document.elements.equipmentAction.click();
-        assert.equal(document.elements.attackDamage.textContent, "8–10 Physical");
+        assert.equal(document.elements.attackDamage.textContent, "10–12 Physical");
         document.equipmentSlots[4].click();
         await document.elements.equipmentAction.click();
-        assert.equal(document.elements.attackDamage.textContent, "No weapon");
+        assert.equal(document.elements.attackDamage.textContent, "5 Physical");
     },
 
     "server lock reason disables equipment mutation controls"() {

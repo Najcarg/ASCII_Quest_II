@@ -17,6 +17,7 @@ $tests = array_merge(
     require __DIR__ . '/StarterEquipmentTest.php',
     require __DIR__ . '/EquipmentCombatIntegrationTest.php',
     require __DIR__ . '/EffectiveWeaponDamageTest.php',
+    require __DIR__ . '/StrengthUnarmedDamageTest.php',
     require __DIR__ . '/EquipmentEndpointTest.php',
     require __DIR__ . '/GameRouteTest.php',
     require __DIR__ . '/ItemGeneratorTest.php',

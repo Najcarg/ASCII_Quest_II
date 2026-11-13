@@ -22,25 +22,26 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
         }
         $items = $this->equippedItems($lockedCharacter);
         $weapon = EffectiveWeaponDamage::equippedWeapon($items);
-        if ($weapon === null || ($weapon['snapshot_equipment_slot'] ?? null) !== 'weapon') {
-            throw new DomainException('No equipped weapon is available.');
-        }
         $modifiers = $this->aggregator->aggregate($items);
         $stats = CharacterStats::calculate($lockedCharacter, $modifiers, $weapon);
         $range = $stats['combat']['attack_damage'];
         // Preserve deterministic combat resolution, derived from the displayed effective range.
         $damage = (int) round(($range['min'] + $range['max']) / 2);
-        $itemId = self::positiveInteger($weapon, 'id');
-        $definitionKey = $weapon['definition_key'] ?? null;
-        $damageType = $weapon['snapshot_damage_type'] ?? null;
-        if (!is_string($definitionKey) || $definitionKey === '' || !is_string($damageType) || $damageType === '') {
-            throw new DomainException('Equipped weapon snapshot is invalid.');
+        // Keep normal attack timing/allowance architecture; unarmed has no item identity.
+        $itemId = null;
+        $definitionKey = null;
+        if ($weapon !== null) {
+            $itemId = self::positiveInteger($weapon, 'id');
+            $definitionKey = $weapon['definition_key'] ?? null;
+            if (!is_string($definitionKey) || $definitionKey === '') {
+                throw new DomainException('Equipped weapon snapshot is invalid.');
+            }
         }
 
         return [
             'snapshot_weapon_item_id' => $itemId,
             'snapshot_weapon_key' => $definitionKey,
-            'snapshot_damage_type' => $damageType,
+            'snapshot_damage_type' => $range['type'],
             'snapshot_base_damage' => $damage,
             'snapshot_accuracy' => (float) $stats['combat']['accuracy'],
             'snapshot_critical_chance' => (float) $stats['combat']['critical_chance'],

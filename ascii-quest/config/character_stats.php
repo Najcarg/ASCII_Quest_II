@@ -7,7 +7,7 @@ return [
     'base' => [
         'life' => 100,
         'mana' => 100,
-        'melee_damage' => 5,
+        'melee_damage' => 0, // No hidden unarmed base: melee damage equals effective Strength.
         'toughness' => 2,
         'dodging' => 2.0,
         'accuracy' => 5.0,
@@ -28,7 +28,7 @@ return [
 
     'per_point' => [
         'strength' => [
-            'melee_damage' => 5,
+            'melee_damage' => 1,
             'toughness' => 2,
             'fire_resistance' => 1.0,
         ],

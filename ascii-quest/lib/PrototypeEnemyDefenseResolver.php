@@ -12,7 +12,7 @@ final class PrototypeEnemyDefenseResolver implements EnemyDefenseResolver
 
     public function resolve(array $playerAction, array $enemyDefinition): array
     {
-        $incomingDamage = self::requiredPositiveInteger(
+        $incomingDamage = self::requiredNonNegativeInteger(
             $playerAction,
             'snapshot_base_damage',
             'Player action base damage',
@@ -45,14 +45,14 @@ final class PrototypeEnemyDefenseResolver implements EnemyDefenseResolver
         ];
     }
 
-    private static function requiredPositiveInteger(
+    private static function requiredNonNegativeInteger(
         array $values,
         string $key,
         string $label,
     ): int {
         $value = self::integerValue($values[$key] ?? null, $label);
-        if ($value <= 0) {
-            throw new InvalidArgumentException("{$label} must be positive.");
+        if ($value < 0) {
+            throw new InvalidArgumentException("{$label} cannot be negative.");
         }
 
         return $value;
