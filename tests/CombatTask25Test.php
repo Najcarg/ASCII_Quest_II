@@ -83,7 +83,7 @@ return [
             $random = new Task6SequenceRandomSource($dodged ? [$roll] : [$roll, 20]);
             $resolver = new PrototypeBlockResolver(new PrototypeChampionDamageResolver(), $random, CombatDefinitionRegistry::fromDefaultConfig()->playerReaction('basic_block'));
             // A dodge must not even validate passive defense: it never reaches that resolver.
-            $defense = $dodged ? ['dodging' => $dodge] : ['dodging' => $dodge, 'toughness' => 20, 'resistances' => ['fire' => 50]];
+            $defense = $dodged ? ['dodging' => $dodge] : ['dodging' => $dodge, 'block_rate' => 1.0, 'toughness' => 20, 'resistances' => ['fire' => 50]];
             $result = $resolver->resolve(task6EnemyAction('smash'), $defense, true);
             assertSameValue($dodged ? ['DODGE', 0, 18, false, 1] : ['BLOCK', 8, 10, true, 2], [$result['outcome'] ?? null, $result['applied_damage'], $result['prevented_damage'], $result['blocked'], $random->integerCalls], 'Dodge then existing 15 passive damage / half Block rounded to 8.');
         }

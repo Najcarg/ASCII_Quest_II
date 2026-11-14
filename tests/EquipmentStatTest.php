@@ -46,7 +46,7 @@ return [
         assertSameValue(6, $modifiers['toughness'], 'Snapshot toughness stacks.');
         assertSameValue(750, $modifiers['attack_rate_bp'], 'Base attack rate stacks in basis points.');
         assertSameValue(200, $modifiers['cast_rate_bp'], 'Base cast rate stacks in basis points.');
-        assertSameValue(100, $modifiers['block_rate_bp'], 'Base block rate stacks but stays passive.');
+        assertSameValue(100, $modifiers['block_rate_bp'], 'Base block rate stacks in basis points.');
         assertSameValue(300, $modifiers['damage_percent_bp'], 'Percentage modifiers stay in basis points.');
         assertSameValue($modifiers, $aggregator->aggregate(array_reverse([
             [
@@ -103,7 +103,7 @@ return [
         assertFloatValue(14.0, $stats['resistances']['fire'], 'Strength and direct resistance.');
         assertFloatValue(1.125, $stats['rates']['attack_rate'], 'Attack factor.');
         assertFloatValue(1.05, $stats['rates']['cast_rate'], 'Cast factor.');
-        assertFloatValue(1.025, $stats['rates']['block_rate'], 'Passive block factor projection.');
+        assertFloatValue(1.025, $stats['rates']['block_rate'], 'Shared block factor projection.');
         assertSameValue(12, $stats['utility']['life_on_hit'], 'Deferred modifier is aggregated but not resolved.');
     },
 

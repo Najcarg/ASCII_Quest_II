@@ -37,6 +37,7 @@ final class PrototypeCombatEquipmentProvider implements CombatEquipmentProvider
         return [
             'toughness' => (int) $stats['combat']['toughness'],
             'dodging' => (float) $stats['combat']['dodging'],
+            'block_rate' => (float) $stats['rates']['block_rate'],
             'resistances' => [
                 'fire' => (float) $stats['resistances']['fire'],
                 'lightning' => (float) $stats['resistances']['lightning'],

@@ -90,6 +90,7 @@ final class Task5MutableEquipmentProvider implements CombatEquipmentProvider
     public array $defense = [
         'toughness' => 10,
         'dodging' => 0.0,
+        'block_rate' => 1.0,
         'resistances' => [
             'fire' => 0.0,
             'lightning' => 0.0,
@@ -514,6 +515,7 @@ return [
         assertSameValue([
             'toughness' => 22,
             'dodging' => 12.0,
+            'block_rate' => 1.0,
             'resistances' => [
                 'fire' => 10.0,
                 'lightning' => 5.0,

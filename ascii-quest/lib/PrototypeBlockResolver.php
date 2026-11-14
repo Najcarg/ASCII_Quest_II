@@ -51,13 +51,22 @@ final class PrototypeBlockResolver implements BlockResolver
             ];
         }
 
+        $blocked = false;
+        if ($attempted) {
+            $blockRate = $currentDefense['block_rate'] ?? null;
+            if (!is_numeric($blockRate) || !is_finite((float) $blockRate)) {
+                throw new InvalidArgumentException('Champion Block Rate must be finite numeric data.');
+            }
+            // Current CharacterStats factor, not a second equipment/modifier calculation.
+            $blockChance = max(0.0, min(75.0, $this->chancePercent * (float) $blockRate));
+            $blocked = $this->random->integer(1, 100) <= $blockChance;
+        }
+
         $damage = $this->championDamage->resolve($incomingAction, $currentDefense);
         $incomingDamage = self::nonNegativeInteger($damage, 'incoming_damage');
         $passiveAppliedDamage = self::nonNegativeInteger($damage, 'applied_damage');
         self::nonNegativeInteger($damage, 'prevented_damage');
 
-        $blocked = $attempted &&
-            $this->random->integer(1, 100) <= $this->chancePercent;
         if (!$blocked) {
             return [
                 'outcome' => 'HIT',

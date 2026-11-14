@@ -77,7 +77,7 @@ return [
         assertSameValue(190, $stats['resources']['max_mana'], 'Equipment-aware Maximum Mana.');
     },
 
-    'Persistent combat defense reads current equipment while deferred mechanics stay inactive' => function (): void {
+    'Persistent combat defense reads current equipment including active Block Rate' => function (): void {
         $armour = equipmentItem(3, 'chest', [
             ['modifier_type' => 'fire_resistance', 'modifier_operation' => 'flat', 'rolled_value' => 8],
             ['modifier_type' => 'dodging', 'modifier_operation' => 'flat', 'rolled_value' => 20],
@@ -91,7 +91,7 @@ return [
         assertSameValue(16, $defense['toughness'], 'Current equipped toughness.');
         assertFloatValue(13.0, $defense['resistances']['fire'], 'Current equipped resistance.');
         assertFloatValue(32.0, $defense['dodging'], 'Dodge is projected but existing resolver remains authoritative.');
-        assertSameValue(false, array_key_exists('block_rate', $defense), 'Block Rate does not activate a final formula.');
+        assertFloatValue(1.9, $defense['block_rate'], 'Shared Block Rate factor is projected for active attempts.');
         assertSameValue(false, array_key_exists('life_on_hit', $defense), 'Life on hit does not activate.');
 
         $reader->items[0]['snapshot_toughness'] = 9;

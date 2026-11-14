@@ -297,7 +297,7 @@ return [
             $definition,
         );
         $action = task7EnemyAction();
-        $defense = ['dodging' => 0, 'toughness' => 0, 'resistances' => ['fire' => 0.0]];
+        $defense = ['dodging' => 0, 'block_rate' => 1.0, 'toughness' => 0, 'resistances' => ['fire' => 0.0]];
         $missed = $missedResolver->resolve($action, $defense, false);
         $successful = $successResolver->resolve($action, $defense, true);
         $failed = $failedResolver->resolve($action, $defense, true);
@@ -329,7 +329,7 @@ return [
             $playerDefinition,
         ))->resolve(
             task7EnemyAction(),
-            ['dodging' => 0, 'toughness' => 0, 'resistances' => ['fire' => 0.0]],
+            ['dodging' => 0, 'block_rate' => 1.0, 'toughness' => 0, 'resistances' => ['fire' => 0.0]],
             true,
         );
         assertSameValue(true, $playerResult['blocked'], 'Changing enemy Block does not change player reaction chance.');
