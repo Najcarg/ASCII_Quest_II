@@ -883,6 +883,10 @@ final class CombatRepository
             'snapshot_weapon_key' => null,
             'snapshot_damage_type' => null,
             'snapshot_base_damage' => null,
+            'snapshot_fire_damage' => 0,
+            'snapshot_lightning_damage' => 0,
+            'snapshot_cold_damage' => 0,
+            'snapshot_poison_damage' => 0,
             'snapshot_accuracy' => null,
             'snapshot_critical_chance' => null,
             'snapshot_critical_damage' => null,
@@ -912,6 +916,10 @@ final class CombatRepository
         ]);
         $values += [
             'snapshot_weapon_item_id' => $action['snapshot_weapon_item_id'] ?? null,
+            'snapshot_fire_damage' => $action['snapshot_fire_damage'] ?? null,
+            'snapshot_lightning_damage' => $action['snapshot_lightning_damage'] ?? null,
+            'snapshot_cold_damage' => $action['snapshot_cold_damage'] ?? null,
+            'snapshot_poison_damage' => $action['snapshot_poison_damage'] ?? null,
             'parent_action_id' => $action['parent_action_id'] ?? null,
             'completed_timeline_ms' => $action['completed_timeline_ms'] ?? null,
             'block_token' => $action['block_token'] ?? null,
@@ -942,6 +950,7 @@ final class CombatRepository
                     snapshot_weapon_item_id,
                     snapshot_damage_type, snapshot_base_damage, snapshot_accuracy,
                     snapshot_critical_chance, snapshot_critical_damage,
+                    snapshot_fire_damage, snapshot_lightning_damage, snapshot_cold_damage, snapshot_poison_damage,
                     block_token, block_expires_timeline_ms,
                     block_attempted_timeline_ms, block_prompt_x, block_prompt_y,
                     resolved_damage, prevented_damage, healing_applied
@@ -954,6 +963,7 @@ final class CombatRepository
                     :snapshot_weapon_item_id,
                     :snapshot_damage_type, :snapshot_base_damage, :snapshot_accuracy,
                     :snapshot_critical_chance, :snapshot_critical_damage,
+                    :snapshot_fire_damage, :snapshot_lightning_damage, :snapshot_cold_damage, :snapshot_poison_damage,
                     :block_token, :block_expires_timeline_ms,
                     :block_attempted_timeline_ms, :block_prompt_x, :block_prompt_y,
                     :resolved_damage, :prevented_damage, :healing_applied
@@ -1046,6 +1056,10 @@ final class CombatRepository
             'snapshot_weapon_key' => null,
             'snapshot_damage_type' => null,
             'snapshot_base_damage' => null,
+            'snapshot_fire_damage' => 0,
+            'snapshot_lightning_damage' => 0,
+            'snapshot_cold_damage' => 0,
+            'snapshot_poison_damage' => 0,
             'snapshot_accuracy' => null,
             'snapshot_critical_chance' => null,
             'snapshot_critical_damage' => null,

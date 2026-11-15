@@ -353,6 +353,8 @@ return [
         $random = new Task6SequenceRandomSource([1, 20, 100]);
         $result = task6EnemyDefenseResolver($random)->resolve(
             [
+                'snapshot_damage_type' => 'physical',
+                'snapshot_fire_damage' => 0, 'snapshot_lightning_damage' => 0, 'snapshot_cold_damage' => 0, 'snapshot_poison_damage' => 0,
                 'snapshot_base_damage' => 20,
                 'snapshot_accuracy' => 5.0,
                 'snapshot_critical_chance' => 0.0,
@@ -375,6 +377,8 @@ return [
         $firstRandom = new Task6SequenceRandomSource([1, 21, 100]);
         $first = task6EnemyDefenseResolver($firstRandom)->resolve(
             [
+                'snapshot_damage_type' => 'physical',
+                'snapshot_fire_damage' => 0, 'snapshot_lightning_damage' => 0, 'snapshot_cold_damage' => 0, 'snapshot_poison_damage' => 0,
                 'snapshot_base_damage' => 20,
                 'snapshot_accuracy' => 0.0,
                 'snapshot_critical_chance' => 0.0,
@@ -385,6 +389,8 @@ return [
         $secondRandom = new Task6SequenceRandomSource([1, 21, 100]);
         $second = task6EnemyDefenseResolver($secondRandom)->resolve(
             [
+                'snapshot_damage_type' => 'physical',
+                'snapshot_fire_damage' => 0, 'snapshot_lightning_damage' => 0, 'snapshot_cold_damage' => 0, 'snapshot_poison_damage' => 0,
                 'snapshot_base_damage' => 20,
                 'snapshot_accuracy' => 100.0,
                 'snapshot_critical_chance' => 100.0,

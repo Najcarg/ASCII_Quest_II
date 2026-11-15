@@ -343,7 +343,11 @@ return [
         $enemyDefinition = (new CombatDefinitionRegistry($playerChanged))->enemy('cave_brute');
         $enemyRandom = new Task7SequenceRandomSource([], [1, 20, 100]);
         $enemyResult = (new PrototypeEnemyDefenseResolver($enemyRandom))->resolve(
-            ['snapshot_base_damage' => 20, 'snapshot_accuracy' => 0, 'snapshot_critical_chance' => 0, 'snapshot_critical_damage' => 0],
+            ['snapshot_damage_type' => 'physical',
+                'snapshot_fire_damage' => 0, 'snapshot_lightning_damage' => 0,
+                'snapshot_cold_damage' => 0, 'snapshot_poison_damage' => 0,
+                'snapshot_base_damage' => 20, 'snapshot_accuracy' => 0,
+                'snapshot_critical_chance' => 0, 'snapshot_critical_damage' => 0],
             $enemyDefinition,
         );
         assertSameValue(true, $enemyResult['blocked'], 'Changing player reaction Block does not change enemy Block chance.');

@@ -39,6 +39,7 @@ $tests = array_merge(
     require __DIR__ . '/CombatTask25Test.php',
     require __DIR__ . '/CombatTask26Test.php',
     require __DIR__ . '/CombatTask27Test.php',
+    require __DIR__ . '/CombatTask28Test.php',
 );
 
 $passed = 0;

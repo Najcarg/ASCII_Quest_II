@@ -83,7 +83,12 @@ return [
     },
     'Zero attack damage resolves normally but negative damage remains invalid' => function (): void {
         $resolver = new PrototypeEnemyDefenseResolver(new Task6SequenceRandomSource([1, 1, 100]));
-        assertSameValue(['incoming_damage' => 0, 'prevented_damage' => 0, 'applied_damage' => 0, 'blocked' => true, 'outcome' => 'BLOCK'], $resolver->resolve(['snapshot_base_damage' => 0, 'snapshot_accuracy' => 0, 'snapshot_critical_chance' => 0, 'snapshot_critical_damage' => 0], task6CaveBruteDefinition()), 'Zero damage remains zero when blocked.');
+        $zero = ['snapshot_damage_type' => 'physical',
+            'snapshot_fire_damage' => 0, 'snapshot_lightning_damage' => 0,
+            'snapshot_cold_damage' => 0, 'snapshot_poison_damage' => 0,
+            'snapshot_base_damage' => 0, 'snapshot_accuracy' => 0,
+            'snapshot_critical_chance' => 0, 'snapshot_critical_damage' => 0];
+        assertSameValue(['incoming_damage' => 0, 'prevented_damage' => 0, 'applied_damage' => 0, 'blocked' => true, 'outcome' => 'BLOCK'], $resolver->resolve($zero, task6CaveBruteDefinition()), 'Zero damage remains zero when blocked.');
         task6AssertRejected(fn (): array => $resolver->resolve(['snapshot_base_damage' => -1], task6CaveBruteDefinition()), 'Negative damage.');
     },
     'Unarmed action starts persists resolves and replays through existing normal attack architecture' => function (): void {

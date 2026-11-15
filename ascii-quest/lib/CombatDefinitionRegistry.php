@@ -283,6 +283,13 @@ final class CombatDefinitionRegistry
             self::percentage($blockServerOnly, 'prototype_reduction_percent');
 
             $serverOnly = self::requiredArray($enemy, 'server_only');
+            $resistances = self::requiredArray($serverOnly, 'resistances');
+            foreach (['fire', 'lightning', 'cold', 'poison'] as $type) {
+                $value = $resistances[$type] ?? null;
+                if (!is_int($value) || $value < 0 || $value > 100) {
+                    throw new RuntimeException('Enemy elemental resistance must be an integer between 0 and 100.');
+                }
+            }
             self::positiveInteger($serverOnly, 'prototype_gold_reward');
             self::positiveInteger($serverOnly, 'prototype_raw_exp_reward');
         }

@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 function task25Offense(array $changes = []): array
 {
-    return array_replace(['snapshot_base_damage' => 11, 'snapshot_accuracy' => 15.0,
+    return array_replace(['snapshot_damage_type' => 'physical',
+        'snapshot_fire_damage' => 0, 'snapshot_lightning_damage' => 0, 'snapshot_cold_damage' => 0, 'snapshot_poison_damage' => 0,
+        'snapshot_base_damage' => 11, 'snapshot_accuracy' => 15.0,
         'snapshot_critical_chance' => 0.0, 'snapshot_critical_damage' => 20], $changes);
 }
 
@@ -161,7 +163,7 @@ return [
             $equipment->unequip(7, 42, 90, equipmentToken($key === 'prototype_weapon_attack' ? 2503 : 2505));
             assertSameValue($before, $provider->offensiveSnapshot($character, $key), 'Unequip affects next snapshot.');
             [$boostedResult] = task25Resolve($boosted, [90, 100, 45]);
-            assertSameValue(['CRITICAL', $key === 'prototype_weapon_attack' ? 10 : 48], [$boostedResult['outcome'], $boostedResult['applied_damage']], 'Boosted snapshot resolves after unequip, including skill base damage without weapon scaling.');
+            assertSameValue(['CRITICAL', $key === 'prototype_weapon_attack' ? 2008 : 48], [$boostedResult['outcome'], $boostedResult['applied_damage']], 'Boosted snapshot resolves after unequip, including skill base damage without weapon scaling.');
         }
     },
     'Task25 Enemy resolution uses newly equipped dodge or defense before existing Block' => function (): void {
@@ -189,7 +191,7 @@ return [
         $state = $service->state(7, 42);
         assertSameValue(['CRITICAL', 48, 3], [$state['battle_events'][0]['outcome'], $pdo->actions[1]['resolved_damage'], $random->integerCalls], 'Stored skill chances and bonus survive unequip.');
         assertSameValue($before, task25Snapshot($pdo->actions[1]), 'Immutable skill offense.');
-        [$legacy] = task25Resolve(['state' => 'pending', 'snapshot_base_damage' => 24, 'snapshot_accuracy' => null, 'snapshot_critical_chance' => null, 'snapshot_critical_damage' => null], [50, 100, 1]);
+        [$legacy] = task25Resolve(task25Offense(['state' => 'pending', 'snapshot_base_damage' => 24, 'snapshot_accuracy' => null, 'snapshot_critical_chance' => null, 'snapshot_critical_damage' => null]), [50, 100, 1]);
         assertSameValue(['HIT', 24], [$legacy['outcome'], $legacy['applied_damage']], 'Pre-Task25 null offense uses neutral zero, not current equipment.');
     },
     'Task25 Outcome event failure atomically rolls back action damage and retries without partial results' => function (): void {

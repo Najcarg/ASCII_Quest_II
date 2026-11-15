@@ -128,6 +128,8 @@ return [
                     ],
                 ],
                 'server_only' => [
+                    // Direct player elemental damage only; no physical resistance.
+                    'resistances' => ['fire' => 0, 'lightning' => 0, 'cold' => 0, 'poison' => 0],
                     'prototype_gold_reward' => 25,
                     'prototype_raw_exp_reward' => 40,
                 ],

@@ -28,6 +28,21 @@ final class PrototypeEnemyDefenseResolver implements EnemyDefenseResolver
             ];
         }
 
+        // Build from immutable action data only, after a successful hit roll.
+        // Same-type native and bonus damage combine BEFORE resistance rounding.
+        $components = $this->components($playerAction, $incomingDamage);
+        $incomingDamage = array_sum($components);
+        $resistedComponents = $components;
+        $resistances = $enemyDefinition['server_only']['resistances'] ?? null;
+        if (!is_array($resistances)) {
+            throw new InvalidArgumentException('Enemy elemental resistances are required.');
+        }
+        foreach (['fire', 'lightning', 'cold', 'poison'] as $type) {
+            $resistance = self::requiredPercentage($resistances, $type, 'Enemy elemental resistance');
+            $resistedComponents[$type] = max(0, (int) round($components[$type] * (1 - $resistance / 100)));
+        }
+        $resistedDamage = array_sum($resistedComponents);
+
         $block = $enemyDefinition['block']['server_only'] ?? null;
         if (!is_array($block)) {
             throw new InvalidArgumentException('Enemy Block configuration is required.');
@@ -44,12 +59,13 @@ final class PrototypeEnemyDefenseResolver implements EnemyDefenseResolver
             'Enemy Block reduction',
         );
         $blocked = $this->random->integer(1, 100) <= $chancePercent;
-        $preventedDamage = $blocked
-            ? (int) round($incomingDamage * $reductionPercent / 100)
+        $blockedDamage = $blocked
+            ? (int) round($resistedDamage * $reductionPercent / 100)
             : 0;
 
-        // Preserve enemy Block on normal damage, then scale the remainder once.
-        $normalDamage = max(0, $incomingDamage - $preventedDamage);
+        // ONE Block on the resisted sum, then ONE critical on the remainder.
+        $normalDamage = max(0, $resistedDamage - $blockedDamage);
+        $preventedDamage = $incomingDamage - $normalDamage;
         $criticalChance = max(0, min(100, self::snapshotNumber($playerAction, 'snapshot_critical_chance')));
         $critical = $this->random->integer(1, 100) <= $criticalChance;
         $appliedDamage = $critical
@@ -63,6 +79,32 @@ final class PrototypeEnemyDefenseResolver implements EnemyDefenseResolver
             'blocked' => $blocked,
             'outcome' => $critical ? 'CRITICAL' : ($blocked ? 'BLOCK' : 'HIT'),
         ];
+    }
+
+    /** @return array{physical: int, fire: int, lightning: int, cold: int, poison: int} */
+    private function components(array $action, int $nativeDamage): array
+    {
+        $components = array_fill_keys(['physical', 'fire', 'lightning', 'cold', 'poison'], 0);
+        $type = $action['snapshot_damage_type'] ?? null;
+        if (!is_string($type) || !array_key_exists($type, $components)) {
+            throw new InvalidArgumentException('Player action native damage type is unsupported.');
+        }
+        $components[$type] = $nativeDamage;
+        foreach (['fire', 'lightning', 'cold', 'poison'] as $element) {
+            $key = 'snapshot_' . $element . '_damage';
+            if (!array_key_exists($key, $action)) {
+                throw new InvalidArgumentException('Player elemental snapshot is required.');
+            }
+            if ($action[$key] === null && ($action['state'] ?? null) === 'pending') {
+                // Legacy pending SQL NULL only: neutral zero, never current equipment.
+                continue;
+            }
+            $bonus = self::requiredNonNegativeInteger($action, $key, 'Player elemental snapshot');
+            if (($action['action_kind'] ?? null) !== 'skill') {
+                $components[$element] += $bonus;
+            }
+        }
+        return $components;
     }
 
     private static function snapshotNumber(array $action, string $key): float
