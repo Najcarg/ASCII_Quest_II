@@ -6,6 +6,7 @@ require_once __DIR__ . '/CombatPlayerActionEvaluator.php';
 require_once __DIR__ . '/CombatEquipmentProvider.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
 require_once __DIR__ . '/ItemProjector.php';
+require_once __DIR__ . '/CombatStatusEffects.php';
 
 final class CombatStateProjector
 {
@@ -195,6 +196,7 @@ final class CombatStateProjector
                 'current_hp' => self::integer($encounter, 'enemy_current_hp'),
                 'maximum_hp' => self::integer($encounter, 'enemy_max_hp'),
                 'active_action' => $activeEnemyAction,
+                'status_effects' => (new CombatStatusEffects($this->repository))->project($encounter),
             ],
             'player_attack' => [
                 'key' => (string) $playerAttackDefinition['key'],

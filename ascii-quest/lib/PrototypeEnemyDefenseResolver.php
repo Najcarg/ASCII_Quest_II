@@ -42,6 +42,10 @@ final class PrototypeEnemyDefenseResolver implements EnemyDefenseResolver
             $resistedComponents[$type] = max(0, (int) round($components[$type] * (1 - $resistance / 100)));
         }
         $resistedDamage = array_sum($resistedComponents);
+        $resistancePrevention = $incomingDamage - $resistedDamage;
+        // Existing Shock only: new applications occur after direct damage and LoH.
+        $shock = max(0, min(50, (int) ($enemyDefinition['server_only']['active_shock_potency'] ?? 0)));
+        $resistedDamage = max(0, (int) round($resistedDamage * (1 + $shock / 100)));
 
         $block = $enemyDefinition['block']['server_only'] ?? null;
         if (!is_array($block)) {
@@ -65,7 +69,9 @@ final class PrototypeEnemyDefenseResolver implements EnemyDefenseResolver
 
         // ONE Block on the resisted sum, then ONE critical on the remainder.
         $normalDamage = max(0, $resistedDamage - $blockedDamage);
-        $preventedDamage = $incomingDamage - $normalDamage;
+        // Amplification is not negative prevention. Retain actual resistance
+        // and Block mitigation, independent of Shock and critical bonus damage.
+        $preventedDamage = $resistancePrevention + $blockedDamage;
         $criticalChance = max(0, min(100, self::snapshotNumber($playerAction, 'snapshot_critical_chance')));
         $critical = $this->random->integer(1, 100) <= $criticalChance;
         $appliedDamage = $critical

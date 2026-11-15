@@ -7,6 +7,8 @@ require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatEquipmentProvider.php';
 require_once __DIR__ . '/CombatRepository.php';
 require_once __DIR__ . '/EnemyDefenseResolver.php';
+require_once __DIR__ . '/CombatStatusEffects.php';
+require_once __DIR__ . '/SystemCombatRandomSource.php';
 
 final class CombatActionResolver
 {
@@ -16,6 +18,7 @@ final class CombatActionResolver
         private CombatEquipmentProvider $equipment,
         private EnemyDefenseResolver $enemyDefense,
         private BlockResolver $blockResolver,
+        private ?CombatRandomSource $statusRandom = null,
     ) {
     }
 
@@ -62,6 +65,10 @@ final class CombatActionResolver
         }
 
         $enemyDefinition = $this->enemyDefinition($encounter);
+        $statuses = new CombatStatusEffects($this->repository);
+        $enemyDefinition['server_only']['active_shock_potency'] = $statuses->potency(
+            (int) $encounter['id'], 'shock', (int) $lockedAction['resolves_timeline_ms'],
+        );
         $damage = $this->enemyDefense->resolve($lockedAction, $enemyDefinition);
         $appliedDamage = self::requiredNonNegativeInteger($damage, 'applied_damage');
         $preventedDamage = self::requiredNonNegativeInteger($damage, 'prevented_damage');
@@ -95,6 +102,9 @@ final class CombatActionResolver
                 null,
             );
         }
+
+        $statuses->applyContact($encounter, $lockedAction, $damage, $enemyDefinition,
+            $this->statusRandom ??= new SystemCombatRandomSource());
 
         if (($definition['kind'] ?? null) === 'skill') {
             $this->createResolvedEffect(

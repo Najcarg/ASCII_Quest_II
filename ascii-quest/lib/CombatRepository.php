@@ -18,6 +18,84 @@ final class CombatRepository
     {
     }
 
+    /** All status mutation reads require the encounter aggregate lock. */
+    public function lockStatusEffectsForEncounter(int $encounterId): array
+    {
+        $this->requireEncounterLock($encounterId);
+        $this->detailRowsTouched = true;
+        $stmt = $this->pdo->prepare("SELECT * FROM combat_status_effects
+            WHERE encounter_id = :encounter_id AND state = 'active'
+            ORDER BY id ASC FOR UPDATE");
+        $stmt->execute(['encounter_id' => $encounterId]);
+        return $stmt->fetchAll();
+    }
+
+    public function statusEffectsForEncounter(int $encounterId): array
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM combat_status_effects
+            WHERE encounter_id = :encounter_id AND state = 'active' ORDER BY id ASC");
+        $stmt->execute(['encounter_id' => $encounterId]);
+        return $stmt->fetchAll();
+    }
+
+    /** Append identity, never overwrite an earlier source's replay guard. */
+    public function applyStatusEffect(int $encounterId, int $sourceActionId, string $key, int $potency, int $now): bool
+    {
+        $this->requireEncounterLock($encounterId);
+        if (!in_array($key, ['poison', 'bleed', 'burn', 'freeze', 'shock'], true) || $potency <= 0 || $now < 0) {
+            throw new DomainException('Invalid combat status application.');
+        }
+        $source = array_filter($this->lockActionsForEncounter($encounterId),
+            static fn (array $action): bool => (int) $action['id'] === $sourceActionId);
+        if ($source === []) {
+            throw new DomainException('Status source does not belong to the locked encounter.');
+        }
+        $stmt = $this->pdo->prepare("SELECT * FROM combat_status_effects
+            WHERE source_action_id = :source_action_id AND target_actor = 'enemy' AND status_key = :status_key
+            FOR UPDATE");
+        $stmt->execute(['source_action_id' => $sourceActionId, 'status_key' => $key]);
+        if ($stmt->fetch() !== false) {
+            return false;
+        }
+        foreach ($this->lockStatusEffectsForEncounter($encounterId) as $status) {
+            if ($status['status_key'] === $key) {
+                $this->advanceStatusEffect($encounterId, $status, null, 'expired');
+            }
+        }
+        $stmt = $this->pdo->prepare("INSERT INTO combat_status_effects
+            (encounter_id, source_action_id, target_actor, status_key, potency,
+             applied_timeline_ms, next_tick_timeline_ms, expires_timeline_ms, state)
+            VALUES (:encounter_id, :source_action_id, 'enemy', :status_key, :potency,
+             :applied_timeline_ms, :next_tick_timeline_ms, :expires_timeline_ms, 'active')");
+        $stmt->execute([
+            'encounter_id' => $encounterId, 'source_action_id' => $sourceActionId, 'status_key' => $key,
+            'potency' => $potency, 'applied_timeline_ms' => $now,
+            'next_tick_timeline_ms' => in_array($key, ['poison', 'bleed', 'burn'], true) ? $now + 1000 : null,
+            'expires_timeline_ms' => $now + 4000,
+        ]);
+        return true;
+    }
+
+    public function advanceStatusEffect(int $encounterId, array $status, ?int $nextTick, string $state): void
+    {
+        $this->requireEncounterLock($encounterId);
+        if (!in_array($state, ['active', 'expired'], true)) {
+            throw new DomainException('Invalid combat status state.');
+        }
+        $stmt = $this->pdo->prepare("UPDATE combat_status_effects
+            SET next_tick_timeline_ms = :next_tick_timeline_ms, state = :state
+            WHERE id = :status_id AND encounter_id = :encounter_id AND state = 'active'
+              AND next_tick_timeline_ms <=> :expected_tick");
+        $stmt->execute([
+            'next_tick_timeline_ms' => $nextTick, 'state' => $state,
+            'status_id' => $status['id'], 'encounter_id' => $encounterId,
+            'expected_tick' => $status['next_tick_timeline_ms'],
+        ]);
+        if ($stmt->rowCount() !== 1) {
+            throw new RuntimeException('Combat status schedule changed concurrently.');
+        }
+    }
+
     public function findOwnedCharacter(int $userId, int $characterId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT
@@ -887,6 +965,11 @@ final class CombatRepository
             'snapshot_lightning_damage' => 0,
             'snapshot_cold_damage' => 0,
             'snapshot_poison_damage' => 0,
+            'snapshot_poison_status_damage' => 0,
+            'snapshot_bleed_status_damage' => 0,
+            'snapshot_burn_status_damage' => 0,
+            'snapshot_freeze_status_damage' => 0,
+            'snapshot_shock_status_damage' => 0,
             'snapshot_accuracy' => null,
             'snapshot_critical_chance' => null,
             'snapshot_critical_damage' => null,
@@ -920,6 +1003,11 @@ final class CombatRepository
             'snapshot_lightning_damage' => $action['snapshot_lightning_damage'] ?? null,
             'snapshot_cold_damage' => $action['snapshot_cold_damage'] ?? null,
             'snapshot_poison_damage' => $action['snapshot_poison_damage'] ?? null,
+            'snapshot_poison_status_damage' => $action['snapshot_poison_status_damage'] ?? 0,
+            'snapshot_bleed_status_damage' => $action['snapshot_bleed_status_damage'] ?? 0,
+            'snapshot_burn_status_damage' => $action['snapshot_burn_status_damage'] ?? 0,
+            'snapshot_freeze_status_damage' => $action['snapshot_freeze_status_damage'] ?? 0,
+            'snapshot_shock_status_damage' => $action['snapshot_shock_status_damage'] ?? 0,
             'parent_action_id' => $action['parent_action_id'] ?? null,
             'completed_timeline_ms' => $action['completed_timeline_ms'] ?? null,
             'block_token' => $action['block_token'] ?? null,
@@ -951,6 +1039,7 @@ final class CombatRepository
                     snapshot_damage_type, snapshot_base_damage, snapshot_accuracy,
                     snapshot_critical_chance, snapshot_critical_damage,
                     snapshot_fire_damage, snapshot_lightning_damage, snapshot_cold_damage, snapshot_poison_damage,
+                    snapshot_poison_status_damage, snapshot_bleed_status_damage, snapshot_burn_status_damage, snapshot_freeze_status_damage, snapshot_shock_status_damage,
                     block_token, block_expires_timeline_ms,
                     block_attempted_timeline_ms, block_prompt_x, block_prompt_y,
                     resolved_damage, prevented_damage, healing_applied
@@ -964,6 +1053,7 @@ final class CombatRepository
                     :snapshot_damage_type, :snapshot_base_damage, :snapshot_accuracy,
                     :snapshot_critical_chance, :snapshot_critical_damage,
                     :snapshot_fire_damage, :snapshot_lightning_damage, :snapshot_cold_damage, :snapshot_poison_damage,
+                    :snapshot_poison_status_damage, :snapshot_bleed_status_damage, :snapshot_burn_status_damage, :snapshot_freeze_status_damage, :snapshot_shock_status_damage,
                     :block_token, :block_expires_timeline_ms,
                     :block_attempted_timeline_ms, :block_prompt_x, :block_prompt_y,
                     :resolved_damage, :prevented_damage, :healing_applied
@@ -1060,6 +1150,11 @@ final class CombatRepository
             'snapshot_lightning_damage' => 0,
             'snapshot_cold_damage' => 0,
             'snapshot_poison_damage' => 0,
+            'snapshot_poison_status_damage' => 0,
+            'snapshot_bleed_status_damage' => 0,
+            'snapshot_burn_status_damage' => 0,
+            'snapshot_freeze_status_damage' => 0,
+            'snapshot_shock_status_damage' => 0,
             'snapshot_accuracy' => null,
             'snapshot_critical_chance' => null,
             'snapshot_critical_damage' => null,

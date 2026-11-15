@@ -97,6 +97,7 @@ final class CombatBootstrap
                     'Player Block reaction is unavailable.',
                 ),
             ),
+            $randomSource,
         );
 
         return new CombatService(

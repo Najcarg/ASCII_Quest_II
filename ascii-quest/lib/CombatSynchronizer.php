@@ -282,6 +282,7 @@ final class CombatSynchronizer
             $encounter['next_enemy_decision_timeline_ms'] = $startTimeline;
         }
 
+        $statuses = new CombatStatusEffects($this->repository);
         $cursorMs = $startTimeline;
         $enemyDecisionSuppressed = false;
         while (true) {
@@ -310,6 +311,15 @@ final class CombatSynchronizer
                     $cursorMs,
                     $serverNow,
                 );
+            }
+            if (($encounter['status'] ?? null) === 'active') {
+                $encounter = $statuses->processAt($encounter,
+                    $this->definitions->enemy((string) $encounter['enemy_key']), $cursorMs);
+                if (self::integer($encounter, 'enemy_current_hp') === 0) {
+                    [$encounter, $lockedCharacter] = $this->transitionToVictory(
+                        $encounter, $lockedCharacter, $cursorMs, $serverNow,
+                    );
+                }
             }
             foreach ($dueActions as $action) {
                 if (($encounter['status'] ?? null) !== 'active') {
@@ -532,6 +542,11 @@ final class CombatSynchronizer
             }
         }
 
+        $statusDue = (new CombatStatusEffects($this->repository))->nextDue(self::positiveInteger($encounter, 'id'));
+        if ($statusDue !== null && $statusDue > $cursorMs && $statusDue <= $targetTimelineMs) {
+            $candidates[] = $statusDue;
+        }
+
         if (!$enemyDecisionSuppressed) {
             $nextEnemyDecision = self::integer(
                 $encounter,
@@ -559,6 +574,14 @@ final class CombatSynchronizer
             throw new DomainException('Combat enemy definition is unavailable.');
         }
 
+        // Feed the same frozen duration to policy fit checks and persistence.
+        // Pending actions and base cooldowns are deliberately untouched.
+        $freeze = (new CombatStatusEffects($this->repository))->potency($encounterId, 'freeze', $cursorMs);
+        foreach ($enemyDefinition['actions'] as &$enemyAction) {
+            $baseMs = (int) round($enemyAction['duration_seconds'] * 1000);
+            $enemyAction['duration_seconds'] = round($baseMs * (1 + min(50, $freeze) / 100)) / 1000;
+        }
+        unset($enemyAction);
         $history = $this->repository->lockActionsForEncounter($encounterId);
         $decision = $this->caveBrutePolicy->decide(
             $encounter,

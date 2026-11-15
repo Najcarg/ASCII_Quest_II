@@ -17,6 +17,8 @@ final class FakeCombatPdo extends PDO
     public array $encounters = [];
     public array $actions = [];
     public array $events = [];
+    public array $statuses = [];
+    private int $nextStatusId = 1;
     public array $preparedSql = [];
     public array $lockOrder = [];
     public array $writeOrder = [];
@@ -119,6 +121,8 @@ final class FakeCombatPdo extends PDO
             $this->nextEncounterId,
             $this->nextActionId,
             $this->nextEventId,
+            $this->statuses,
+            $this->nextStatusId,
         ];
         $this->transactionActive = true;
 
@@ -151,6 +155,8 @@ final class FakeCombatPdo extends PDO
             $this->nextEncounterId,
             $this->nextActionId,
             $this->nextEventId,
+            $this->statuses,
+            $this->nextStatusId,
         ] = $this->snapshot;
         $this->snapshot = null;
         $this->transactionActive = false;
@@ -171,6 +177,41 @@ final class FakeCombatPdo extends PDO
     public function executeStatement(string $sql, array $params): array
     {
         $normalized = strtolower(preg_replace('/\s+/', ' ', trim($sql)) ?? $sql);
+
+        if (str_starts_with($normalized, 'select') && str_contains($normalized, 'from combat_status_effects')) {
+            $rows = array_values(array_filter($this->statuses, static function (array $row) use ($params): bool {
+                if (isset($params['source_action_id'])) {
+                    return $row['source_action_id'] === $params['source_action_id'] && $row['status_key'] === $params['status_key'];
+                }
+                return $row['encounter_id'] === $params['encounter_id'] && $row['state'] === 'active';
+            }));
+            usort($rows, static fn ($a, $b) => $a['id'] <=> $b['id']);
+            return ['rows' => $rows, 'row_count' => count($rows)];
+        }
+        if (str_starts_with($normalized, 'insert into combat_status_effects')) {
+            foreach ($this->statuses as $row) {
+                if (($row['source_action_id'] === $params['source_action_id'] && $row['status_key'] === $params['status_key']) ||
+                    ($row['encounter_id'] === $params['encounter_id'] && $row['status_key'] === $params['status_key'] && $row['state'] === 'active')) {
+                    throw new PDOException('Duplicate status identity or active instance.', 23000);
+                }
+            }
+            if (!isset($this->actions[$params['source_action_id']]) || !isset($this->encounters[$params['encounter_id']])) {
+                throw new PDOException('Status foreign key violation.', 23000);
+            }
+            $id = $this->nextStatusId++;
+            $this->statuses[$id] = ['id'=>$id, 'target_actor'=>'enemy', 'state'=>'active'] + $params;
+            return ['rows'=>[], 'row_count'=>1];
+        }
+        if (str_starts_with($normalized, 'update combat_status_effects')) {
+            $id = (int) $params['status_id'];
+            $row = $this->statuses[$id] ?? null;
+            if ($row === null || $row['encounter_id'] !== $params['encounter_id'] || $row['state'] !== 'active' || $row['next_tick_timeline_ms'] !== $params['expected_tick']) {
+                return ['rows'=>[], 'row_count'=>0];
+            }
+            $this->statuses[$id]['next_tick_timeline_ms'] = $params['next_tick_timeline_ms'];
+            $this->statuses[$id]['state'] = $params['state'];
+            return ['rows'=>[], 'row_count'=>1];
+        }
 
         if (str_starts_with($normalized, 'select') && str_contains($normalized, 'from users')) {
             if (str_contains($normalized, 'for update')) {
@@ -796,6 +837,12 @@ function combatActionFixture(string $requestToken): array
         'snapshot_lightning_damage' => null,
         'snapshot_cold_damage' => null,
         'snapshot_poison_damage' => null,
+        'snapshot_poison_status_damage' => null,
+        'snapshot_bleed_status_damage' => null,
+        'snapshot_burn_status_damage' => null,
+        'snapshot_freeze_status_damage' => null,
+        'snapshot_shock_status_damage' => null,
+
         'snapshot_accuracy' => 15.0,
         'snapshot_critical_chance' => 15.0,
         'snapshot_critical_damage' => 20,

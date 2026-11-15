@@ -114,6 +114,11 @@ final class Task5MutableEquipmentProvider implements CombatEquipmentProvider
             'snapshot_lightning_damage' => 0,
             'snapshot_cold_damage' => 0,
             'snapshot_poison_damage' => 0,
+            'snapshot_poison_status_damage' => 0,
+            'snapshot_bleed_status_damage' => 0,
+            'snapshot_burn_status_damage' => 0,
+            'snapshot_freeze_status_damage' => 0,
+            'snapshot_shock_status_damage' => 0,
             'snapshot_accuracy' => 15.0,
             'snapshot_critical_chance' => 15.0,
             'snapshot_critical_damage' => 20,
@@ -343,6 +348,11 @@ final class Task3MovementRepository
         return $this->activeForCharacter($characterId);
     }
 
+    public function statusEffectsForEncounter(int $encounterId): array
+    {
+        return [];
+    }
+
     public function actionsForEncounter(int $encounterId): array
     {
         return array_values(array_filter(
@@ -516,6 +526,11 @@ return [
             'snapshot_lightning_damage' => 0,
             'snapshot_cold_damage' => 0,
             'snapshot_poison_damage' => 0,
+            'snapshot_poison_status_damage' => 0,
+            'snapshot_bleed_status_damage' => 0,
+            'snapshot_burn_status_damage' => 0,
+            'snapshot_freeze_status_damage' => 0,
+            'snapshot_shock_status_damage' => 0,
             'snapshot_accuracy' => 15.0,
             'snapshot_critical_chance' => 15.0,
             'snapshot_critical_damage' => 20,

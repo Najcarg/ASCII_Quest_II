@@ -123,7 +123,7 @@ return [
     'Task28 native fire weapon gets no Strength and persisted elemental snapshots survive equipment fixture changes and replay' => function (): void {
         $wand = task25Mace();
         $wand['snapshot_damage_min'] = 10; $wand['snapshot_damage_max'] = 10; $wand['snapshot_damage_type'] = 'fire';
-        [$pdo, $clock, $reader, $provider, $random, $service] = task25Fixture([$wand, task28Ring(['fire_damage' => 5, 'lightning_damage' => 2, 'cold_damage' => 3, 'poison_damage' => 4])], [1, 100, 100], ['strength' => 99]);
+        [$pdo, $clock, $reader, $provider, $random, $service] = task25Fixture([$wand, task28Ring(['fire_damage' => 5, 'lightning_damage' => 2, 'cold_damage' => 3, 'poison_damage' => 4])], [1, 100, 100, 100], ['strength' => 99]);
         $token = equipmentToken(2800);
         $service->startPlayerAction(7, 42, 'prototype_weapon_attack', $token);
         $before = $pdo->actions[1];
@@ -135,7 +135,7 @@ return [
         $saved = [$pdo->characters, $pdo->actions, $pdo->events];
         $service->state(7, 42);
         $service->startPlayerAction(7, 42, 'prototype_weapon_attack', $token);
-        assertSameValue([$saved, 3], [[$pdo->characters, $pdo->actions, $pdo->events], $random->integerCalls], 'Replay no mutation or rerolls.');
+        assertSameValue([$saved, 4], [[$pdo->characters, $pdo->actions, $pdo->events], $random->integerCalls], 'Replay no mutation or rerolls.');
     },
     'Task28 legacy pending NULL bonuses stay NULL and use zero never current equipment or historical backfill' => function (): void {
         [$pdo, $clock, , , , $service] = task25Fixture([task28Ring(['fire_damage' => 999])], [1, 100, 100]);
@@ -150,13 +150,13 @@ return [
     },
     'Task28 multi-element weapon heals Life on Hit exactly once and excluded skill adds no bonuses or healing' => function (): void {
         foreach (['prototype_weapon_attack', 'prototype_flame_strike'] as $key) {
-            [$pdo, $clock, , , $random, $service] = task25Fixture([task28Ring(['fire_damage' => 5, 'lightning_damage' => 2, 'cold_damage' => 3, 'poison_damage' => 4, 'life_on_hit' => 5])], [1, 100, 100]);
+            [$pdo, $clock, , , $random, $service] = task25Fixture([task28Ring(['fire_damage' => 5, 'lightning_damage' => 2, 'cold_damage' => 3, 'poison_damage' => 4, 'life_on_hit' => 5])], [1, 100, 100, 100]);
             $service->startPlayerAction(7, 42, $key, equipmentToken(2802));
             $before = task28StoredBonus($pdo->actions[1]);
             assertSameValue($key === 'prototype_flame_strike' ? task28Bonus() : task28Bonus(['fire' => 5, 'lightning' => 2, 'cold' => 3, 'poison' => 4]), $before, 'All four explicit non-NULL values persisted.');
             task26Advance($clock, $key === 'prototype_flame_strike' ? 1.5 : 1);
             $service->state(7, 42);
-            assertSameValue($key === 'prototype_flame_strike' ? [24, 145, 0, 3] : [19, 150, 1, 3], [$pdo->actions[1]['resolved_damage'], $pdo->characters[42]['current_hp'], count(task26HealingEvents($pdo)), $random->integerCalls], 'One normal contact, no per-type heal trigger.');
+            assertSameValue($key === 'prototype_flame_strike' ? [24, 145, 0, 3] : [19, 150, 1, 4], [$pdo->actions[1]['resolved_damage'], $pdo->characters[42]['current_hp'], count(task26HealingEvents($pdo)), $random->integerCalls], 'One normal contact, no per-type heal trigger.');
             assertSameValue($before, task28StoredBonus($pdo->actions[1]), 'Resolution preserves all four snapshots.');
         }
     },
