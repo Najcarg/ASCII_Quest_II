@@ -77,7 +77,7 @@ return [
         assertFloatValue(1.1, $unarmed['rates']['cast_rate'], 'Cast Rate preserved.');
         assertSameValue(9, $unarmed['utility']['fire_damage'], 'Elemental damage preserved.');
         assertSameValue(200, $unarmed['utility']['poison_damage'], 'Status damage preserved.');
-        assertFloatValue(2.0, $unarmed['utility']['status_effect_chance'], 'Status chance preserved.');
+        assertFloatValue(90.0, $unarmed['utility']['status_effect_chance'], 'Status chance uses normalized scale and remains weapon-independent.');
         assertSameValue(14, $unarmed['combat']['toughness'], 'Toughness preserved.');
         assertFloatValue(8.0, $unarmed['resistances']['fire'], 'Resistance preserved.');
     },

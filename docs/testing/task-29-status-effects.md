@@ -4,6 +4,10 @@ Base: `2c2ed1d83761cf820a65ca337e5d8eaed1143e7d`
 Branch: `feature/combat-task-29-status-effects`
 Worktree: `/tmp/ascii-quest-task29`
 
+**Task30 update:** the current chance scale below supersedes Task29's original
+`divisor100` scale. Task29's implementation/validation evidence is historical;
+see [Task30 validation](task-30-status-chance-scale.md) for current totals.
+
 The explicit Task29 brief governs. `AGENTS.md` was read;
 `docs/tasks/current-task.md` is historical Task19, not this task's scope.
 No item seeds/catalogue, affix availability, production, database execution,
@@ -73,19 +77,24 @@ For EACH status separately, in poison/bleed/burn/freeze/shock order:
 ```text
 potency == 0: no roll
 chance = CharacterStats::statusEffectChance({selected: potency, other four: 0})
-       = min(90, potency / 100) percent       # existing divisor100, cap90
+       = min(90, potency / 0.20) percent      # Task30 divisor0.20, cap90
 success iff CombatRandomSource.integer(1,100) <= chance
 ```
 
 There is exactly one independent draw for each positive-potency eligible status,
 not one shared/highest-status draw or one draw per direct damage component. The
-fractional chance is not rounded up: potency2000 gives20% (20 succeeds,21 fails),
-potency9001 remains90% (90 succeeds,91 fails). With integer draws, potency1–99
-cannot proc; potency100 first permits roll1. **Later item/affix balancing must
-account for this existing probability formula**, rather than changing it here.
-Small potency behavior tests seed already-applied durable effects through the
-locked repository; they do not pretend that potency20 can proc on an integer
-roll under the existing formula.
+chance is not rounded up. Under Task30, potency1 gives5% (5 succeeds,6 fails),
+potency4 gives20% (20 succeeds,21 fails), potency5 gives25%, and potency18 or100
+gives the90% cap (90 succeeds,91 fails). Potency and damage/slow/amplification
+are unchanged; only chance was normalized. Small-potency behavior tests still
+seed already-applied durable effects through the locked repository to isolate
+potency/scheduling from chance; Task30 also tests real low-potency application.
+
+**Historical Task29 scale, superseded:** `min(90, potency / 100)` meant potency2000
+gave20%, potency9001 capped at90%, and potency1–99 could not proc on integer
+1..100 draws. Task29 deliberately preserved that then-existing authority. Task30
+changes only its config divisor; chance-specific fixtures now use potency4 for20%
+and100 for the cap. Other Task29 potency/damage/schedule fixtures are preserved.
 
 Rolls occur only after normal landed HIT/CRITICAL/BLOCK contact, including zero
 damage. No MISS, skill, enemy, cancelled/resolved/replayed-action status draws.
@@ -181,7 +190,7 @@ rolls, source ids and internal schedules are never exposed. Existing Battle Info
 renders server-owned events. No new HUD calculation, animation or client status
 simulation was needed.
 
-## Real RED → GREEN and final validation
+## Historical Task29 RED → GREEN and final validation
 
 Before runtime edits, the baseline `php tests/run.php` was **416 passed,0 failed**.
 Initial `php tests/run_task29.php` was **0 passed,20 failed**: absent migration,
@@ -192,7 +201,7 @@ inside tests). A second genuine RED exposed mitigation bookkeeping under Shock:
 got2). Keeping resistance and Block prevention independent of amplification fixed
 that failure without changing non-Shock behavior.
 
-Final results:
+Original Task29 final results (before Task30; not current suite totals):
 
 - `php tests/run_task29.php`: **43 passed,0 failed**.
 - `php tests/run.php`: **459 passed,0 failed** (416 previous +43 new).

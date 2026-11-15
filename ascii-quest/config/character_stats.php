@@ -67,6 +67,6 @@ return [
     ],
 
     'status_effect' => [
-        'divisor' => 100.0,
+        'divisor' => 0.20,
     ],
 ];

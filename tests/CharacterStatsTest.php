@@ -174,14 +174,14 @@ return [
 
     'Status effect chance uses highest status damage' => function (): void {
         $chance = CharacterStats::statusEffectChance([
-            'poison' => 50,
-            'bleed' => 300,
-            'burn' => 800,
+            'poison' => 1,
+            'bleed' => 3,
+            'burn' => 8,
             'freeze' => 0,
-            'shock' => 200,
+            'shock' => 2,
         ]);
 
-        assertFloatValue(8.0, $chance, 'Status chance from highest damage.');
+        assertFloatValue(40.0, $chance, 'Status chance from highest damage, not the sum.');
     },
 
     'Status effect chance is capped at 90 percent' => function (): void {

@@ -101,14 +101,14 @@ $tests = [
         }
     },
     'Task29 independent mixed status rolls and replay through fresh service' => function (): void {
-        [$pdo,$clock,,$provider,$random,$service] = task29Resolve(array_fill_keys(['poison','bleed','burn','freeze','shock'],2000),[1,100,100,20,21,20,21,20]);
+        [$pdo,$clock,,$provider,$random,$service] = task29Resolve(array_fill_keys(['poison','bleed','burn','freeze','shock'],4),[1,100,100,20,21,20,21,20]);
         assertSameValue(['poison','burn','shock'],array_column(task29Active($pdo),'status_key'),'Independent chance, not highest/shared draw.');
         $saved = [$pdo->statuses,$pdo->actions,$pdo->events,task29Encounters($pdo),$pdo->characters];
         $fresh = CombatBootstrap::serviceForRepository(new CombatRepository($pdo),$clock,$provider,$random);
         $state = $fresh->state(7,42);
         $fresh->startPlayerAction(7,42,'prototype_weapon_attack',equipmentToken(2900));
         assertSameValue([$saved,8],[[$pdo->statuses,$pdo->actions,$pdo->events,task29Encounters($pdo),$pdo->characters],$random->integerCalls],'Fresh service / second tab replay identical.');
-        assertSameValue([['key'=>'poison','potency'=>2000,'remaining_ms'=>4000],['key'=>'burn','potency'=>2000,'remaining_ms'=>4000],['key'=>'shock','potency'=>2000,'remaining_ms'=>4000]],$state['enemy']['status_effects'],'Allowlist only.');
+        assertSameValue([['key'=>'poison','potency'=>4,'remaining_ms'=>4000],['key'=>'burn','potency'=>4,'remaining_ms'=>4000],['key'=>'shock','potency'=>4,'remaining_ms'=>4000]],$state['enemy']['status_effects'],'Allowlist only.');
     },
     'Task29 landed zero damage applies unscaled status after Life on Hit' => function (): void {
         [$pdo,$clock,$reader,,,$service] = task29Fixture(['bleed'=>2000], [1,20,1,20], ['strength'=>0]);
@@ -171,9 +171,9 @@ $tests = [
 ];
 foreach (['poison','bleed','burn','freeze','shock'] as $key) {
     $tests["Task29 {$key} zero skips chance and inclusive boundary independent roll"] = function () use ($key): void {
-        foreach ([[0,[],false,3],[2000,[20],true,4],[2000,[21],false,4],[9001,[90],true,4],[9001,[91],false,4],[1,[1],false,4]] as [$potency,$rolls,$active,$calls]) {
+        foreach ([[0,[],false,3],[4,[20],true,4],[4,[21],false,4],[100,[90],true,4],[100,[91],false,4],[1,[5],true,4],[1,[6],false,4]] as [$potency,$rolls,$active,$calls]) {
             [$pdo,,,,$random] = task29Resolve([$key=>$potency],array_merge([1,100,100],$rolls));
-            assertSameValue([$active,$calls],[count(task29Active($pdo))===1,$random->integerCalls],'Own chance = min(90,p/100), integer draw <= fractional chance.');
+            assertSameValue([$active,$calls],[count(task29Active($pdo))===1,$random->integerCalls],'Own chance = min(90,p/0.20), inclusive integer draw; potency is unchanged.');
         }
     };
     $tests["Task29 {$key} HIT CRITICAL BLOCK contact once MISS and skills never roll"] = function () use ($key): void {

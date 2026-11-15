@@ -12,8 +12,8 @@ function task29Service(FakeCombatPdo $pdo, Task4MutableCombatClock $clock, Comba
     return new CombatService($repo, $definitions, $clock, $sync, $provider);
 }
 
-// Test already-applied durable effects at small potencies, which cannot proc on
-// integer 1..100 draws under the existing p/100 chance formula. No SQL is run.
+// Seed already-applied durable effects to isolate potency/scheduling from chance.
+// Task30 makes small potencies proc naturally; these behavior fixtures stay unchanged. No SQL is run.
 function task29Seed(FakeCombatPdo $pdo, string $key, int $potency, int $now = 3000, int $source = 70): void
 {
     $pdo->actions[$source] = ['id'=>$source,'encounter_id'=>91,'state'=>'resolved','actor'=>'player','action_kind'=>'weapon',
