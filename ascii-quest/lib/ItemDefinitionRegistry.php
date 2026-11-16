@@ -9,6 +9,9 @@ final class ItemDefinitionRegistry
         'strength', 'dexterity', 'vitality', 'energy', 'fate', 'toughness',
         'physical_resistance', 'fire_resistance', 'lightning_resistance',
         'poison_resistance', 'cold_resistance', 'attack_rate_bp', 'cast_rate_bp',
+        'accuracy', 'critical_chance', 'critical_damage', 'dodging', 'life_on_hit',
+        'block_rate_bp', 'fire_damage', 'lightning_damage', 'cold_damage',
+        'poison_damage', 'bleed_damage', 'burn_damage', 'freeze_damage', 'shock_damage',
     ];
 
     public function __construct(
