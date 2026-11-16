@@ -24,6 +24,20 @@ function task32Expected(): array
     ];
 }
 
+/** Real equipment service writes completed receipts; retirement is a later fixture event. */
+function task32RetiredEquipmentHistory(): array
+{
+    [$pdo] = task32Granted();
+    $item = task32Generated($pdo, 'accuracy');
+    $store = new FakeEquipmentStore(equipmentCharacter(), [$item]);
+    $service = equipmentService($store);
+    $equip = $service->equip(7, 42, $item['id'], 'weapon', equipmentToken(3203));
+    $unequip = $service->unequip(7, 42, $item['id'], equipmentToken(3204));
+    $store->items[$item['id']]['retired_at'] = '2026-11-16 12:00:00.000000';
+    $store->failWrite = true; // Any attempt to reapply equipment mutations must fail the test.
+    return [$store, $service, $item['id'], $equip, $unequip];
+}
+
 $tests = [
     'Task32 maintenance service and repository exist without generator or web bootstrap' => function (): void {
         foreach (['TestEquipmentGrantService', 'TestEquipmentGrantRepository'] as $class) {
@@ -226,16 +240,60 @@ $tests = [
         $r = $service->execute(7, 42, true);
         assertSameValue([14, 0], [$r['retired_exists'], $r['created']], 'Genuine immutable identities need no live catalogue to remain retired.');
     },
-    'Task32 old successful equip receipt cannot bypass authoritative retirement rejection' => function (): void {
-        [$pdo] = task32Granted(); $item = task32Generated($pdo, 'accuracy');
-        $store = new FakeEquipmentStore(equipmentCharacter(), [$item]); $svc = equipmentService($store);
-        $token = equipmentToken(3203); $receipt = $svc->equip(7, 42, $item['id'], 'weapon', $token);
-        $svc->unequip(7, 42, $item['id'], equipmentToken(3204));
-        $store->items[$item['id']]['retired_at'] = '2026-11-16 12:00:00.000000';
-        $before = serialize([$store->items, $store->equipment, $store->requests]);
-        task32Reject(fn () => $svc->equip(7, 42, $item['id'], 'weapon', $token), 'Item retired.');
-        assertSameValue($before, serialize([$store->items, $store->equipment, $store->requests]), 'Receipt/payload remain unchanged; no replay re-equip.');
-        assertSameValue($receipt['item_id'], $store->requests['42:' . $token]['item_id'], 'Historical receipt retains original identity.');
+    'Task32 completed equip replay after retirement returns original success without reequipping' => function (): void {
+        [$store, $service, $id, $original] = task32RetiredEquipmentHistory();
+        assertSameValue('equipped', $original['result'], 'Actual successful equip, not a fabricated receipt.');
+        $before = serialize($store);
+        $replay = $service->equip(7, 42, $id, 'weapon', equipmentToken(3203));
+        assertSameValue($original, $replay, 'Persisted semantic result survives subsequent unequip and retirement.');
+        assertSameValue($before, serialize($store), 'No new receipt, resource/equipment write, or retirement reversal.');
+        assertSameValue([], $store->equipment, 'Successful replay is not a new equip.');
+    },
+    'Task32 completed unequip replay after retirement returns original success without mutations' => function (): void {
+        [$store, $service, $id, , $original] = task32RetiredEquipmentHistory();
+        assertSameValue('unequipped', $original['result'], 'Actual successful unequip, not a fabricated receipt.');
+        $before = serialize($store);
+        assertSameValue($original, $service->unequip(7, 42, $id, equipmentToken(3204)), 'Original persisted unequip result.');
+        assertSameValue($before, serialize($store), 'History, timestamps, items, resources and receipts byte-for-byte unchanged.');
+    },
+    'Task32 retired completed token collisions take precedence over retirement rejection' => function (): void {
+        [$store, $service, $id] = task32RetiredEquipmentHistory();
+        $before = serialize($store);
+        foreach ([
+            fn () => $service->equip(7, 42, $id, 'ring', equipmentToken(3203)),
+            fn () => $service->equip(7, 42, $id + 1, 'weapon', equipmentToken(3203)),
+            fn () => $service->unequip(7, 42, $id + 1, equipmentToken(3204)),
+            fn () => $service->unequip(7, 42, $id, equipmentToken(3203)),
+            fn () => $service->equip(7, 42, $id, 'weapon', equipmentToken(3204)),
+        ] as $collision) {
+            task32Reject($collision, 'Item request token collision.');
+            assertSameValue($before, serialize($store), 'Different slot/item fingerprint or command cannot replay or mutate history.');
+        }
+    },
+    'Task32 completed retired replays retain ownership authority but precede mutable state checks' => function (): void {
+        foreach (['dead', 'active', 'victory_loot'] as $state) {
+            [$store, $service, $id, $equip, $unequip] = task32RetiredEquipmentHistory();
+            if ($state === 'dead') { $store->characters[42]['life_state'] = 'dead'; }
+            else { $store->encounterStatus = $state; }
+            $before = serialize($store);
+            assertSameValue($equip, $service->equip(7, 42, $id, 'weapon', equipmentToken(3203)), 'Historical equip result, not a new mutation.');
+            assertSameValue($unequip, $service->unequip(7, 42, $id, equipmentToken(3204)), 'Historical unequip result, not a new mutation.');
+            assertSameValue($before, serialize($store), 'No mutable-state effect on completed replay.');
+            task32Reject(fn () => $service->equip(8, 42, $id, 'weapon', equipmentToken(3203)), 'Champion unavailable.');
+            task32Reject(fn () => $service->unequip(8, 42, $id, equipmentToken(3204)), 'Champion unavailable.');
+            assertSameValue($before, serialize($store), 'Foreign owner cannot access durable result.');
+            $error = $state === 'dead' ? 'Equipment is unavailable.' : 'Equipment is unavailable during combat.';
+            task32Reject(fn () => $service->equip(7, 42, $id, 'weapon', equipmentToken(3210)), $error);
+            task32Reject(fn () => $service->unequip(7, 42, $id, equipmentToken(3211)), $error);
+            assertSameValue($before, serialize($store), 'New command validates mutable state before the retired item.');
+        }
+    },
+    'Task32 retired fresh equip and unequip reject despite previous successful history' => function (): void {
+        [$store, $service, $id] = task32RetiredEquipmentHistory();
+        $before = serialize($store);
+        task32Reject(fn () => $service->equip(7, 42, $id, 'weapon', equipmentToken(3210)), 'Item retired.');
+        task32Reject(fn () => $service->unequip(7, 42, $id, equipmentToken(3211)), 'Item retired.');
+        assertSameValue($before, serialize($store), 'New tokens cannot equip, unequip, recreate receipts, or unretire the item.');
     },
     'Task32 all ordinary selection SQL paths filter retirement while historical ID lookup retains it' => function (): void {
         $item = file_get_contents(__DIR__ . '/../ascii-quest/lib/ItemRepository.php');

@@ -24,8 +24,7 @@ final class EquipmentService
         $this->repository->beginMutation();
         try {
             [$character, $encounter] = $this->lockAuthority($userId, $characterId);
-            $item = $this->repository->lockOwnedItem($characterId, $itemId);
-            if (($item['retired_at'] ?? null) !== null) { throw new DomainException('Item retired.'); }
+            // Completed receipts retain their semantic result after later retirement.
             $replay = $this->replay($characterId, $requestToken, 'equip', $fingerprint);
             if ($replay !== null) {
                 $this->repository->commitMutation();
@@ -33,9 +32,11 @@ final class EquipmentService
             }
             $this->assertMutable($character, $encounter);
 
+            $item = $this->repository->lockOwnedItem($characterId, $itemId);
             if ($item === null) {
                 throw new OutOfBoundsException('Item unavailable.');
             }
+            if (($item['retired_at'] ?? null) !== null) { throw new DomainException('Item retired.'); }
             if (($item['snapshot_equipment_slot'] ?? null) !== $slot) {
                 throw new DomainException('Item is incompatible with that equipment slot.');
             }
@@ -72,17 +73,18 @@ final class EquipmentService
         $this->repository->beginMutation();
         try {
             [$character, $encounter] = $this->lockAuthority($userId, $characterId);
-            $item = $this->repository->lockOwnedItem($characterId, $itemId);
-            if (($item['retired_at'] ?? null) !== null) { throw new DomainException('Item retired.'); }
+            // Collision validation and completed replay precede new-mutation checks.
             $replay = $this->replay($characterId, $requestToken, 'unequip', $fingerprint);
             if ($replay !== null) {
                 $this->repository->commitMutation();
                 return $replay;
             }
             $this->assertMutable($character, $encounter);
+            $item = $this->repository->lockOwnedItem($characterId, $itemId);
             if ($item === null) {
                 throw new OutOfBoundsException('Item unavailable.');
             }
+            if (($item['retired_at'] ?? null) !== null) { throw new DomainException('Item retired.'); }
             $equipped = $this->repository->lockEquippedItems($characterId);
             $sourceSlot = null;
             foreach ($equipped as $row) {

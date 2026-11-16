@@ -169,10 +169,14 @@ already_clean, makes no UPDATE, and never resets the original timestamp.
 Active means retired_at IS NULL. Normal inventory count/page/list and current
 EquipmentRepository/ItemRepository equipment reads exclude retired rows, as do
 starter-bootstrap usable-weapon selection reads. Owned ID/affix reads intentionally
-retain historical snapshots. Equip/unequip authority rejects retirement before
-receipt replay; raw equip/unequip/starter-equip methods and starter service also
-reject it. Both claim UPDATE paths require active rows; explicit claim service
-also rejects a retired row. No normal UI/archive is added. Cleanup cannot retire
+retain historical snapshots. Equip/unequip authority first validates owned
+Champion/account/encounter locks, then durable receipt command/fingerprint and
+completion. A matching completed token returns its original semantic result even
+after retirement: replay is not a new mutation. Collisions remain authoritative.
+Only a new command checks mutable Champion state, loads its owned item, rejects
+retirement, and continues ordinary validation/mutation. Raw equip/unequip/
+starter-equip methods and starter service still reject retirement. Both claim
+UPDATE paths require active rows; explicit claim service also rejects a retired row. No normal UI/archive is added. Cleanup cannot retire
 an equipped item, so valid current equipment cannot become retired in place.
 
 Grant after retirement reports **retired_exists** per matching key in preview and
@@ -192,7 +196,8 @@ before runtime implementation: focused **32 passed/8 failed**, exit1. Real failu
 included missing retirement counts/column, attempted DELETE, history cleanup,
 retired-inventory/authority behavior and retirement rollback. Implementing logical
 retirement/filtering/guards produced **40 passed/0 failed**. Further edge cases,
-exact stat/behavior and historical-identity coverage yield **51 new tests**.
+exact stat/behavior and historical-identity coverage initially yielded51 tests;
+the review correction below brings current Task32 coverage to **55 tests**.
 A read-only-verifier test initially misclassified the SQL string function REPLACE
 as a write; the assertion was corrected to distinguish REPLACE INTO. A selection
 SQL test initially matched interface declarations; corrected to match method bodies.
@@ -208,20 +213,62 @@ fields are asserted independently. Actual combat tests prove inclusive35/not36
 proc, poison direct7 plus tick7, bleed/burn tick7, Freeze7 duration, subsequent
 Shock7 amplification, and Vampiric7 healing. History fixtures prove action/receipt
 references and payloads are retained, retired IDs remain readable, all affixes
-remain, inventory hides retirement, authority/replay rejects it, and mixed/repeated
-runs do not resurrect or reset anything. Fault injection proves all-or-nothing
+remain, inventory hides retirement, new mutation authority rejects it, completed
+valid receipt replay preserves its original result, and mixed/repeated runs do not
+resurrect or reset anything. Fault injection proves all-or-nothing
 grant and retirement; state/combat/ownership and strict CLI cases are covered.
 
 Connection-free PDO doubles simulate row storage and transaction rollback. They
 are not proof of MariaDB SQL execution, real concurrent lock scheduling, actual
 FK execution, or browser gameplay. None of those are claimed.
 
-Final checks (all exit0):
+### Review correction — completed receipts survive retirement
+
+Previous feature SHA: `efeea121bfbd0ec6c427a7c30478c2e205f7af1f`. Review identified
+that checking retirement before receipt replay wrongly invalidated successful
+historical commands and masked token collisions. The previous test demanding
+rejection of completed equip replay was incorrect and has been replaced.
+
+Regression tests first ran against that exact runtime: **51 passed,4 failed**,
+exit1. Both equip/unequip completed replays raised Item retired.; changed intent
+was incorrectly reported as retirement rather than token collision; historical
+replay under later dead/combat state failed. The existing fresh-token retirement
+guards continued passing. Moving the item load/retirement check after receipt
+handling and mutable-state validation produced **55 passed,0 failed**, exit0.
+
+Tests create actual successful equip and unequip requests through EquipmentService
+with the existing connection-free store, then apply a later retirement fixture.
+Exact token/fingerprint replay must return the original stored success. Full
+serialized store equality verifies no equipment/resource/receipt/snapshot or
+retirement-timestamp changes, and injected write failure guards against replayed
+mutations. Different slot/item intent or command still rejects as token collision;
+fresh equip/unequip tokens still reject Item retired. Matching completed results
+remain replayable in later dead/active/victory_loot states, while wrong ownership
+still rejects and fresh commands check mutable state before retirement.
+
+Other Task32 retirement guards were inspected without broad changes:
+- InventoryService claim already validates/replays its durable receipt before
+  mutable-state/drop retirement checks. ItemRepository and CombatRepository claim
+  UPDATE guards affect actual claims, not that completed-receipt branch.
+- CombatService closed-victory replay returns before ItemDropService auto-claim;
+  auto-claim selects only unclaimed drops. Maintenance grants have no drop rows,
+  and cleanup explicitly rejects combat_item_drops references.
+- Raw EquipmentRepository mutation methods have no receipt replay; EquipmentService
+  now returns before calling them for a completed token. StarterEquipmentService
+  has no durable request-receipt replay, and Task32 cannot retire starter items.
+- Maintenance grant/cleanup reruns use provenance identity rather than command
+  receipts; retired_exists/already_clean behavior remains unchanged.
+
+This inspection and regression execution are connection-free; no claim is made
+about live SQL/concurrency/browser behavior. No migration, FK or history changes
+were made for this review fix. Migration011 remains NOT APPLIED anywhere.
+
+Final checks (all exit0; review-fix required checks rerun):
 
 | Command | Result |
 | --- | --- |
-| `php tests/run.php` | 784 passed,0 failed (all733 existing tests, Tasks18–31 included) |
-| `php tests/run_task32.php` | 51 passed,0 failed |
+| `php tests/run.php` | 788 passed,0 failed (all733 existing tests, Tasks18–31 included) |
+| `php tests/run_task32.php` | 55 passed,0 failed |
 | `php tests/run_task31.php` | 122 passed,0 failed |
 | `php tests/run_task30.php` | 152 passed,0 failed |
 | `php tests/run_task29.php` | 43 passed,0 failed |
