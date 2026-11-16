@@ -359,7 +359,7 @@ $tests = [
         }
         $cli = file_get_contents(__DIR__ . '/../scripts/grant_test_equipment.php');
         assertSameValue(true, strpos($cli, "PHP_SAPI !== 'cli'") < strpos($cli, 'require_once'), 'Web guard before any loading.');
-        assertSameValue(true, strpos($cli, 'TestEquipmentGrantArguments::parse') < strpos($cli, '/../ascii-quest/db.php'), 'Invalid arguments before DB bootstrap.');
+        assertSameValue(true, strpos($cli, 'TestEquipmentGrantArguments::parse') < strpos($cli, 'DatabaseBootstrap::connect()'), 'Invalid arguments before DB bootstrap.');
         foreach (glob(__DIR__ . '/../ascii-quest/*.php') as $web) {
             assertSameValue(false, str_contains(file_get_contents($web), 'TestEquipmentGrant'), 'No maintenance browser endpoint.');
         }

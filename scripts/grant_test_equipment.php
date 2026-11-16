@@ -16,12 +16,11 @@ try {
 }
 
 try {
-    $bootstrap = __DIR__ . '/../ascii-quest/db.php';
-    if (!is_file($bootstrap)) { throw new RuntimeException('Maintenance database bootstrap unavailable.'); }
-    require_once $bootstrap;
+    require_once __DIR__ . '/lib/DatabaseBootstrap.php';
+    $pdo = DatabaseBootstrap::connect();
     require_once __DIR__ . '/lib/TestEquipmentGrantRepository.php';
     require_once __DIR__ . '/lib/TestEquipmentGrantService.php';
-    $service = new TestEquipmentGrantService(new TestEquipmentGrantRepository(getDb()));
+    $service = new TestEquipmentGrantService(new TestEquipmentGrantRepository($pdo));
     $result = $service->execute($options['user_id'], $options['character_id'], $options['apply'], $options['cleanup']);
     fwrite(STDOUT, "TEST equipment maintenance (inventory only)\n" . json_encode($result, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT) . "\n");
     exit($result['result'] === 'failed' ? 1 : 0);
