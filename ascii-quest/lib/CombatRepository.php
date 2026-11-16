@@ -817,7 +817,7 @@ final class CombatRepository
     public function claimLockedItemDrop(int $dropId, int $itemId, int $characterId, string $claimedAt): bool
     {
         $this->requireChampionLock($characterId);
-        $item = $this->pdo->prepare('UPDATE character_items SET character_id = :character_id, claimed_at = :claimed_at WHERE id = :item_id AND character_id IS NULL AND claimed_at IS NULL');
+        $item = $this->pdo->prepare('UPDATE character_items SET character_id = :character_id, claimed_at = :claimed_at WHERE id = :item_id AND character_id IS NULL AND claimed_at IS NULL AND retired_at IS NULL');
         $item->execute(['character_id' => $characterId, 'claimed_at' => $claimedAt, 'item_id' => $itemId]);
         if ($item->rowCount() !== 1) {
             return false;

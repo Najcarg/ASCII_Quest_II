@@ -20,6 +20,7 @@ final class StarterEquipmentService
         }
         $existing = $this->repository->starterItem($characterId);
         if ($existing !== null) {
+            if (($existing['retired_at'] ?? null) !== null) { throw new DomainException('Item retired.'); }
             $equipped = $this->repository->equippedUsableWeapon($characterId);
             if ($equipped === null) {
                 $this->repository->equipStarterWeapon($characterId, (int) $existing['id']);

@@ -70,6 +70,7 @@ final class EquipmentRepository
         }
     }
 
+    /** ID lookup also retains retired snapshots for audit; mutation callers must reject retirement. */
     public function lockOwnedItem(int $characterId, int $itemId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM character_items WHERE id = :item_id AND character_id = :character_id LIMIT 1 FOR UPDATE');
@@ -99,7 +100,7 @@ final class EquipmentRepository
     private function equippedItemsQuery(int $characterId, bool $lock): array
     {
         $suffix = $lock ? ' FOR UPDATE' : '';
-        $stmt = $this->pdo->prepare('SELECT ci.*, ce.equipment_slot FROM character_equipment ce INNER JOIN character_items ci ON ci.id = ce.item_id AND ci.character_id = ce.character_id WHERE ce.character_id = :character_id ORDER BY ce.equipment_slot' . $suffix);
+        $stmt = $this->pdo->prepare('SELECT ci.*, ce.equipment_slot FROM character_equipment ce INNER JOIN character_items ci ON ci.id = ce.item_id AND ci.character_id = ce.character_id WHERE ce.character_id = :character_id AND ci.retired_at IS NULL ORDER BY ce.equipment_slot' . $suffix);
         $stmt->execute(['character_id' => $characterId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (!is_array($rows) || $rows === []) {
@@ -116,6 +117,7 @@ final class EquipmentRepository
 
     public function equipItem(int $characterId, int $itemId, string $slot): ?int
     {
+        $this->assertActiveOwnedItem($characterId, $itemId);
         $stmt = $this->pdo->prepare('SELECT item_id FROM character_equipment WHERE character_id = :character_id AND equipment_slot = :slot LIMIT 1 FOR UPDATE');
         $stmt->execute(['character_id' => $characterId, 'slot' => $slot]);
         $current = $stmt->fetchColumn();
@@ -137,6 +139,7 @@ final class EquipmentRepository
 
     public function unequipItem(int $characterId, int $itemId): ?string
     {
+        $this->assertActiveOwnedItem($characterId, $itemId);
         $stmt = $this->pdo->prepare('SELECT equipment_slot FROM character_equipment WHERE character_id = :character_id AND item_id = :item_id LIMIT 1 FOR UPDATE');
         $stmt->execute(['character_id' => $characterId, 'item_id' => $itemId]);
         $slot = $stmt->fetchColumn();
@@ -190,7 +193,7 @@ final class EquipmentRepository
 
     public function equippedUsableWeapon(int $characterId): ?array
     {
-        $stmt = $this->pdo->prepare("SELECT ci.* FROM character_equipment ce INNER JOIN character_items ci ON ci.id = ce.item_id AND ci.character_id = ce.character_id WHERE ce.character_id = :character_id AND ce.equipment_slot = 'weapon' AND ci.snapshot_equipment_slot = 'weapon' LIMIT 1 FOR UPDATE");
+        $stmt = $this->pdo->prepare("SELECT ci.* FROM character_equipment ce INNER JOIN character_items ci ON ci.id = ce.item_id AND ci.character_id = ce.character_id WHERE ce.character_id = :character_id AND ce.equipment_slot = 'weapon' AND ci.snapshot_equipment_slot = 'weapon' AND ci.retired_at IS NULL LIMIT 1 FOR UPDATE");
         $stmt->execute(['character_id' => $characterId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return is_array($row) ? $row : null;
@@ -198,7 +201,7 @@ final class EquipmentRepository
 
     public function ownedUsableWeapon(int $characterId): ?array
     {
-        $stmt = $this->pdo->prepare("SELECT * FROM character_items WHERE character_id = :character_id AND snapshot_equipment_slot = 'weapon' ORDER BY id LIMIT 1 FOR UPDATE");
+        $stmt = $this->pdo->prepare("SELECT * FROM character_items WHERE character_id = :character_id AND snapshot_equipment_slot = 'weapon' AND retired_at IS NULL ORDER BY id LIMIT 1 FOR UPDATE");
         $stmt->execute(['character_id' => $characterId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return is_array($row) ? $row : null;
@@ -231,8 +234,16 @@ final class EquipmentRepository
 
     public function equipStarterWeapon(int $characterId, int $itemId): void
     {
+        $this->assertActiveOwnedItem($characterId, $itemId);
         $stmt = $this->pdo->prepare("INSERT INTO character_equipment (character_id, equipment_slot, item_id) VALUES (:character_id, 'weapon', :item_id)");
         $stmt->execute(['character_id' => $characterId, 'item_id' => $itemId]);
+    }
+
+    private function assertActiveOwnedItem(int $characterId, int $itemId): void
+    {
+        $item = $this->lockOwnedItem($characterId, $itemId);
+        if ($item === null) { throw new OutOfBoundsException('Item unavailable.'); }
+        if (($item['retired_at'] ?? null) !== null) { throw new DomainException('Item retired.'); }
     }
 
     public function bootstrapCandidates(): array

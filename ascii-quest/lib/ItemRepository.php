@@ -51,7 +51,8 @@ final class ItemRepository implements ItemInventoryReader
              LEFT JOIN character_equipment AS ce ON ce.item_id = ci.id
              WHERE c.user_id = :user_id
                AND c.id = :character_id
-               AND ce.item_id IS NULL',
+               AND ce.item_id IS NULL
+               AND ci.retired_at IS NULL',
         );
         $statement->execute([
             'user_id' => $userId,
@@ -97,6 +98,7 @@ final class ItemRepository implements ItemInventoryReader
              WHERE c.user_id = :user_id
                AND c.id = :character_id
                AND ce.item_id IS NULL
+               AND ci.retired_at IS NULL
              ORDER BY ci.claimed_at DESC, ci.id DESC
              LIMIT :item_limit OFFSET :item_offset',
         );
@@ -146,7 +148,7 @@ final class ItemRepository implements ItemInventoryReader
              INNER JOIN character_items ci
                 ON ci.id = ce.item_id AND ci.character_id = ce.character_id
              INNER JOIN characters c ON c.id = ce.character_id
-             WHERE c.user_id = :user_id AND c.id = :character_id
+             WHERE c.user_id = :user_id AND c.id = :character_id AND ci.retired_at IS NULL
              ORDER BY ce.equipment_slot',
         );
         $statement->execute(['user_id' => $userId, 'character_id' => $characterId]);
@@ -194,7 +196,7 @@ final class ItemRepository implements ItemInventoryReader
     {
         $stmt = $this->pdo->prepare('SELECT d.id AS drop_id, d.outcome AS claim_state, d.item_id,
             ce.id AS encounter_id, ce.character_id AS encounter_character_id, ce.status AS encounter_status,
-            ci.character_id AS item_character_id, ci.id, ci.item_level, ci.rarity, ci.display_name,
+            ci.character_id AS item_character_id, ci.retired_at, ci.id, ci.item_level, ci.rarity, ci.display_name,
             ci.snapshot_category, ci.snapshot_subtype, ci.snapshot_equipment_slot,
             ci.snapshot_damage_type, ci.snapshot_damage_min, ci.snapshot_damage_max,
             ci.snapshot_toughness, ci.snapshot_attack_rate_modifier_bp,
@@ -221,7 +223,7 @@ final class ItemRepository implements ItemInventoryReader
 
     public function claimDrop(int $dropId, int $itemId, int $characterId, string $claimedAt): bool
     {
-        $item = $this->pdo->prepare('UPDATE character_items SET character_id = :character_id, claimed_at = :claimed_at WHERE id = :item_id AND character_id IS NULL AND claimed_at IS NULL');
+        $item = $this->pdo->prepare('UPDATE character_items SET character_id = :character_id, claimed_at = :claimed_at WHERE id = :item_id AND character_id IS NULL AND claimed_at IS NULL AND retired_at IS NULL');
         $item->execute(['character_id' => $characterId, 'claimed_at' => $claimedAt, 'item_id' => $itemId]);
         if ($item->rowCount() !== 1) {
             return false;

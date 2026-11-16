@@ -24,6 +24,8 @@ final class EquipmentService
         $this->repository->beginMutation();
         try {
             [$character, $encounter] = $this->lockAuthority($userId, $characterId);
+            $item = $this->repository->lockOwnedItem($characterId, $itemId);
+            if (($item['retired_at'] ?? null) !== null) { throw new DomainException('Item retired.'); }
             $replay = $this->replay($characterId, $requestToken, 'equip', $fingerprint);
             if ($replay !== null) {
                 $this->repository->commitMutation();
@@ -31,7 +33,6 @@ final class EquipmentService
             }
             $this->assertMutable($character, $encounter);
 
-            $item = $this->repository->lockOwnedItem($characterId, $itemId);
             if ($item === null) {
                 throw new OutOfBoundsException('Item unavailable.');
             }
@@ -71,13 +72,15 @@ final class EquipmentService
         $this->repository->beginMutation();
         try {
             [$character, $encounter] = $this->lockAuthority($userId, $characterId);
+            $item = $this->repository->lockOwnedItem($characterId, $itemId);
+            if (($item['retired_at'] ?? null) !== null) { throw new DomainException('Item retired.'); }
             $replay = $this->replay($characterId, $requestToken, 'unequip', $fingerprint);
             if ($replay !== null) {
                 $this->repository->commitMutation();
                 return $replay;
             }
             $this->assertMutable($character, $encounter);
-            if ($this->repository->lockOwnedItem($characterId, $itemId) === null) {
+            if ($item === null) {
                 throw new OutOfBoundsException('Item unavailable.');
             }
             $equipped = $this->repository->lockEquippedItems($characterId);

@@ -129,6 +129,7 @@ final class InventoryService
                 || ($drop['claim_state'] ?? null) === 'none') {
                 throw new DomainException('Item drop unavailable.');
             }
+            if (($drop['retired_at'] ?? null) !== null) { throw new DomainException('Item retired.'); }
             $itemId = (int) ($drop['item_id'] ?? 0);
             $this->repository->createClaimRequest($characterId, $requestToken, $fingerprint, $itemId);
             $now = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format('Y-m-d H:i:s.u');
