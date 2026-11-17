@@ -1485,6 +1485,15 @@ a:hover {
     min-width: 0;
 }
 
+/* Stretch only the three-column desktop frames, not the map or their content.
+   The lower row's own grid stretches Info/Details to the shared bottom edge. */
+@media (min-width: 1101px) {
+    .hud-right-panel,
+    .hud-lower-row {
+        align-self: stretch;
+    }
+}
+
 .hud-bottom-panel {
     min-width: 0;
     min-height: 190px;

@@ -2,6 +2,8 @@
 
 // Dependency-free local Chromium/CDP check. No application server, session or DB.
 // Usage: node tests/Task33BrowserTest.js OUTPUT_DIR [--before] [--root=/path/to/base-checkout]
+// Record exact-base geometry with --record-baseline --root=BASE, then run normally
+// in the same OUTPUT_DIR to compare map/Items and unchanged <=1100px layouts.
 const { spawn, execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -9,6 +11,7 @@ const path = require("node:path");
 const assert = require("node:assert/strict");
 const output = path.resolve(process.argv[2] || path.join(os.tmpdir(), "ascii-quest-task33"));
 const before = process.argv.includes("--before");
+const recordBaseline = process.argv.includes("--record-baseline");
 const rootOption = process.argv.find((argument) => argument.startsWith("--root="));
 const root = rootOption ? path.resolve(rootOption.slice(7)) : path.resolve(__dirname, "..");
 fs.mkdirSync(output, { recursive: true });
@@ -71,7 +74,7 @@ async function screenshot(name) {
         await new Promise((resolve) => setTimeout(resolve, 50));
     }
     await evaluate("document.querySelector('[data-inventory-slot]').click(); document.fonts.ready.then(() => true)");
-    await screenshot(before ? "before-desktop.png" : "after-desktop.png");
+    await screenshot(before || recordBaseline ? "before-desktop.png" : "after-desktop.png");
     if (before) {
         const metrics = await evaluate(`(() => { const r=document.querySelector('.hud-bottom-panel').getBoundingClientRect(); return {infoWidth:r.width,infoHeight:r.height}; })()`);
         fs.writeFileSync(path.join(output, 'before-results.json'), JSON.stringify(metrics, null, 2));
@@ -79,9 +82,32 @@ async function screenshot(name) {
         return;
     }
     const results = [];
+    const geometry = {};
+    const baselinePath = path.join(output, 'baseline-geometry.json');
+    const baseline = !recordBaseline && fs.existsSync(baselinePath)
+        ? JSON.parse(fs.readFileSync(baselinePath, 'utf8')) : null;
+    function checkGeometry(name, layout, desktop) {
+        geometry[name] = layout;
+        if (baseline) {
+            const previous = baseline[name];
+            assert.ok(previous, `baseline exists: ${name}`);
+            // Desktop frame heights intentionally change; map and Items must not.
+            for (const key of desktop ? ['left', 'map', 'mapGrid', 'mapCell', 'items', 'contentOffsets'] : Object.keys(layout)) {
+                assert.deepEqual(layout[key], previous[key], `${name}: unchanged ${key} against exact base`);
+            }
+            if (desktop) {
+                for (const key of ['row', 'info', 'details']) {
+                    for (const edge of ['x', 'y', 'width', 'right']) {
+                        assert.equal(layout[key][edge], previous[key][edge], `${name}: unchanged ${key}.${edge}`);
+                    }
+                }
+            }
+        }
+    }
     const measureLayout = () => evaluate(`(() => {
         const rect = (selector) => { const r = document.querySelector(selector).getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}; };
-        return { row:rect('.hud-lower-row'), info:rect('.hud-bottom-panel'), details:rect('.item-details-panel'), map:rect('.map-area'), items:rect('.hud-right-panel'), gap:parseFloat(getComputedStyle(document.querySelector('.game-layout')).rowGap), overflow:document.documentElement.scrollWidth > innerWidth };
+        const offset = (panel, child) => document.querySelector(child).getBoundingClientRect().y - document.querySelector(panel).getBoundingClientRect().y;
+        return { left:rect('.hud-left-panel'), row:rect('.hud-lower-row'), info:rect('.hud-bottom-panel'), details:rect('.item-details-panel'), map:rect('.map-area'), mapGrid:rect('.game-map'), mapCell:rect('.map-cell'), items:rect('.hud-right-panel'), contentOffsets:{info:offset('.hud-bottom-panel', '.hud-bottom-tabs'), details:offset('.item-details-panel', '.item-details-panel h2')}, gap:parseFloat(getComputedStyle(document.querySelector('.game-layout')).rowGap), overflow:document.documentElement.scrollWidth > innerWidth };
     })()`);
     function assertCentrePlacement(layout, beside = true) {
         assert.equal(layout.overflow, false);
@@ -97,12 +123,21 @@ async function screenshot(name) {
             assert.equal(layout.info.y, layout.details.y);
             assert.equal(layout.details.right, layout.map.right);
             assert.ok(layout.details.x >= layout.info.right, 'Item Details beside Info');
+            if (!recordBaseline) {
+                for (const key of ['left', 'items', 'info', 'details']) {
+                    assert.ok(Math.abs(layout[key].bottom - layout.row.bottom) < 1,
+                        `${key}.bottom=${layout[key].bottom} == lowerRow.bottom=${layout.row.bottom} (<1px)`);
+                }
+                assert.equal(layout.contentOffsets.info, 6, 'Info tabs stay top-aligned');
+                assert.equal(layout.contentOffsets.details, 9, 'Details heading stays top-aligned');
+            }
         } else {
             assert.ok(layout.details.y >= layout.info.bottom);
         }
     }
     const layout = await measureLayout();
     assertCentrePlacement(layout);
+    checkGeometry('1440x900', layout, true);
     const previousMetrics = path.join(output, 'before-results.json');
     if (fs.existsSync(previousMetrics)) {
         const previous = JSON.parse(fs.readFileSync(previousMetrics, 'utf8'));
@@ -112,13 +147,18 @@ async function screenshot(name) {
     results.push({ desktopLayout: layout });
     for (const tab of ["bottom-server", "bottom-chat", "bottom-information"]) {
         assert.equal(await evaluate(`document.querySelector('[data-tab-target="${tab}"]').click(); !document.getElementById('${tab}').hidden && !document.getElementById('inventoryDetails').hidden`), true);
-        assertCentrePlacement(await measureLayout());
+        const tabLayout = await measureLayout();
+        assertCentrePlacement(tabLayout);
+        checkGeometry(`1440x900-${tab}`, tabLayout, true);
     }
     results.push('3 Info/Server/Chat tabs retain centre-only placement and visible selected details.');
     await evaluate("document.querySelector('.hud-right-panel').style.minHeight = '1400px'");
-    assertCentrePlacement(await measureLayout());
+    const stressLayout = await measureLayout();
+    assertCentrePlacement(stressLayout);
+    checkGeometry('1440x900-tall-items', stressLayout, true);
+    results.push({ stressLayout });
     await evaluate("document.querySelector('.hud-right-panel').style.removeProperty('min-height')");
-    results.push('Tall-sidebar stress check: 1400px Items does not push lower panels down.');
+    results.push('Tall-sidebar stress check: 1400px Items retains immediate map gap and aligned desktop bottoms.');
     // Inspect the actual platform font selected for the Egyptian symbol, not just font-family/check().
     const tree = await command("DOM.getDocument");
     for (const selector of ["[data-inventory-slot] .item-type-icon", "#inventoryDetailName .item-type-icon"]) {
@@ -177,26 +217,39 @@ async function screenshot(name) {
     })()`), true);
     results.push('Browser selection, equip/unequip, details reset, next/previous pagination passed (mock fetch; no DB).');
     // Wide desktop, breakpoint boundaries, tablet and narrow mobile.
-    for (const width of [1920, 1280, 1101, 1100, 1024, 800, 721, 720, 390, 320]) {
+    for (const width of [1920, 1440, 1280, 1101, 1100, 1099, 1024, 800, 721, 720, 719, 390, 320]) {
         await command("Emulation.setDeviceMetricsOverride", { width, height: 1100, deviceScaleFactor: 1, mobile: width <= 720 });
         const responsive = await evaluate(`(() => { document.querySelector('[data-tab-target="bottom-chat"]').click(); const a=document.querySelector('.hud-bottom-panel').getBoundingClientRect(); const b=document.querySelector('.item-details-panel').getBoundingClientRect(); const input=document.querySelector('#bottom-chat input'); return {width:innerWidth,scrollWidth:document.documentElement.scrollWidth,stacked:b.y>=a.bottom, inputWidth:input.getBoundingClientRect().width, availableInputWidth:input.parentElement.clientWidth - 16}; })()`);
         assert.ok(responsive.scrollWidth <= width, JSON.stringify(responsive));
         assert.ok(Math.abs(responsive.inputWidth - responsive.availableInputWidth) < 1, JSON.stringify(responsive));
         await evaluate("document.querySelector('[data-tab-target=bottom-information]').click()");
         assert.equal(responsive.stacked, width <= 1100);
-        if (width > 720) assertCentrePlacement(await measureLayout(), width > 1100);
+        const viewportLayout = await measureLayout();
+        if (width > 720) assertCentrePlacement(viewportLayout, width > 1100);
         else {
-            const mobile = await measureLayout();
+            const mobile = viewportLayout;
             assert.ok(mobile.row.y >= mobile.items.bottom, 'single-column lower panels follow Items');
             assert.ok(mobile.row.x >= 0 && mobile.row.right <= width, 'mobile lower row fits viewport');
         }
-        results.push(responsive);
+        checkGeometry(`${width}x1100`, viewportLayout, width > 1100);
+        results.push({ ...responsive, layout:viewportLayout });
+        // Stress every desktop width, including the three-column boundary.
+        if (width > 1100) {
+            await evaluate("document.querySelector('.hud-right-panel').style.minHeight = '1400px'");
+            const tallLayout = await measureLayout();
+            assertCentrePlacement(tallLayout);
+            checkGeometry(`${width}x1100-tall-items`, tallLayout, true);
+            results.push({ width, tallLayout });
+            await evaluate("document.querySelector('.hud-right-panel').style.removeProperty('min-height')");
+        }
         if (width === 390) await screenshot("after-mobile.png");
     }
-    fs.writeFileSync(path.join(output, "browser-results.json"), JSON.stringify(results, null, 2));
+    fs.writeFileSync(recordBaseline ? baselinePath : path.join(output, 'geometry.json'), JSON.stringify(geometry, null, 2));
+    fs.writeFileSync(path.join(output, recordBaseline ? 'baseline-results.json' : 'browser-results.json'), JSON.stringify(results, null, 2));
     console.log(JSON.stringify(results, null, 2));
-    console.log("Task33/33.1 browser: 11 viewport layouts, 3 tabs, 1 tall-sidebar stress check, synthetic selection/equipment/pagination, 2 platform-font and 2 glyph-fit checks passed (no DB).");
+    console.log(`Task33/33.1/33.2 browser: 14 viewport layouts, 3 tabs, 5 tall-sidebar stress checks, synthetic selection/equipment/pagination, 2 platform-font and 2 glyph-fit checks passed (no DB). ${recordBaseline ? 'Exact-base geometry recorded.' : baseline ? 'Map/Items and responsive geometry match exact base.' : 'No baseline geometry supplied.'}`);
 })().catch((error) => { console.error(error); process.exitCode = 1; }).finally(() => {
     socket?.close(); browser.kill();
-    browser.on("exit", () => fs.rmSync(profile, { recursive: true, force: true }));
+    // Chromium children can finish writing the profile just after the parent exits.
+    browser.on("exit", () => fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
 });

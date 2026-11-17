@@ -132,3 +132,77 @@ The existing CLI-only real-template fixture and synthetic fetch responses make
 no network application requests, DB connections or persistent mutations.
 Authenticated production, other browsers and OS font fallbacks remain untested.
 No main promotion, deployment, DB work or Task32 cleanup was performed.
+
+## Task33.2: shared desktop bottom edge
+
+Base: `0b183249a147410f730ec852e94fbeb6accec7bb`.
+
+The parent grid deliberately keeps `align-items: start` so the map retains its
+intrinsic height. Task33.1's spanning sidebars and `auto 1fr` tracks already put
+surplus height in the lower track, but the lower row did not stretch into it.
+Above 1100px, `.hud-lower-row` and `.hud-right-panel` now use
+`align-self: stretch`. The left sidebar already stretches. The lower row's
+existing nested grid stretches both Info and Item Details without distributing
+or centring their content. Stretching Items also handles the case where centre
+content determines the grid height. No fixed frame heights, map sizing, column
+widths, template, rendering or runtime JavaScript changes were introduced.
+At/below 1100px the new rule does not apply.
+
+Database-free Chromium geometry (CSS px; every listed bottom equals the left,
+Items, lower row, Info and Item Details bottoms exactly: **0px difference**):
+
+| Viewport | Map bottom | Lower row top | Shared bottom | Lower row width |
+|---|---:|---:|---:|---:|
+| 1920×1100 | 648 | 656 | 915.625 | 1184 |
+| 1440×900 | 599.953125 | 607.953125 | 915.625 | 848 |
+| 1440×1100 | 599.953125 | 607.953125 | 915.625 | 848 |
+| 1280×1100 | 551.90625 | 559.90625 | 884.453125 | 741.609375 |
+| 1101×1100 | 528 | 536 | 846.875 | 630.640625 |
+
+All five tall-Items stress cases (1400px synthetic minimum height) have shared
+bottom **1472px**, with the same **8px** map-to-lower-row gap. A vertical
+scrollbar can naturally reduce available width in stress cases; geometry is
+compared with the exact base under the same stress, not a different scroll state.
+
+The browser suite can record baseline geometry using `--record-baseline
+--root=BASE_CHECKOUT` and compare a normal run in the same output directory.
+An archive of the exact base was used here. Exact comparisons passed for:
+
+- Both sidebars, map frame, actual `.game-map`, and first map cell rectangles.
+- Lower-row/Info/Details horizontal geometry and tops; top content offsets.
+- All measured geometry at/below 1100px, proving no forced tablet/mobile heights.
+
+At 1440×900 Items remains `(1122,72)`, **300×843.625px**; map remains `(266,72)`,
+**848×527.953125px**. Info is now **540×307.671875px**, Details
+**300×307.671875px**, and both end at 915.625px. Their content remains at the
+original top offsets (Info tabs 6px, Details heading 9px).
+
+Validation:
+
+- TDD RED against exact base: left bottom 915.625 != lower-row bottom 804.59375.
+- GREEN: full PHP **803**; Task33 **14**; Item HUD **21**; Combat HUD **32**;
+  Exploration HUD **30**, all zero failures.
+- Task33/33.1/33.2 browser: **14 viewport layouts**, **3 tabs**, **5 tall-sidebar
+  stress cases**, existing synthetic selection/equipment/pagination, **2 font**
+  and **2 glyph-fit** checks. No application API requests or persistent mutations.
+- Viewports: 1440×900, plus widths 1920, 1440, 1280, 1101, 1100, 1099, 1024,
+  800, 721, 720, 719, 390, 320 at height 1100. No horizontal overflow.
+  Info/Details stack at/below 1100; main stack remains at/below 720.
+- PHP lint **146 files**, JS syntax **9 files**, `git diff --check`: passed.
+- A Chromium shutdown/profile-removal race was observed after all browser
+  assertions passed; bounded filesystem retries were added to test cleanup.
+  The final browser run exited successfully.
+
+Local evidence directory:
+`/home/najcarg/Projects/ASCII_Quest_II/task33-2-evidence/`.
+Screenshot `browser/after-desktop.png` is a full-page capture from a **1440×900**
+viewport, visually inspected: all three frame bottoms align; lower panels stay
+immediately beneath the unchanged map and content stays at the top. Mobile:
+`browser/after-mobile.png`. Exact rectangles: `browser/geometry.json` and
+`browser/baseline-geometry.json`; results: `browser/browser-results.json`.
+Baseline/RED/GREEN and regression logs are also in this evidence directory.
+
+Residual limitations: actual user screenshot was unavailable; evidence uses the
+real template with a synthetic local state, not an authenticated production
+session. Other browsers/OS font stacks remain untested. No production access,
+main promotion, deployment, DB changes, migrations or Task32 cleanup performed.
