@@ -1460,8 +1460,25 @@ a:hover {
     font-weight: normal;
 }
 
+/* Let the sidebars span both centre rows: their height must not push the
+   lower panels away from the map. Any extra height belongs to row two. */
+@media (min-width: 721px) {
+    .game-layout {
+        grid-template-rows: auto 1fr;
+    }
+
+    .hud-left-panel,
+    .hud-right-panel {
+        grid-row: 1 / 3;
+    }
+
+    .hud-right-panel {
+        grid-column: 3;
+    }
+}
+
 .hud-lower-row {
-    grid-column: 2 / -1;
+    grid-column: 2 / 3;
     display: grid;
     grid-template-columns: minmax(0, 1fr) clamp(220px, 21vw, 300px);
     gap: 8px;

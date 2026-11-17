@@ -63,7 +63,8 @@ async function screenshot(name) {
     await command("Page.enable");
     await command("DOM.enable");
     await command("CSS.enable");
-    await command("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false });
+    // Target-like landscape desktop; screenshot uses this exact CSS viewport.
+    await command("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     await command("Page.navigate", { url: `file://${html}` });
     for (let i = 0; i < 100; i++) {
         if (await evaluate("!!window.ASCIIQuestInventoryController && document.querySelectorAll('.map-cell').length > 0")) break;
@@ -78,25 +79,46 @@ async function screenshot(name) {
         return;
     }
     const results = [];
-    const layout = await evaluate(`(() => {
-        const rect = (selector) => { const r = document.querySelector(selector).getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right}; };
-        return { row:rect('.hud-lower-row'), info:rect('.hud-bottom-panel'), details:rect('.item-details-panel'), map:rect('.map-area'), items:rect('.hud-right-panel'), overflow:document.documentElement.scrollWidth > innerWidth };
+    const measureLayout = () => evaluate(`(() => {
+        const rect = (selector) => { const r = document.querySelector(selector).getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}; };
+        return { row:rect('.hud-lower-row'), info:rect('.hud-bottom-panel'), details:rect('.item-details-panel'), map:rect('.map-area'), items:rect('.hud-right-panel'), gap:parseFloat(getComputedStyle(document.querySelector('.game-layout')).rowGap), overflow:document.documentElement.scrollWidth > innerWidth };
     })()`);
-    assert.equal(layout.overflow, false);
-    assert.equal(layout.row.x, layout.map.x);
-    assert.equal(layout.row.right, layout.items.right);
-    assert.ok(layout.info.width > layout.details.width);
-    assert.equal(layout.info.y, layout.details.y);
-    assert.ok(layout.info.height >= 175);
+    function assertCentrePlacement(layout, beside = true) {
+        assert.equal(layout.overflow, false);
+        assert.equal(layout.row.x, layout.map.x, 'lowerRow.left == mainMap.left');
+        assert.equal(layout.row.right, layout.map.right, 'lowerRow.right == mainMap.right');
+        assert.ok(layout.row.right < layout.items.x && layout.row.right < layout.items.right, 'lower row must not extend under Items');
+        assert.ok(Math.abs(layout.row.y - layout.map.bottom - layout.gap) < 1, 'lower panels immediately follow map (one grid gap)');
+        assert.equal(layout.items.y, layout.map.y, 'Items stays at map top');
+        assert.equal(layout.items.x, layout.map.right + layout.gap, 'Items stays in right sidebar column');
+        assert.ok(layout.info.height >= 190, 'preserve enlarged Info area');
+        if (beside) {
+            assert.ok(layout.info.width > layout.details.width);
+            assert.equal(layout.info.y, layout.details.y);
+            assert.equal(layout.details.right, layout.map.right);
+            assert.ok(layout.details.x >= layout.info.right, 'Item Details beside Info');
+        } else {
+            assert.ok(layout.details.y >= layout.info.bottom);
+        }
+    }
+    const layout = await measureLayout();
+    assertCentrePlacement(layout);
     const previousMetrics = path.join(output, 'before-results.json');
     if (fs.existsSync(previousMetrics)) {
         const previous = JSON.parse(fs.readFileSync(previousMetrics, 'utf8'));
-        assert.ok(layout.info.width > previous.infoWidth && layout.info.height > previous.infoHeight, JSON.stringify({previous, current:layout.info}));
+        // Width intentionally shrinks to the centre column in Task33.1; keep the enlarged height.
+        assert.ok(layout.info.height >= previous.infoHeight, JSON.stringify({previous, current:layout.info}));
     }
     results.push({ desktopLayout: layout });
     for (const tab of ["bottom-server", "bottom-chat", "bottom-information"]) {
         assert.equal(await evaluate(`document.querySelector('[data-tab-target="${tab}"]').click(); !document.getElementById('${tab}').hidden && !document.getElementById('inventoryDetails').hidden`), true);
+        assertCentrePlacement(await measureLayout());
     }
+    results.push('3 Info/Server/Chat tabs retain centre-only placement and visible selected details.');
+    await evaluate("document.querySelector('.hud-right-panel').style.minHeight = '1400px'");
+    assertCentrePlacement(await measureLayout());
+    await evaluate("document.querySelector('.hud-right-panel').style.removeProperty('min-height')");
+    results.push('Tall-sidebar stress check: 1400px Items does not push lower panels down.');
     // Inspect the actual platform font selected for the Egyptian symbol, not just font-family/check().
     const tree = await command("DOM.getDocument");
     for (const selector of ["[data-inventory-slot] .item-type-icon", "#inventoryDetailName .item-type-icon"]) {
@@ -154,19 +176,26 @@ async function screenshot(name) {
         return calls.join(',') === 'equip_item.php,unequip_item.php,inventory_state.php?page=2,inventory_state.php?page=1';
     })()`), true);
     results.push('Browser selection, equip/unequip, details reset, next/previous pagination passed (mock fetch; no DB).');
-    for (const width of [1024, 800, 720, 390, 320]) {
+    // Wide desktop, breakpoint boundaries, tablet and narrow mobile.
+    for (const width of [1920, 1280, 1101, 1100, 1024, 800, 721, 720, 390, 320]) {
         await command("Emulation.setDeviceMetricsOverride", { width, height: 1100, deviceScaleFactor: 1, mobile: width <= 720 });
         const responsive = await evaluate(`(() => { document.querySelector('[data-tab-target="bottom-chat"]').click(); const a=document.querySelector('.hud-bottom-panel').getBoundingClientRect(); const b=document.querySelector('.item-details-panel').getBoundingClientRect(); const input=document.querySelector('#bottom-chat input'); return {width:innerWidth,scrollWidth:document.documentElement.scrollWidth,stacked:b.y>=a.bottom, inputWidth:input.getBoundingClientRect().width, availableInputWidth:input.parentElement.clientWidth - 16}; })()`);
         assert.ok(responsive.scrollWidth <= width, JSON.stringify(responsive));
         assert.ok(Math.abs(responsive.inputWidth - responsive.availableInputWidth) < 1, JSON.stringify(responsive));
         await evaluate("document.querySelector('[data-tab-target=bottom-information]').click()");
-        if (width <= 1024) assert.equal(responsive.stacked, true);
+        assert.equal(responsive.stacked, width <= 1100);
+        if (width > 720) assertCentrePlacement(await measureLayout(), width > 1100);
+        else {
+            const mobile = await measureLayout();
+            assert.ok(mobile.row.y >= mobile.items.bottom, 'single-column lower panels follow Items');
+            assert.ok(mobile.row.x >= 0 && mobile.row.right <= width, 'mobile lower row fits viewport');
+        }
         results.push(responsive);
         if (width === 390) await screenshot("after-mobile.png");
     }
     fs.writeFileSync(path.join(output, "browser-results.json"), JSON.stringify(results, null, 2));
     console.log(JSON.stringify(results, null, 2));
-    console.log("Task33 browser: desktop alignment, tabs, real mace fallback in inventory/details, 5 responsive widths passed.");
+    console.log("Task33/33.1 browser: 11 viewport layouts, 3 tabs, 1 tall-sidebar stress check, synthetic selection/equipment/pagination, 2 platform-font and 2 glyph-fit checks passed (no DB).");
 })().catch((error) => { console.error(error); process.exitCode = 1; }).finally(() => {
     socket?.close(); browser.kill();
     browser.on("exit", () => fs.rmSync(profile, { recursive: true, force: true }));
