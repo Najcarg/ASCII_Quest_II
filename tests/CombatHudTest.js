@@ -232,9 +232,11 @@ function combatTabGroup() {
 
 const tests = {
     "combat lower tabs start on Battle Info and retain Server Info and Chat placeholders"() {
-        const combatStart = gameMarkup.indexOf('id="battleHud"');
+        const lowerRowStart = gameMarkup.indexOf('class="hud-lower-row"');
+        const combatStart = gameMarkup.indexOf("<?php if ($isCombatMode): ?>", lowerRowStart);
         const explorationStart = gameMarkup.indexOf("<?php else:", combatStart);
         const combatMarkup = gameMarkup.slice(combatStart, explorationStart);
+        assert.ok(lowerRowStart >= 0 && combatStart > lowerRowStart, "Combat tabs belong to the shared lower row.");
         const battleIndex = combatMarkup.indexOf(">Battle Info</button>");
         const serverIndex = combatMarkup.indexOf(">Server Info</button>");
         const chatIndex = combatMarkup.indexOf(">Chat</button>");

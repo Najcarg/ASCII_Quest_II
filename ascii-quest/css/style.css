@@ -1320,12 +1320,21 @@ a:hover {
 
 .inventory-details {
     display: grid;
-    gap: 2px;
-    margin-top: 5px;
-    padding: 5px;
-    border: 1px solid rgba(169, 122, 59, 0.45);
-    background: rgba(0, 0, 0, 0.45);
-    font-size: 8px;
+    gap: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.item-display-name {
+    user-select: text;
+    overflow-wrap: anywhere;
+}
+
+.item-type-icon {
+    line-height: 1;
+    font-weight: normal;
+    user-select: none;
 }
 
 .inventory-details[hidden] {
@@ -1333,7 +1342,7 @@ a:hover {
 }
 
 .inventory-details strong { color: #f0d58a; }
-.inventory-details span { color: #a99c84; }
+.inventory-details > span { color: #a99c84; }
 
 .inventory-message {
     min-height: 10px;
@@ -1451,10 +1460,55 @@ a:hover {
     font-weight: normal;
 }
 
+.hud-lower-row {
+    grid-column: 2 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(220px, 21vw, 300px);
+    gap: 8px;
+    min-width: 0;
+}
+
 .hud-bottom-panel {
-    margin-top: 8px;
+    min-width: 0;
+    min-height: 190px;
     padding: 5px;
     overflow: hidden;
+    box-shadow: none;
+}
+
+.item-details-panel {
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid rgba(169, 122, 59, 0.55);
+    background: rgba(0, 0, 0, 0.35);
+    overflow-wrap: anywhere;
+}
+
+.item-details-panel h2 {
+    margin: 0 0 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(169, 122, 59, 0.35);
+    color: #f0d58a;
+    font-size: 13px;
+}
+
+.item-details-empty {
+    margin: 0;
+    color: #a99c84;
+    font-size: 12px;
+}
+
+.hud-chat-input {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    margin: 8px 0 0;
+    padding: 5px;
+    border: 1px solid rgba(169, 122, 59, 0.45);
+    background: #050404;
+    color: #a99c84;
+    font: inherit;
 }
 
 .hud-bottom-tabs {
@@ -1475,8 +1529,8 @@ a:hover {
 }
 
 .hud-bottom-panel .game-log-messages {
-    height: 53px;
-    max-height: 53px;
+    height: 135px;
+    max-height: 135px;
     padding: 4px 6px;
 }
 
@@ -1491,7 +1545,17 @@ a:hover {
     padding: 24px 8px;
 }
 
+@media (max-width: 1100px) {
+    .hud-lower-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 @media (max-width: 720px) {
+    .hud-lower-row {
+        grid-column: 1 / -1;
+    }
+
     .game-page {
         padding: 4px;
     }

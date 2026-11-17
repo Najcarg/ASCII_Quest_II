@@ -423,6 +423,7 @@ $detailStatGroups = [
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ASCII Quest - Game</title>
     <link rel="stylesheet" href="css/style.css?v=<?= $styleVersion ?>">
 </head>
@@ -845,66 +846,6 @@ $detailStatGroups = [
                             <button id="combatCloseButton" class="combat-action-button" type="button">Close / Continue</button>
                         </section>
 
-                        <section class="hud-bottom-panel" data-tab-group>
-                            <div class="hud-tabs hud-bottom-tabs" role="tablist" aria-label="Combat information panels">
-                                <button
-                                    type="button"
-                                    class="hud-tab is-active"
-                                    role="tab"
-                                    aria-selected="true"
-                                    aria-controls="combat-battle-info"
-                                    data-tab-target="combat-battle-info"
-                                >Battle Info</button>
-                                <button
-                                    type="button"
-                                    class="hud-tab"
-                                    role="tab"
-                                    aria-selected="false"
-                                    aria-controls="combat-server-info"
-                                    data-tab-target="combat-server-info"
-                                >Server Info</button>
-                                <button
-                                    type="button"
-                                    class="hud-tab"
-                                    role="tab"
-                                    aria-selected="false"
-                                    aria-controls="combat-chat"
-                                    data-tab-target="combat-chat"
-                                >Chat</button>
-                            </div>
-
-                            <section
-                                id="combat-battle-info"
-                                class="hud-tab-panel"
-                                role="tabpanel"
-                                data-tab-panel
-                            >
-                                <div class="game-log">
-                                    <div class="game-log-title">Battle History</div>
-                                    <div id="combatBattleEvents" class="game-log-messages"></div>
-                                </div>
-                            </section>
-
-                            <section
-                                id="combat-server-info"
-                                class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
-                                role="tabpanel"
-                                data-tab-panel
-                                hidden
-                            >
-                                <p>Server information will appear here in a later milestone.</p>
-                            </section>
-
-                            <section
-                                id="combat-chat"
-                                class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
-                                role="tabpanel"
-                                data-tab-panel
-                                hidden
-                            >
-                                <p>Chat will be implemented in a later milestone.</p>
-                            </section>
-                        </section>
                     </section>
                 <?php else: ?>
                 <div class="map-title">
@@ -939,68 +880,6 @@ $detailStatGroups = [
                     </span>
                 </div>
 
-                <section class="hud-bottom-panel" data-tab-group>
-                    <div class="hud-tabs hud-bottom-tabs" role="tablist" aria-label="Exploration information panels">
-                        <button
-                            type="button"
-                            class="hud-tab is-active"
-                            role="tab"
-                            aria-selected="true"
-                            aria-controls="bottom-information"
-                            data-tab-target="bottom-information"
-                        >Information</button>
-                        <button
-                            type="button"
-                            class="hud-tab"
-                            role="tab"
-                            aria-selected="false"
-                            aria-controls="bottom-server"
-                            data-tab-target="bottom-server"
-                        >Server Info</button>
-                        <button
-                            type="button"
-                            class="hud-tab"
-                            role="tab"
-                            aria-selected="false"
-                            aria-controls="bottom-chat"
-                            data-tab-target="bottom-chat"
-                        >Chat</button>
-                    </div>
-
-                    <section
-                        id="bottom-information"
-                        class="hud-tab-panel"
-                        role="tabpanel"
-                        data-tab-panel
-                    >
-                        <div class="game-log">
-                            <div class="game-log-title">Exploration Information</div>
-                            <div id="gameLogMessages" class="game-log-messages">
-                                <!-- JavaScript adds exploration messages here -->
-                            </div>
-                        </div>
-                    </section>
-
-                    <section
-                        id="bottom-server"
-                        class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
-                        role="tabpanel"
-                        data-tab-panel
-                        hidden
-                    >
-                        <p>Server information will appear here in a later milestone.</p>
-                    </section>
-
-                    <section
-                        id="bottom-chat"
-                        class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
-                        role="tabpanel"
-                        data-tab-panel
-                        hidden
-                    >
-                        <p>Chat will be implemented in a later milestone.</p>
-                    </section>
-                </section>
                 <?php endif; ?>
             </section>
 
@@ -1147,11 +1026,6 @@ $detailStatGroups = [
                             <span id="inventoryPageLabel">Page 1 of 1</span>
                             <button id="inventoryNext" type="button">Next</button>
                         </div>
-                        <section id="inventoryDetails" class="inventory-details" hidden>
-                            <strong id="inventoryDetailName"></strong>
-                            <span id="inventoryDetailMeta"></span>
-                            <span id="inventoryDetailStats"></span>
-                        </section>
                     </section>
                 </section>
 
@@ -1177,6 +1051,144 @@ $detailStatGroups = [
                     <p>Passive Tree will be implemented in a later milestone.</p>
                 </section>
             </aside>
+            <section class="hud-lower-row" aria-label="Game information and selected item">
+                <?php if ($isCombatMode): ?>
+                    <section class="hud-bottom-panel" data-tab-group>
+                        <div class="hud-tabs hud-bottom-tabs" role="tablist" aria-label="Combat information panels">
+                            <button
+                                type="button"
+                                class="hud-tab is-active"
+                                role="tab"
+                                aria-selected="true"
+                                aria-controls="combat-battle-info"
+                                data-tab-target="combat-battle-info"
+                            >Battle Info</button>
+                            <button
+                                type="button"
+                                class="hud-tab"
+                                role="tab"
+                                aria-selected="false"
+                                aria-controls="combat-server-info"
+                                data-tab-target="combat-server-info"
+                            >Server Info</button>
+                            <button
+                                type="button"
+                                class="hud-tab"
+                                role="tab"
+                                aria-selected="false"
+                                aria-controls="combat-chat"
+                                data-tab-target="combat-chat"
+                            >Chat</button>
+                        </div>
+
+                        <section
+                            id="combat-battle-info"
+                            class="hud-tab-panel"
+                            role="tabpanel"
+                            data-tab-panel
+                        >
+                            <div class="game-log">
+                                <div class="game-log-title">Battle History</div>
+                                <div id="combatBattleEvents" class="game-log-messages"></div>
+                            </div>
+                        </section>
+
+                        <section
+                            id="combat-server-info"
+                            class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
+                            role="tabpanel"
+                            data-tab-panel
+                            hidden
+                        >
+                            <p>Server information will appear here in a later milestone.</p>
+                        </section>
+
+                        <section
+                            id="combat-chat"
+                            class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
+                            role="tabpanel"
+                            data-tab-panel
+                            hidden
+                        >
+                            <p>Chat will be implemented in a later milestone.</p>
+                            <input class="hud-chat-input" type="text" aria-label="Chat message (not yet available)" placeholder="Chat unavailable" disabled>
+                        </section>
+                    </section>
+                <?php else: ?>
+                    <section class="hud-bottom-panel" data-tab-group>
+                        <div class="hud-tabs hud-bottom-tabs" role="tablist" aria-label="Exploration information panels">
+                            <button
+                                type="button"
+                                class="hud-tab is-active"
+                                role="tab"
+                                aria-selected="true"
+                                aria-controls="bottom-information"
+                                data-tab-target="bottom-information"
+                            >Information</button>
+                            <button
+                                type="button"
+                                class="hud-tab"
+                                role="tab"
+                                aria-selected="false"
+                                aria-controls="bottom-server"
+                                data-tab-target="bottom-server"
+                            >Server Info</button>
+                            <button
+                                type="button"
+                                class="hud-tab"
+                                role="tab"
+                                aria-selected="false"
+                                aria-controls="bottom-chat"
+                                data-tab-target="bottom-chat"
+                            >Chat</button>
+                        </div>
+
+                        <section
+                            id="bottom-information"
+                            class="hud-tab-panel"
+                            role="tabpanel"
+                            data-tab-panel
+                        >
+                            <div class="game-log">
+                                <div class="game-log-title">Exploration Information</div>
+                                <div id="gameLogMessages" class="game-log-messages">
+                                    <!-- JavaScript adds exploration messages here -->
+                                </div>
+                            </div>
+                        </section>
+
+                        <section
+                            id="bottom-server"
+                            class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
+                            role="tabpanel"
+                            data-tab-panel
+                            hidden
+                        >
+                            <p>Server information will appear here in a later milestone.</p>
+                        </section>
+
+                        <section
+                            id="bottom-chat"
+                            class="hud-tab-panel hud-placeholder hud-bottom-placeholder"
+                            role="tabpanel"
+                            data-tab-panel
+                            hidden
+                        >
+                            <p>Chat will be implemented in a later milestone.</p>
+                            <input class="hud-chat-input" type="text" aria-label="Chat message (not yet available)" placeholder="Chat unavailable" disabled>
+                        </section>
+                    </section>
+                <?php endif; ?>
+                <section class="item-details-panel" aria-labelledby="itemDetailsTitle">
+                    <h2 id="itemDetailsTitle">Item Details</h2>
+                    <p id="inventoryDetailsEmpty" class="item-details-empty">Select an inventory or equipped item.</p>
+                    <section id="inventoryDetails" class="inventory-details" hidden>
+                        <strong id="inventoryDetailName"></strong>
+                        <span id="inventoryDetailMeta"></span>
+                        <span id="inventoryDetailStats"></span>
+                    </section>
+                </section>
+            </section>
         </section>
 
     </section>

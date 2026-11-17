@@ -41,6 +41,33 @@
     const EQUIPMENT_ERROR_MESSAGE = "Unable to change equipment. Please try again.";
     const EQUIPMENT_LABELS = { helm: "Helm", gloves: "Gloves", chest: "Chest", ring: "Ring", weapon: "Weapon", "off-hand": "Off-Hand", amulet: "Amulet", belt: "Belt", charm: "Charm", boots: "Boots" };
 
+    // Presentation only. base_type is ItemProjector's authoritative snapshot_subtype.
+    // Keep this single map easy to change if a client font lacks a symbol.
+    const ITEM_TYPE_ICONS = Object.freeze({
+        sword: "⯝", dagger: "†", mace: "𓉒", wand: "‡", shield: "⛨",
+        gloves: "☞", boots: "⛛", belt: "▬", ring: "◎", amulet: "◈", charm: "❖",
+    });
+
+    function renderItemName(document, node, item, legacyGlyph = false) {
+        const name = String(item.display_name || "Unknown item");
+        const icon = Object.prototype.hasOwnProperty.call(ITEM_TYPE_ICONS, item.base_type)
+            ? ITEM_TYPE_ICONS[item.base_type]
+            : (legacyGlyph ? String(item.glyph || "?") : "");
+        // Rebuild rather than prefix existing DOM text: no accumulated icons, no name mutation.
+        const nameNode = document.createElement("span");
+        nameNode.className = "item-display-name";
+        nameNode.textContent = name;
+        if (icon) {
+            const decoration = document.createElement("span");
+            decoration.className = "item-type-icon";
+            decoration.setAttribute("aria-hidden", "true");
+            decoration.textContent = icon + " ";
+            node.replaceChildren(decoration, nameNode);
+        } else {
+            node.replaceChildren(nameNode);
+        }
+    }
+
     function byId(document, id) {
         return document.getElementById(id);
     }
@@ -102,7 +129,7 @@
             }
             const rarity = RARITIES.has(item.rarity) ? item.rarity : "normal";
             cell.dataset.itemId = String(item.id);
-            cell.textContent = String(item.glyph || "?") + " " + String(item.display_name || "Unknown item");
+            renderItemName(document, cell, item, true);
             cell.classList.add("inventory-rarity-" + rarity);
             cell.setAttribute("aria-label", String(item.display_name || "Unknown item"));
         });
@@ -143,7 +170,7 @@
             if (item) {
                 const rarity = RARITIES.has(item.rarity) ? item.rarity : "normal";
                 slot.dataset.itemId = String(item.id);
-                slot.textContent = String(item.glyph || "?") + " " + String(item.display_name || "Unknown item");
+                renderItemName(document, slot, item, true);
                 slot.classList.add("inventory-rarity-" + rarity);
             }
         }
@@ -165,10 +192,12 @@
             return;
         }
         details.hidden = !item;
+        const empty = byId(document, "inventoryDetailsEmpty");
+        if (empty) empty.hidden = !!item;
         if (!item) {
             return;
         }
-        byId(document, "inventoryDetailName").textContent = String(item.display_name || "Unknown item");
+        renderItemName(document, byId(document, "inventoryDetailName"), item);
         byId(document, "inventoryDetailMeta").textContent = [
             capitalize(item.rarity),
             "Item level " + Number(item.item_level || 0),
@@ -331,5 +360,5 @@
         };
     }
 
-    return { render, createController };
+    return { render, renderDetails, renderItemName, createController };
 });

@@ -32,7 +32,10 @@ function classList() {
 function element() {
     const listeners = {};
     return {
-        textContent: "",
+        children: [],
+        get textContent() { return this.children.length ? this.children.map((child) => child.textContent).join("") : (this.value || ""); },
+        set textContent(value) { this.children = []; this.value = value; },
+        replaceChildren(...nodes) { this.children = nodes; this.value = ""; },
         hidden: false,
         disabled: false,
         dataset: {},
@@ -79,6 +82,7 @@ function documentFixture() {
         },
         getElementById(id) { return elements[id] || null; },
         equipmentSlots,
+        createElement: element,
     };
 }
 
@@ -129,7 +133,7 @@ const tests = {
     "one item renders in server order and uses textContent"() {
         const document = documentFixture();
         itemHud.render(document, state([item(1, "<img src=x onerror=alert(1)>")]));
-        assert.equal(document.cells[0].textContent, "/ <img src=x onerror=alert(1)>");
+        assert.equal(document.cells[0].textContent, "⯝ <img src=x onerror=alert(1)>");
         assert.equal(document.cells[0].dataset.itemId, "1");
         assert.equal(document.cells[0].classList.contains("inventory-rarity-normal"), true);
         assert.equal(document.cells[1].textContent, "");
@@ -213,7 +217,7 @@ const tests = {
         const controller = itemHud.createController({ document, initialState: state([item(7, "Basic Sword")]) });
         document.cells[0].click();
         assert.equal(document.elements.inventoryDetails.hidden, false);
-        assert.equal(document.elements.inventoryDetailName.textContent, "Basic Sword");
+        assert.equal(document.elements.inventoryDetailName.textContent, "⯝ Basic Sword");
         assert.equal(document.elements.inventoryDetailMeta.textContent, "Normal · Item level 1 · Sword");
         assert.equal(document.elements.inventoryDetailStats.textContent, "Physical damage 4–7");
         assert.equal(controller.selectedItemId(), 7);
@@ -292,7 +296,7 @@ const tests = {
         initial.equipment.weapon = { ...item(7, "<img onerror=alert(1)>"), equipped: true, equipped_slot: "weapon" };
         itemHud.render(document, initial);
         assert.equal(document.equipmentSlots.length, 10);
-        assert.equal(document.equipmentSlots[4].textContent, "/ <img onerror=alert(1)>");
+        assert.equal(document.equipmentSlots[4].textContent, "⯝ <img onerror=alert(1)>");
         assert.equal(document.equipmentSlots[4].dataset.itemId, "7");
         assert.equal(document.equipmentSlots[3].textContent, "Ring");
     },
