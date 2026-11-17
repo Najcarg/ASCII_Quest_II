@@ -214,6 +214,72 @@
         byId(document, "inventoryDetailStats").textContent = [statLine, ...affixLines].join(" · ");
     }
 
+    // One physical Details panel; this controller owns presentation only. Future
+    // tree UIs supply {name, description?, stat_lines?}, or null to clear a choice.
+    // Setters retain independent choices without changing the active mode/tab.
+    function createDetailsController(document) {
+        const modes = {
+            item: ["Item Details", "Select an inventory or equipped item."],
+            skill: ["Skill Details", "Select a skill to view its details."],
+            passive: ["Passive Details", "Select a passive skill to view its details."],
+        };
+        let mode = "item";
+        const selections = { item: null, skill: null, passive: null };
+
+        function paint() {
+            const [title, placeholder] = modes[mode];
+            const titleNode = byId(document, "itemDetailsTitle");
+            if (titleNode) titleNode.textContent = title;
+            // Keep the existing authoritative item projection/name/stat renderer.
+            renderDetails(document, mode === "item" ? selections.item : null);
+            const selected = selections[mode];
+            const empty = byId(document, "inventoryDetailsEmpty");
+            if (empty) {
+                empty.textContent = placeholder;
+                empty.hidden = !!selected;
+            }
+            const context = byId(document, "contextDetails");
+            if (context) context.hidden = mode === "item" || !selected;
+            if (mode !== "item" && selected) {
+                for (const [id, value] of [
+                    ["contextDetailName", selected.name],
+                    ["contextDetailDescription", selected.description],
+                    ["contextDetailStats", selected.stat_lines.join(" · ")],
+                ]) {
+                    const node = byId(document, id);
+                    if (node) node.textContent = value;
+                }
+            }
+        }
+
+        function setDetailsMode(nextMode) {
+            if (typeof nextMode !== "string" || !Object.prototype.hasOwnProperty.call(modes, nextMode)) return false;
+            mode = nextMode;
+            paint();
+            return true;
+        }
+
+        function setContextDetails(contextMode, details) {
+            selections[contextMode] = typeof details?.name === "string" && details.name.trim()
+                ? { name: details.name, description: String(details.description || ""),
+                    stat_lines: Array.isArray(details.stat_lines) ? details.stat_lines.map(String) : [] }
+                : null;
+            paint();
+        }
+
+        for (const tab of document.querySelectorAll("[data-details-mode]")) {
+            tab.addEventListener("click", function () { setDetailsMode(tab.dataset.detailsMode); });
+        }
+        paint();
+        return {
+            setDetailsMode,
+            detailsMode() { return mode; },
+            setItem(item) { selections.item = item; paint(); },
+            setSkillDetails(details) { setContextDetails("skill", details); },
+            setPassiveDetails(details) { setContextDetails("passive", details); },
+        };
+    }
+
     function createController(options) {
         const document = options.document;
         const fetchImplementation = options.fetchImplementation || null;
@@ -232,6 +298,7 @@
         let selectedItem = null;
         let pending = false;
         let mutation = null;
+        const details = createDetailsController(document);
 
         function allItems(state) {
             return validItems(state).concat(Object.values(state?.equipment || {}).filter(Boolean));
@@ -247,11 +314,10 @@
 
         function applyState(nextState) {
             currentState = nextState || { items: [], pagination: {} };
-            if (!allItems(currentState).some((item) => Number(item.id) === selectedId)) {
-                selectedId = null;
-                selectedItem = null;
-                renderDetails(document, null);
-            }
+            // Resolve against the current projection, never restore stale item data.
+            selectedItem = allItems(currentState).find((item) => Number(item.id) === selectedId) || null;
+            selectedId = selectedItem ? Number(selectedItem.id) : null;
+            details.setItem(selectedItem);
             render(document, currentState, pending);
             updateAction();
         }
@@ -270,7 +336,7 @@
             for (const slot of document.querySelectorAll("[data-equipment-slot]")) {
                 if (Number(slot.dataset.itemId) === selectedId) slot.classList.add("is-selected");
             }
-            renderDetails(document, item);
+            details.setItem(item);
             updateAction();
         }
 
@@ -291,7 +357,7 @@
                 const payload = await response.json();
                 if (!response.ok || !payload?.state) throw new Error("Invalid equipment response.");
                 updateChampion(document, payload.champion);
-                pending = false; mutation = null; selectedId = null; selectedItem = null; renderDetails(document, null); applyState(payload.state);
+                pending = false; mutation = null; selectedId = null; selectedItem = null; applyState(payload.state);
             } catch (error) {
                 pending = false; render(document, currentState, pending); updateAction();
                 const message = byId(document, "inventoryMessage"); if (message) message.textContent = EQUIPMENT_ERROR_MESSAGE;
@@ -357,8 +423,12 @@
                 return loadPage(Number(currentState?.pagination?.page) || 1);
             },
             selectedItemId() { return selectedId; },
+            setDetailsMode: details.setDetailsMode,
+            detailsMode: details.detailsMode,
+            setSkillDetails: details.setSkillDetails,
+            setPassiveDetails: details.setPassiveDetails,
         };
     }
 
-    return { render, renderDetails, renderItemName, createController };
+    return { render, renderDetails, renderItemName, createDetailsController, createController };
 });

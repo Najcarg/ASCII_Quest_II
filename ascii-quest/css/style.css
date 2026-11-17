@@ -1495,6 +1495,8 @@ a:hover {
 }
 
 .hud-bottom-panel {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     min-height: 190px;
     padding: 5px;
@@ -1538,7 +1540,17 @@ a:hover {
 }
 
 .hud-bottom-tabs {
+    flex: none;
     width: min(100%, 420px);
+}
+
+/* Fill only the existing frame's remaining space. Keep all content at the top,
+   and let messages scroll within the log rather than sizing it to the viewport. */
+.hud-bottom-panel .hud-tab-panel:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .hud-bottom-panel .hud-tab-panel {
@@ -1546,17 +1558,23 @@ a:hover {
 }
 
 .hud-bottom-panel .game-log {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
     margin-top: 4px;
 }
 
 .hud-bottom-panel .game-log-title {
+    flex: none;
     padding: 3px 8px;
     font-size: 11px;
 }
 
 .hud-bottom-panel .game-log-messages {
-    height: 135px;
-    max-height: 135px;
+    flex: 1 1 135px;
+    min-height: 135px;
+    max-height: none;
     padding: 4px 6px;
 }
 

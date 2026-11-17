@@ -16,9 +16,22 @@ $character = [
 ];
 $characterStats = CharacterStats::calculate($character);
 $_SESSION = ['csrf_token' => 'local-fixture-not-a-session'];
-$isCombatMode = false;
+$isCombatMode = in_array('--combat', $argv, true);
+$isDefeated = false;
+$combatSkillOneAvailable = false;
+$combatSkillOneStatus = 'Unavailable';
 $isVictoryLoot = false;
 $combatState = $combatSkillOne = $currentWarp = $encounterEnemy = null;
+if ($isCombatMode) {
+    $combatState = [
+        'status' => 'active',
+        'turn' => ['number' => 1, 'player_actions_remaining' => 1],
+        'champion' => ['current_hp' => 100],
+        'enemy' => ['glyph' => 'B', 'name' => 'Local UI Enemy', 'current_hp' => 90, 'maximum_hp' => 120],
+        'player_attack' => ['name' => 'Weapon Attack'],
+        'potion' => ['key' => 'Local potion', 'charges_remaining' => 1, 'charge_allowance' => 1],
+    ];
+}
 $warpDestinations = [];
 $currentHp = $maximumLife = $characterStats['resources']['max_life'];
 $currentMana = $maximumMana = $characterStats['resources']['max_mana'];
@@ -55,5 +68,9 @@ $start = strpos($source, '$mainStatLabels =');
 ob_start();
 eval(substr($source, $start));
 $html = ob_get_clean();
+// Layout-only combat fixture: do not start polling or combat commands.
+if ($isCombatMode) {
+    $html = preg_replace('~<script src="js/combat_hud\.js[^" ]*"></script>~', '', $html);
+}
 $base = 'file://' . $root . '/ascii-quest/';
 echo str_replace('<head>', '<head><base href="' . e($base) . '">', $html);

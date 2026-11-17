@@ -206,3 +206,13 @@ Residual limitations: actual user screenshot was unavailable; evidence uses the
 real template with a synthetic local state, not an authenticated production
 session. Other browsers/OS font stacks remain untested. No production access,
 main promotion, deployment, DB changes, migrations or Task32 cleanup performed.
+
+## Task33.3: inner fill and context Details
+
+Information/Battle Info now fill the existing frame with a top-aligned flex log;
+Server Info and Chat use the same active-panel fill. The single lower-right
+Details panel follows Items / Skill Tree / Passive Tree with independent,
+presentation-only selection hooks and safe return-to-item restoration.
+Task33.1/33.2 outer grid geometry and breakpoints are unchanged.
+
+See [Task33.3 implementation, API, validation and committed screenshots](testing/task33-3-details-context-panel.md).

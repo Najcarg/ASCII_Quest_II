@@ -892,6 +892,7 @@ $detailStatGroups = [
                         aria-selected="true"
                         aria-controls="right-items"
                         data-tab-target="right-items"
+                        data-details-mode="item"
                     >Items</button>
                     <button
                         type="button"
@@ -900,6 +901,7 @@ $detailStatGroups = [
                         aria-selected="false"
                         aria-controls="right-skills"
                         data-tab-target="right-skills"
+                        data-details-mode="skill"
                     >Skill Tree</button>
                     <button
                         type="button"
@@ -908,6 +910,7 @@ $detailStatGroups = [
                         aria-selected="false"
                         aria-controls="right-passives"
                         data-tab-target="right-passives"
+                        data-details-mode="passive"
                     >Passive Tree</button>
                 </div>
 
@@ -1051,7 +1054,7 @@ $detailStatGroups = [
                     <p>Passive Tree will be implemented in a later milestone.</p>
                 </section>
             </aside>
-            <section class="hud-lower-row" aria-label="Game information and selected item">
+            <section class="hud-lower-row" aria-label="Game information and selection details">
                 <?php if ($isCombatMode): ?>
                     <section class="hud-bottom-panel" data-tab-group>
                         <div class="hud-tabs hud-bottom-tabs" role="tablist" aria-label="Combat information panels">
@@ -1186,6 +1189,11 @@ $detailStatGroups = [
                         <strong id="inventoryDetailName"></strong>
                         <span id="inventoryDetailMeta"></span>
                         <span id="inventoryDetailStats"></span>
+                    </section>
+                    <section id="contextDetails" class="inventory-details" hidden>
+                        <strong id="contextDetailName"></strong>
+                        <span id="contextDetailDescription"></span>
+                        <span id="contextDetailStats"></span>
                     </section>
                 </section>
             </section>
