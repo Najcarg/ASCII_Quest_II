@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CombatAccessGuard.php';
+require_once __DIR__ . '/SkillBootstrap.php';
 require_once __DIR__ . '/CombatActionResolver.php';
 require_once __DIR__ . '/CaveBrutePolicy.php';
 require_once __DIR__ . '/CombatClock.php';
@@ -49,7 +50,8 @@ final class CombatBootstrap
     public static function service(PDO $pdo): CombatService
     {
         $repository = self::repository($pdo);
-        $definitions = CombatDefinitionRegistry::fromDefaultConfig();
+        $skillService = SkillBootstrap::service($pdo);
+        $definitions = CombatDefinitionRegistry::withSkillCatalogue($skillService->catalogue());
         $catalogue = $repository->itemGenerationCatalogue();
         $dropConfig = $definitions->itemDropConfiguration();
         $itemDropService = new ItemDropService(
@@ -68,7 +70,7 @@ final class CombatBootstrap
             $definitions,
             new EquipmentStatAggregator(),
         );
-        return self::serviceForRepository($repository, null, $equipmentProvider, null, $itemDropService);
+        return self::serviceForRepository($repository, null, $equipmentProvider, null, $itemDropService, $skillService);
     }
 
     public static function serviceForRepository(
@@ -77,9 +79,12 @@ final class CombatBootstrap
         ?CombatEquipmentProvider $equipmentProvider = null,
         ?CombatRandomSource $randomSource = null,
         ?ItemDropService $itemDropService = null,
+        ?SkillService $skillService = null,
     ): CombatService
     {
-        $definitions = CombatDefinitionRegistry::fromDefaultConfig();
+        // Null is the explicit prototype fixture adapter, never the PDO/server factory.
+        $definitions = $skillService === null ? CombatDefinitionRegistry::fromDefaultConfig()
+            : CombatDefinitionRegistry::withSkillCatalogue($skillService->catalogue());
         $clock ??= new SystemCombatClock();
         $equipmentProvider ??= new PrototypeCombatEquipmentProvider($definitions);
         $randomSource ??= new SystemCombatRandomSource();
@@ -123,9 +128,11 @@ final class CombatBootstrap
                 $playerActionEvaluator,
                 null,
                 $equipmentProvider,
+                $skillService,
             ),
             $playerActionEvaluator,
             $itemDropService,
+            $skillService,
         );
     }
 

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/BlockResolver.php';
+require_once __DIR__ . '/SkillCatalogue.php';
 require_once __DIR__ . '/CharacterStats.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CombatEquipmentProvider.php';
@@ -53,7 +54,13 @@ final class CombatActionResolver
         array $lockedAction,
     ): array {
         $definitionKey = self::requiredString($lockedAction, 'definition_key');
-        $definition = $this->definitions->playerAction($definitionKey);
+        $frozenSkill = $lockedAction['snapshot_skill_definition'] ?? null;
+        $definition = $frozenSkill === null ? $this->definitions->playerAction($definitionKey)
+            : SkillCatalogue::decodeSnapshot($frozenSkill);
+        if ($frozenSkill === null && ($lockedAction['action_kind'] ?? null) === 'skill' && $definitionKey !== 'prototype_flame_strike') {
+            throw new DomainException('Canonical pending skill snapshot is missing.');
+        }
+        if (($definition['key'] ?? null) !== $definitionKey) { throw new DomainException('Frozen action identity mismatch.'); }
         if (
             $definition === null ||
             !in_array($definition['kind'] ?? null, ['weapon', 'skill'], true) ||
@@ -106,7 +113,10 @@ final class CombatActionResolver
         $statuses->applyContact($encounter, $lockedAction, $damage, $enemyDefinition,
             $this->statusRandom ??= new SystemCombatRandomSource());
 
-        if (($definition['kind'] ?? null) === 'skill') {
+        $statuses->applySkillContact($encounter, $lockedAction, $damage, $enemyDefinition,
+            $this->statusRandom ??= new SystemCombatRandomSource());
+
+        if (($definition['kind'] ?? null) === 'skill' && isset($definition['effect'])) {
             $this->createResolvedEffect(
                 self::requiredPositiveInteger($encounter, 'id'),
                 self::requiredPositiveInteger($lockedAction, 'id'),

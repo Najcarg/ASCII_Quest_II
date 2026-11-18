@@ -76,6 +76,13 @@ final class CombatDefinitionRegistry
         );
     }
 
+    public static function withSkillCatalogue(SkillCatalogue $catalogue): self
+    {
+        $config = require __DIR__ . '/../config/combat.php';
+        foreach ($catalogue->actions() as $key => $action) { $config['prototype_balance']['player_actions'][$key] = $action; }
+        return new self($config);
+    }
+
     public static function fromDefaultConfig(): self
     {
         return new self(require __DIR__ . '/../config/combat.php');
@@ -165,9 +172,8 @@ final class CombatDefinitionRegistry
             }
             if (($action['kind'] ?? null) === 'skill') {
                 self::assertCanonicalIdentifier($action['slot'] ?? null, 'Player skill slot');
-                if (!array_key_exists('effect', $action)) {
-                    throw new RuntimeException('Player skill effect is required.');
-                }
+                // Canonical learned skills may be direct damage only. Legacy
+                // Flame Strike retains its original optional cosmetic effect.
             }
         }
 

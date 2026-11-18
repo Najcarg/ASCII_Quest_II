@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
 require_once __DIR__ . '/CharacterProgression.php';
+require_once __DIR__ . '/SkillService.php';
 require_once __DIR__ . '/CombatPlayerActionEvaluator.php';
 require_once __DIR__ . '/CombatEquipmentProvider.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
@@ -39,6 +40,7 @@ final class CombatStateProjector
         ?CombatPlayerActionEvaluator $playerActionEvaluator = null,
         ?ItemProjector $itemProjector = null,
         private ?CombatEquipmentProvider $equipmentProvider = null,
+        private ?SkillService $skillService = null,
     ) {
         $this->playerActionEvaluator = $playerActionEvaluator ??
             new CombatPlayerActionEvaluator(
@@ -148,25 +150,38 @@ final class CombatStateProjector
             $encounter, $character, $lockedActions, $playerAttackDefinition,
         );
         $playerSkills = [];
-        foreach ($this->definitions->playerActions() as $definition) {
-            if (($definition['kind'] ?? null) !== 'skill') {
-                continue;
+        if ($this->skillService !== null) {
+            foreach ($this->skillService->combatSlots($character) as $slot) {
+                $definition = $slot['definition'];
+                $skillState = $definition === null ? [
+                    'duration_ms'=>0,'cooldown_started_timeline_ms'=>null,'cooldown_ready_timeline_ms'=>null,
+                    'available'=>false,'disabled_reason'=>'empty_slot',
+                ] : $this->playerActionState($encounter,$character,$lockedActions,$definition);
+                if ($slot['disabled_reason'] !== null) { $skillState['available']=false; $skillState['disabled_reason']=$slot['disabled_reason']; }
+                $playerSkills[] = [
+                    'slot'=>$slot['slot'],'key'=>$slot['key'],'name'=>$slot['name'] ?? 'Empty',
+                    'duration_ms'=>$skillState['duration_ms'],
+                    'cooldown_ms'=>$definition===null?0:(int)round($definition['cooldown_seconds']*1000),
+                    'cooldown_started_timeline_ms'=>$skillState['cooldown_started_timeline_ms'],
+                    'cooldown_ready_timeline_ms'=>$skillState['cooldown_ready_timeline_ms'],
+                    'available'=>$skillState['available'],'disabled_reason'=>$skillState['disabled_reason'],
+                    'effect'=>$slot['effect'],'damage_type'=>$definition['damage_type']??null,
+                    'damage'=>$definition['prototype_damage']??0,'requires_slot'=>true,
+                ];
             }
-            $skillState = $this->playerActionState(
-                $encounter, $character, $lockedActions, $definition,
-            );
-            $playerSkills[] = [
-                'slot' => (string) $definition['slot'],
-                'key' => (string) $definition['key'],
-                'name' => (string) $definition['name'],
-                'duration_ms' => $skillState['duration_ms'],
-                'cooldown_started_timeline_ms' =>
-                    $skillState['cooldown_started_timeline_ms'],
-                'cooldown_ready_timeline_ms' =>
-                    $skillState['cooldown_ready_timeline_ms'],
-                'available' => $skillState['available'],
-                'disabled_reason' => $skillState['disabled_reason'],
-            ];
+        } else {
+            // Explicit legacy fixture adapter. Real PDO bootstrap always supplies SkillService.
+            foreach ($this->definitions->playerActions() as $definition) {
+                if (($definition['kind'] ?? null) !== 'skill') { continue; }
+                $skillState = $this->playerActionState($encounter,$character,$lockedActions,$definition);
+                $playerSkills[] = [
+                    'slot'=>(string)$definition['slot'],'key'=>(string)$definition['key'],'name'=>(string)$definition['name'],
+                    'duration_ms'=>$skillState['duration_ms'],
+                    'cooldown_started_timeline_ms'=>$skillState['cooldown_started_timeline_ms'],
+                    'cooldown_ready_timeline_ms'=>$skillState['cooldown_ready_timeline_ms'],
+                    'available'=>$skillState['available'],'disabled_reason'=>$skillState['disabled_reason'],
+                ];
+            }
         }
 
         return [
@@ -234,7 +249,7 @@ final class CombatStateProjector
                         : $this->physicalDrops($encounterId),
                 ]
                 : null,
-        ];
+        ] + ($this->skillService===null?[]:['skill_state'=>$this->skillService->stateForCombat($character,$encounter)]);
     }
 
     private function playerActionState(

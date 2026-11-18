@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CharacterStats.php';
+require_once __DIR__ . '/SkillCatalogue.php';
 require_once __DIR__ . '/CombatRepository.php';
 require_once __DIR__ . '/CombatRandomSource.php';
 
@@ -21,25 +22,42 @@ final class CombatStatusEffects
             !in_array($damage['outcome'] ?? null, ['HIT', 'CRITICAL', 'BLOCK'], true)) {
             return;
         }
+        $powers = [];
         foreach (self::KEYS as $key) {
             $column = 'snapshot_' . $key . '_status_damage';
-            // Missing is not SQL NULL. All new actions persist explicit integers.
-            if (!array_key_exists($column, $action)) {
-                throw new DomainException('Missing combat status snapshot.');
-            }
-            $value = $action[$column];
-            if ($value === null) { continue; } // Legacy pending only; never replace with current gear.
+            if (!array_key_exists($column, $action)) { throw new DomainException('Missing combat status snapshot.'); }
+            $powers[$key] = $action[$column];
+        }
+        $this->applyPowers($encounter,$action,$damage,$enemy,$random,$powers,4000);
+    }
+
+    /** Explicit intrinsic skill statuses only; never read equipment status snapshots. */
+    public function applySkillContact(array $encounter, array $action, array $damage, array $enemy, CombatRandomSource $random): void
+    {
+        if (($encounter['status'] ?? null) !== 'active' || ($action['actor'] ?? null) !== 'player'
+            || ($action['action_kind'] ?? null) !== 'skill' || ($action['state'] ?? null) !== 'pending'
+            || ($action['snapshot_skill_definition'] ?? null) === null
+            || !in_array($damage['outcome'] ?? null,['HIT','CRITICAL','BLOCK'],true)) { return; }
+        $definition = SkillCatalogue::decodeSnapshot($action['snapshot_skill_definition']);
+        $status = $definition['intrinsic_status'] ?? null;
+        if ($status === null) { return; }
+        $powers = array_fill_keys(self::KEYS,0);
+        $powers[$status['key']] = $status['power'];
+        $this->applyPowers($encounter,$action,$damage,$enemy,$random,$powers,$status['duration_ms']);
+    }
+
+    private function applyPowers(array $encounter,array $action,array $damage,array $enemy,CombatRandomSource $random,array $powers,int $durationMs): void
+    {
+        foreach (self::KEYS as $key) {
+            $value = $powers[$key];
+            if ($value === null) { continue; } // Immutable pre-status legacy snapshot.
             if (is_string($value) && ctype_digit($value)) { $value = (int) $value; }
-            if (!is_int($value) || $value < 0) {
-                throw new DomainException('Invalid combat status snapshot.');
-            }
+            if (!is_int($value) || $value < 0) { throw new DomainException('Invalid combat status snapshot.'); }
             if ($value === 0) { continue; }
-            $chances = array_fill_keys(self::KEYS, 0);
-            $chances[$key] = $value;
-            if ($random->integer(1, 100) > CharacterStats::statusEffectChance($chances)) { continue; }
-            if ($this->repository->applyStatusEffect((int) $encounter['id'], (int) $action['id'], $key, $value, (int) $action['resolves_timeline_ms'])) {
-                $this->repository->appendEvent((int) $encounter['id'], 'status_applied_' . $key,
-                    $enemy['name'] . ' is ' . self::LABELS[$key] . '.', null);
+            $chances = array_fill_keys(self::KEYS,0); $chances[$key] = $value;
+            if ($random->integer(1,100) > CharacterStats::statusEffectChance($chances)) { continue; }
+            if ($this->repository->applyStatusEffect((int)$encounter['id'],(int)$action['id'],$key,$value,(int)$action['resolves_timeline_ms'],$durationMs)) {
+                $this->repository->appendEvent((int)$encounter['id'],'status_applied_'.$key,$enemy['name'].' is '.self::LABELS[$key].'.',null);
             }
         }
     }

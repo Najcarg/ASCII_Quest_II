@@ -40,10 +40,10 @@ final class CombatRepository
     }
 
     /** Append identity, never overwrite an earlier source's replay guard. */
-    public function applyStatusEffect(int $encounterId, int $sourceActionId, string $key, int $potency, int $now): bool
+    public function applyStatusEffect(int $encounterId, int $sourceActionId, string $key, int $potency, int $now, int $durationMs = 4000): bool
     {
         $this->requireEncounterLock($encounterId);
-        if (!in_array($key, ['poison', 'bleed', 'burn', 'freeze', 'shock'], true) || $potency <= 0 || $now < 0) {
+        if (!in_array($key, ['poison', 'bleed', 'burn', 'freeze', 'shock'], true) || $potency <= 0 || $now < 0 || $durationMs !== 4000) {
             throw new DomainException('Invalid combat status application.');
         }
         $source = array_filter($this->lockActionsForEncounter($encounterId),
@@ -72,7 +72,7 @@ final class CombatRepository
             'encounter_id' => $encounterId, 'source_action_id' => $sourceActionId, 'status_key' => $key,
             'potency' => $potency, 'applied_timeline_ms' => $now,
             'next_tick_timeline_ms' => in_array($key, ['poison', 'bleed', 'burn'], true) ? $now + 1000 : null,
-            'expires_timeline_ms' => $now + 4000,
+            'expires_timeline_ms' => $now + $durationMs,
         ]);
         return true;
     }
@@ -1009,6 +1009,7 @@ final class CombatRepository
             'snapshot_critical_damage',
         ]);
         $values += [
+            'snapshot_skill_definition' => $action['snapshot_skill_definition'] ?? null,
             'snapshot_weapon_item_id' => $action['snapshot_weapon_item_id'] ?? null,
             'snapshot_fire_damage' => $action['snapshot_fire_damage'] ?? null,
             'snapshot_lightning_damage' => $action['snapshot_lightning_damage'] ?? null,
@@ -1046,7 +1047,7 @@ final class CombatRepository
                     active_slot, state, started_timeline_ms, resolves_timeline_ms,
                     cooldown_ready_timeline_ms, completed_timeline_ms,
                     snapshot_weapon_key,
-                    snapshot_weapon_item_id,
+                    snapshot_weapon_item_id, snapshot_skill_definition,
                     snapshot_damage_type, snapshot_base_damage, snapshot_accuracy,
                     snapshot_critical_chance, snapshot_critical_damage,
                     snapshot_fire_damage, snapshot_lightning_damage, snapshot_cold_damage, snapshot_poison_damage,
@@ -1060,7 +1061,7 @@ final class CombatRepository
                     :active_slot, :state, :started_timeline_ms, :resolves_timeline_ms,
                     :cooldown_ready_timeline_ms, :completed_timeline_ms,
                     :snapshot_weapon_key,
-                    :snapshot_weapon_item_id,
+                    :snapshot_weapon_item_id, :snapshot_skill_definition,
                     :snapshot_damage_type, :snapshot_base_damage, :snapshot_accuracy,
                     :snapshot_critical_chance, :snapshot_critical_damage,
                     :snapshot_fire_damage, :snapshot_lightning_damage, :snapshot_cold_damage, :snapshot_poison_damage,

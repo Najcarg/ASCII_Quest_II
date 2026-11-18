@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CharacterStats.php';
+require_once __DIR__ . '/SkillService.php';
 require_once __DIR__ . '/CaveBrutePolicy.php';
 require_once __DIR__ . '/CombatAccessGuard.php';
 require_once __DIR__ . '/CombatClock.php';
@@ -33,6 +34,7 @@ final class CombatService
         ?CombatStateProjector $projector = null,
         ?CombatPlayerActionEvaluator $playerActionEvaluator = null,
         ?ItemDropService $itemDropService = null,
+        private ?SkillService $skillService = null,
     ) {
         $this->turnEngine = new CombatTurnEngine($definitions->turnDurationSeconds());
         $this->playerActionEvaluator = $playerActionEvaluator ??
@@ -53,6 +55,7 @@ final class CombatService
             $this->playerActionEvaluator,
             null,
             $this->equipmentProvider,
+            $this->skillService,
         );
         $this->itemDropService = $itemDropService;
     }
@@ -238,6 +241,7 @@ final class CombatService
         int $characterId,
         string $actionKey,
         string $requestToken,
+        ?string $skillSlot = null,
     ): array
     {
         if (preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/D', $requestToken) !== 1) {
@@ -286,6 +290,10 @@ final class CombatService
                 ) {
                     throw new DomainException('Combat request token collides with another action.');
                 }
+                if (($replay['snapshot_skill_definition'] ?? null) !== null) {
+                    $frozen = SkillCatalogue::decodeSnapshot($replay['snapshot_skill_definition']);
+                    if ($frozen['slot'] !== $skillSlot) { throw new DomainException('Combat skill slot token collision.'); }
+                } elseif ($skillSlot !== null) { throw new DomainException('Combat skill slot token collision.'); }
                 $state = $this->projector->project($character, $synchronized);
                 $guard->commit();
 
@@ -302,6 +310,12 @@ final class CombatService
                 !in_array($definition['kind'] ?? null, ['weapon', 'skill'], true)
             ) {
                 throw new DomainException('Combat player action is unavailable.');
+            }
+
+            if (($definition['kind'] ?? null) === 'skill' && $this->skillService !== null) {
+                $definition = $this->skillService->assignedAction($character, $actionKey, $skillSlot);
+            } elseif (($definition['kind'] ?? null) === 'weapon' && $skillSlot !== null) {
+                throw new DomainException('Weapon action has no skill slot.');
             }
 
             $timeline = self::integer($synchronized, 'timeline_elapsed_ms');
@@ -338,6 +352,9 @@ final class CombatService
             }
 
             $snapshot = $this->equipmentProvider->offensiveSnapshot($character, $actionKey);
+            if (($definition['kind'] ?? null) === 'skill' && $this->skillService !== null) {
+                $snapshot['snapshot_skill_definition'] = SkillCatalogue::encodeSnapshot($definition);
+            }
             $turnState = $this->turnEngine->consumeAction($turnState, 'player', $timeline, $durationMs);
             $synchronized['player_actions_remaining'] = $turnState['player_actions_remaining'];
             $this->repository->createAction($encounterId, [

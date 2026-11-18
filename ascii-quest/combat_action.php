@@ -36,7 +36,8 @@ $requestKeys = is_array($request) ? array_keys($request) : [];
 $allowedKeys = ['csrf_token', 'action_key', 'request_token'];
 sort($requestKeys);
 sort($allowedKeys);
-if (!is_array($request) || $requestKeys !== $allowedKeys) {
+$slotKeys = array_merge($allowedKeys,['skill_slot']); sort($slotKeys);
+if (!is_array($request) || ($requestKeys !== $allowedKeys && $requestKeys !== $slotKeys)) {
     sendCombatActionJson(['success' => false, 'message' => 'Invalid combat action request.'], 400);
 }
 if (!isset($_SESSION['csrf_token']) || !is_string($request['csrf_token']) ||
@@ -46,6 +47,10 @@ if (!isset($_SESSION['csrf_token']) || !is_string($request['csrf_token']) ||
 
 $actionKey = $request['action_key'];
 $requestToken = $request['request_token'];
+$skillSlot = $request['skill_slot'] ?? null;
+if (array_key_exists('skill_slot',$request) && (!is_string($skillSlot) || !in_array($skillSlot,['skill_1','skill_2','skill_3','ultimate'],true))) {
+    sendCombatActionJson(['success'=>false,'message'=>'Invalid combat skill slot.'],422);
+}
 if (
     !is_string($actionKey) ||
     preg_match('/\A[a-z0-9][a-z0-9_-]{0,63}\z/D', $actionKey) !== 1 ||
@@ -64,6 +69,7 @@ try {
         (int) $_SESSION['character_id'],
         $actionKey,
         $requestToken,
+        $skillSlot,
     );
     sendCombatActionJson($state, 200);
 } catch (OutOfBoundsException) {
