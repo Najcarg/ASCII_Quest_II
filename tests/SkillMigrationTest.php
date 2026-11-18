@@ -72,4 +72,24 @@ return [
         }
         assertSameValue(true,str_contains(file_get_contents(__DIR__.'/../ascii-quest/move_character.php'),'serviceForPdoRepository($pdo, $combatRepository)'),'Movement entry uses DB catalogue/equipment and its owned aggregate.');
     },
+    'Task34B verifier accepts actual MariaDB flattened AND OR CHECK spelling without weaker predicates' => function (): void {
+        $sql=file_get_contents(__DIR__.'/../database/migrations/013_character_skill_system_verify.sql');
+        // Captured from information_schema.CHECK_CONSTRAINTS on MariaDB11.8.6.
+        // AND binds more tightly than OR: these omit only redundant group parentheses.
+        $printed=[
+            'chk_skill_type'=>"`tree_position` = 'ultimate' and `skill_type` = 'ultimate' or `tree_position` <> 'ultimate' and `skill_type` = 'normal'",
+            'chk_skill_status'=>"`status_key` is null and `status_power` = 0 or `status_key` is not null and `status_key` in ('poison','bleed','burn','freeze','shock') and `status_power` between 1 and 100",
+            'chk_skill_loadout_slot'=>"`slot` in ('skill_1','skill_2','skill_3') and `skill_type` = 'normal' or `slot` = 'ultimate' and `skill_type` = 'ultimate'",
+        ];
+        foreach($printed as $name=>$actual){
+            preg_match("/SELECT 'CHECK ".preg_quote($name,'/')."'.+? IN \(('(?:''|[^'])*'(?:,'(?:''|[^'])*')*)\)\) <> 1/s",$sql,$match);
+            assertSameValue(true,isset($match[1]),'Named exact CHECK whitelist.');
+            preg_match_all("/'((?:''|[^'])*)'/",$match[1],$literals);
+            $allowed=array_map(static fn($v)=>str_replace("''","'",$v),$literals[1]);
+            $normalized=strtolower(preg_replace('/[`\s]/','',$actual));
+            assertSameValue(true,in_array($normalized,$allowed,true),'MariaDB normalized '.$name);
+            assertSameValue(false,in_array(str_replace('and','or',$normalized),$allowed,true),'Weaker OR predicate rejected.');
+            assertSameValue(false,in_array(explode('or',$normalized,2)[0],$allowed,true),'Missing branch rejected.');
+        }
+    },
 ];
