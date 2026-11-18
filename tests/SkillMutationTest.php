@@ -19,6 +19,14 @@ foreach (SkillCatalogue::CLASSES as $class) {
     };
 }
 $tests += [
+    'Task34B first consistent class read follows account mutex before combat lookup' => function (): void {
+        [$r,$s]=task34bService();$r->resolveClassAfterMutex=true;
+        $s->mutate(7,42,'unlock','warrior_power_strike',null,task34bToken());
+        assertSameValue(['character','account','class','encounter'],array_slice($r->locks,0,4),'No stale pre-mutex repeatable-read snapshot.');
+        $r->locks=[];$r->battle=['id'=>92,'status'=>'active'];
+        assertSameValue(true,$s->state(7,42)['loadout_locked'],'Account fighter remains authoritative.');
+        assertSameValue(['character','account','class','encounter'],array_slice($r->locks,0,4),'GET same lock/snapshot order.');
+    },
     'Task34B unlock rejects wrong user missing champion class dead inactive level prerequisites points' => function (): void {
         [$r,$s]=task34bService();
         foreach ([[8,42,'warrior_power_strike'],[7,999,'warrior_power_strike'],[7,42,'mage_flame_strike'],[7,42,'warrior_berserker_strike'],[7,42,'warrior_cleave'],[7,42,'unknown_skill']] as [$user,$id,$key]) {

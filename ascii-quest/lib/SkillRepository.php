@@ -26,12 +26,20 @@ final class SkillRepository
         $stmt->execute(['character_id'=>$characterId,'user_id'=>$userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row)) { return null; }
-        // Class metadata is immutable during normal play; do not lock a shared
-        // class row before the account mutex (cross-Champion deadlock risk).
-        $class = $this->pdo->prepare('SELECT class_key FROM character_classes WHERE id = :class_id LIMIT 1');
-        $class->execute(['class_id'=>$row['class_id']]);
-        $row['class_key'] = $class->fetchColumn();
+        // Do not create a repeatable-read snapshot before the account mutex.
+        // Locking callers resolve class AFTER lockAccount; combat readers already
+        // hold that mutex. No shared class row is locked by this relation.
+        if (!$lock) { $row['class_key']=$this->classKey((int)$row['class_id']); }
         return $row;
+    }
+
+    public function classKey(int $classId): string
+    {
+        $stmt=$this->pdo->prepare('SELECT class_key FROM character_classes WHERE id = :class_id LIMIT 1');
+        $stmt->execute(['class_id'=>$classId]);
+        $key=$stmt->fetchColumn();
+        if (!is_string($key)) { throw new DomainException('Champion class unavailable.'); }
+        return $key;
     }
 
     public function lockAccount(int $userId): void

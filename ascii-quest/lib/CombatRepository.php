@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/CombatStatusRules.php';
 
 require_once __DIR__ . '/CombatDeathResult.php';
 require_once __DIR__ . '/CharacterProgression.php';
@@ -40,10 +41,10 @@ final class CombatRepository
     }
 
     /** Append identity, never overwrite an earlier source's replay guard. */
-    public function applyStatusEffect(int $encounterId, int $sourceActionId, string $key, int $potency, int $now, int $durationMs = 4000): bool
+    public function applyStatusEffect(int $encounterId, int $sourceActionId, string $key, int $potency, int $now, int $durationMs = CombatStatusRules::DURATION_MS): bool
     {
         $this->requireEncounterLock($encounterId);
-        if (!in_array($key, ['poison', 'bleed', 'burn', 'freeze', 'shock'], true) || $potency <= 0 || $now < 0 || $durationMs !== 4000) {
+        if (!in_array($key, ['poison', 'bleed', 'burn', 'freeze', 'shock'], true) || $potency <= 0 || $now < 0 || $durationMs !== CombatStatusRules::DURATION_MS) {
             throw new DomainException('Invalid combat status application.');
         }
         $source = array_filter($this->lockActionsForEncounter($encounterId),

@@ -1,0 +1,927 @@
+[
+  {
+    "class": "warrior",
+    "state": "level1",
+    "unlockEnabled": false
+  },
+  {
+    "class": "warrior",
+    "state": "level2",
+    "unlockEnabled": true
+  },
+  {
+    "class": "warrior",
+    "state": "level3",
+    "unlockEnabled": false
+  },
+  {
+    "class": "warrior",
+    "state": "level3_root",
+    "unlockEnabled": true
+  },
+  {
+    "class": "warrior",
+    "state": "level3_two",
+    "unlockEnabled": false
+  },
+  {
+    "class": "warrior",
+    "state": "level5",
+    "unlockEnabled": false
+  },
+  {
+    "class": "warrior",
+    "width": 1440,
+    "selectedLayout": {
+      "map": {
+        "x": 266,
+        "y": 72,
+        "width": 848,
+        "height": 527.953125
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 240,
+        "height": 732.59375
+      },
+      "right": {
+        "x": 1122,
+        "y": 72,
+        "width": 300,
+        "height": 732.59375
+      },
+      "row": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 848,
+        "height": 196.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "warrior",
+    "width": 1101,
+    "selectedLayout": {
+      "map": {
+        "x": 213.15625,
+        "y": 72,
+        "width": 630.640625,
+        "height": 456
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187.15625,
+        "height": 660.640625
+      },
+      "right": {
+        "x": 851.796875,
+        "y": 72,
+        "width": 231.203125,
+        "height": 660.640625
+      },
+      "row": {
+        "x": 213.15625,
+        "y": 536,
+        "width": 630.640625,
+        "height": 196.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "warrior",
+    "width": 1100,
+    "selectedLayout": {
+      "map": {
+        "x": 213,
+        "y": 72,
+        "width": 630,
+        "height": 456
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187,
+        "height": 898.640625
+      },
+      "right": {
+        "x": 851,
+        "y": 72,
+        "width": 231,
+        "height": 379.421875
+      },
+      "row": {
+        "x": 213,
+        "y": 536,
+        "width": 630,
+        "height": 434.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "warrior",
+    "width": 720,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 681,
+        "height": 486
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 681,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1056.796875,
+        "width": 681,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1445.375,
+        "width": 681,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "warrior",
+    "width": 390,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 351,
+        "height": 501
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 351,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1071.796875,
+        "width": 351,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1460.375,
+        "width": 351,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "warrior",
+    "width": 320,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 281,
+        "height": 521
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 281,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1091.796875,
+        "width": 281,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1480.375,
+        "width": 281,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "warrior",
+    "ajaxOperations": 10,
+    "retainedItem": true,
+    "noTabRequests": true
+  },
+  {
+    "class": "mage",
+    "state": "level1",
+    "unlockEnabled": false
+  },
+  {
+    "class": "mage",
+    "state": "level2",
+    "unlockEnabled": true
+  },
+  {
+    "class": "mage",
+    "state": "level3",
+    "unlockEnabled": false
+  },
+  {
+    "class": "mage",
+    "state": "level3_root",
+    "unlockEnabled": true
+  },
+  {
+    "class": "mage",
+    "state": "level3_two",
+    "unlockEnabled": false
+  },
+  {
+    "class": "mage",
+    "state": "level5",
+    "unlockEnabled": false
+  },
+  {
+    "class": "mage",
+    "width": 1440,
+    "selectedLayout": {
+      "map": {
+        "x": 266,
+        "y": 72,
+        "width": 848,
+        "height": 527.953125
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 240,
+        "height": 732.59375
+      },
+      "right": {
+        "x": 1122,
+        "y": 72,
+        "width": 300,
+        "height": 732.59375
+      },
+      "row": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 848,
+        "height": 196.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "mage",
+    "width": 1101,
+    "selectedLayout": {
+      "map": {
+        "x": 213.15625,
+        "y": 72,
+        "width": 630.640625,
+        "height": 456
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187.15625,
+        "height": 660.640625
+      },
+      "right": {
+        "x": 851.796875,
+        "y": 72,
+        "width": 231.203125,
+        "height": 660.640625
+      },
+      "row": {
+        "x": 213.15625,
+        "y": 536,
+        "width": 630.640625,
+        "height": 196.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "mage",
+    "width": 1100,
+    "selectedLayout": {
+      "map": {
+        "x": 213,
+        "y": 72,
+        "width": 630,
+        "height": 456
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187,
+        "height": 898.640625
+      },
+      "right": {
+        "x": 851,
+        "y": 72,
+        "width": 231,
+        "height": 379.421875
+      },
+      "row": {
+        "x": 213,
+        "y": 536,
+        "width": 630,
+        "height": 434.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "mage",
+    "width": 720,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 681,
+        "height": 486
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 681,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1056.796875,
+        "width": 681,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1445.375,
+        "width": 681,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "mage",
+    "width": 390,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 351,
+        "height": 501
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 351,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1071.796875,
+        "width": 351,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1460.375,
+        "width": 351,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "mage",
+    "width": 320,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 281,
+        "height": 521
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 281,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1091.796875,
+        "width": 281,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1480.375,
+        "width": 281,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "mage",
+    "ajaxOperations": 10,
+    "retainedItem": true,
+    "noTabRequests": true
+  },
+  {
+    "class": "rogue",
+    "state": "level1",
+    "unlockEnabled": false
+  },
+  {
+    "class": "rogue",
+    "state": "level2",
+    "unlockEnabled": true
+  },
+  {
+    "class": "rogue",
+    "state": "level3",
+    "unlockEnabled": false
+  },
+  {
+    "class": "rogue",
+    "state": "level3_root",
+    "unlockEnabled": true
+  },
+  {
+    "class": "rogue",
+    "state": "level3_two",
+    "unlockEnabled": false
+  },
+  {
+    "class": "rogue",
+    "state": "level5",
+    "unlockEnabled": false
+  },
+  {
+    "class": "rogue",
+    "width": 1440,
+    "selectedLayout": {
+      "map": {
+        "x": 266,
+        "y": 72,
+        "width": 848,
+        "height": 527.953125
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 240,
+        "height": 732.59375
+      },
+      "right": {
+        "x": 1122,
+        "y": 72,
+        "width": 300,
+        "height": 732.59375
+      },
+      "row": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 848,
+        "height": 196.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "rogue",
+    "width": 1101,
+    "selectedLayout": {
+      "map": {
+        "x": 213.15625,
+        "y": 72,
+        "width": 630.640625,
+        "height": 456
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187.15625,
+        "height": 660.640625
+      },
+      "right": {
+        "x": 851.796875,
+        "y": 72,
+        "width": 231.203125,
+        "height": 660.640625
+      },
+      "row": {
+        "x": 213.15625,
+        "y": 536,
+        "width": 630.640625,
+        "height": 196.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "rogue",
+    "width": 1100,
+    "selectedLayout": {
+      "map": {
+        "x": 213,
+        "y": 72,
+        "width": 630,
+        "height": 456
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187,
+        "height": 898.640625
+      },
+      "right": {
+        "x": 851,
+        "y": 72,
+        "width": 231,
+        "height": 379.421875
+      },
+      "row": {
+        "x": 213,
+        "y": 536,
+        "width": 630,
+        "height": 434.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "rogue",
+    "width": 720,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 681,
+        "height": 486
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 681,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1056.796875,
+        "width": 681,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1445.375,
+        "width": 681,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "rogue",
+    "width": 390,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 351,
+        "height": 501
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 351,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1071.796875,
+        "width": 351,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1460.375,
+        "width": 351,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "rogue",
+    "width": 320,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 281,
+        "height": 521
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 281,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1091.796875,
+        "width": 281,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1480.375,
+        "width": 281,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "rogue",
+    "ajaxOperations": 10,
+    "retainedItem": true,
+    "noTabRequests": true
+  },
+  {
+    "class": "cleric",
+    "state": "level1",
+    "unlockEnabled": false
+  },
+  {
+    "class": "cleric",
+    "state": "level2",
+    "unlockEnabled": true
+  },
+  {
+    "class": "cleric",
+    "state": "level3",
+    "unlockEnabled": false
+  },
+  {
+    "class": "cleric",
+    "state": "level3_root",
+    "unlockEnabled": true
+  },
+  {
+    "class": "cleric",
+    "state": "level3_two",
+    "unlockEnabled": false
+  },
+  {
+    "class": "cleric",
+    "state": "level5",
+    "unlockEnabled": false
+  },
+  {
+    "class": "cleric",
+    "width": 1440,
+    "selectedLayout": {
+      "map": {
+        "x": 266,
+        "y": 72,
+        "width": 848,
+        "height": 527.953125
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 240,
+        "height": 732.59375
+      },
+      "right": {
+        "x": 1122,
+        "y": 72,
+        "width": 300,
+        "height": 732.59375
+      },
+      "row": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 848,
+        "height": 196.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "cleric",
+    "width": 1101,
+    "selectedLayout": {
+      "map": {
+        "x": 213.15625,
+        "y": 72,
+        "width": 630.640625,
+        "height": 456
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187.15625,
+        "height": 660.640625
+      },
+      "right": {
+        "x": 851.796875,
+        "y": 72,
+        "width": 231.203125,
+        "height": 660.640625
+      },
+      "row": {
+        "x": 213.15625,
+        "y": 536,
+        "width": 630.640625,
+        "height": 196.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "cleric",
+    "width": 1100,
+    "selectedLayout": {
+      "map": {
+        "x": 213,
+        "y": 72,
+        "width": 630,
+        "height": 456
+      },
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187,
+        "height": 898.640625
+      },
+      "right": {
+        "x": 851,
+        "y": 72,
+        "width": 231,
+        "height": 379.421875
+      },
+      "row": {
+        "x": 213,
+        "y": 536,
+        "width": 630,
+        "height": 434.640625
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "cleric",
+    "width": 720,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 681,
+        "height": 486
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 681,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1056.796875,
+        "width": 681,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1445.375,
+        "width": 681,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "cleric",
+    "width": 390,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 351,
+        "height": 501
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 351,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1071.796875,
+        "width": 351,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1460.375,
+        "width": 351,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "cleric",
+    "width": 320,
+    "selectedLayout": {
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 281,
+        "height": 521
+      },
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 281,
+        "height": 446.796875
+      },
+      "right": {
+        "x": 12,
+        "y": 1091.796875,
+        "width": 281,
+        "height": 380.578125
+      },
+      "row": {
+        "x": 12,
+        "y": 1480.375,
+        "width": 281,
+        "height": 435.796875
+      },
+      "overflow": false
+    }
+  },
+  {
+    "class": "cleric",
+    "ajaxOperations": 10,
+    "retainedItem": true,
+    "noTabRequests": true
+  },
+  {
+    "coherentSsrLevel": 1,
+    "fixtureOnly": true
+  },
+  {
+    "coherentSsrLevel": 2,
+    "fixtureOnly": true
+  },
+  {
+    "coherentSsrLevel": 3,
+    "fixtureOnly": true
+  },
+  {
+    "combat": [
+      {
+        "name": "Flame Strike",
+        "status": "Ready",
+        "ready": true
+      },
+      {
+        "name": "Frost Bolt",
+        "status": "Ready",
+        "ready": true
+      },
+      {
+        "name": "Lightning Bolt",
+        "status": "Ready",
+        "ready": true
+      },
+      {
+        "name": "Arcane Inferno",
+        "status": "Ready",
+        "ready": true
+      }
+    ],
+    "allFourAssigned": true
+  }
+]

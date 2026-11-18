@@ -61,6 +61,9 @@ final class CombatActionResolver
             throw new DomainException('Canonical pending skill snapshot is missing.');
         }
         if (($definition['key'] ?? null) !== $definitionKey) { throw new DomainException('Frozen action identity mismatch.'); }
+        if ($frozenSkill !== null && CharacterProgression::nonNegativeInteger($lockedAction['snapshot_base_damage'] ?? null) !== $definition['prototype_damage']) {
+            throw new DomainException('Frozen skill numeric snapshot mismatch.');
+        }
         if (
             $definition === null ||
             !in_array($definition['kind'] ?? null, ['weapon', 'skill'], true) ||

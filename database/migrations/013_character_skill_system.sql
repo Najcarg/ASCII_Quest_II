@@ -10,6 +10,7 @@ CREATE PROCEDURE run_013_character_skill_system()
 BEGIN
     DECLARE v_count INT DEFAULT 0;
     DECLARE v_lock INT DEFAULT 0;
+    DECLARE v_class_id_type VARCHAR(64) DEFAULT NULL;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         IF v_lock = 1 THEN DO RELEASE_LOCK('ascii_quest.migration013'); END IF;
@@ -42,15 +43,23 @@ BEGIN
       AND TABLE_NAME IN ('characters','character_classes','combat_actions','schema_migrations') AND ENGINE = 'InnoDB';
     IF v_count <> 4 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Migration013 requires InnoDB parents'; END IF;
     SELECT COUNT(*) INTO v_count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME IN ('characters','character_classes') AND COLUMN_NAME = 'id' AND IS_NULLABLE = 'NO'
+      AND TABLE_NAME = 'characters' AND COLUMN_NAME = 'id' AND IS_NULLABLE = 'NO'
       AND DATA_TYPE = 'int' AND COLUMN_TYPE REGEXP '^int(\\([0-9]+\\))? unsigned$';
-    IF v_count <> 2 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Migration013 unexpected parent IDs'; END IF;
-    SELECT COUNT(*) INTO v_count FROM character_classes WHERE BINARY class_key IN ('warrior','mage','rogue','cleric');
+    IF v_count <> 1 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Migration013 unexpected Champion parent ID'; END IF;
+    -- Legacy class ID width/signedness is not invented or altered. Copy only a
+    -- strictly whitelisted integer type into both new FK columns.
+    SELECT COLUMN_TYPE INTO v_class_id_type FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'character_classes' AND COLUMN_NAME = 'id' AND IS_NULLABLE = 'NO'
+      AND DATA_TYPE IN ('tinyint','smallint','mediumint','int','bigint');
+    IF v_class_id_type IS NULL OR v_class_id_type NOT REGEXP '^(tinyint|smallint|mediumint|int|bigint)(\\([0-9]+\\))?( unsigned)?$' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Migration013 unsupported class parent ID type';
+    END IF;
+    SELECT COUNT(*) INTO v_count FROM character_classes WHERE BINARY class_key IN ('warrior','mage','rogue','cleric') AND id BETWEEN 1 AND 9223372036854775807;
     IF v_count <> 4 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Migration013 canonical classes missing'; END IF;
 
-    CREATE TABLE skill_definitions (
+    SET @skill_class_ddl = CONCAT('CREATE TABLE skill_definitions (
         skill_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-        class_id INT UNSIGNED NOT NULL,
+        class_id ',v_class_id_type,' NOT NULL,
         tree_position VARCHAR(12) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
         display_name VARCHAR(64) NOT NULL,
         description VARCHAR(255) NOT NULL,
@@ -68,23 +77,29 @@ BEGIN
         UNIQUE KEY uq_skill_class (skill_key, class_id),
         UNIQUE KEY uq_skill_type (skill_key, skill_type),
         CONSTRAINT fk_skill_class FOREIGN KEY (class_id) REFERENCES character_classes(id) ON DELETE RESTRICT,
-        CONSTRAINT chk_skill_position CHECK (tree_position IN ('root','branch_1','branch_2','ultimate')),
-        CONSTRAINT chk_skill_type CHECK ((tree_position = 'ultimate' AND skill_type = 'ultimate') OR (tree_position <> 'ultimate' AND skill_type = 'normal')),
+        CONSTRAINT chk_skill_position CHECK (tree_position IN (''root'',''branch_1'',''branch_2'',''ultimate'')),
+        CONSTRAINT chk_skill_type CHECK ((tree_position = ''ultimate'' AND skill_type = ''ultimate'') OR (tree_position <> ''ultimate'' AND skill_type = ''normal'')),
         CONSTRAINT chk_skill_level CHECK (minimum_level BETWEEN 2 AND 50),
-        CONSTRAINT chk_skill_damage CHECK (damage_type IN ('physical','fire','cold','lightning','poison') AND base_damage BETWEEN 1 AND 10000),
+        CONSTRAINT chk_skill_damage CHECK (damage_type IN (''physical'',''fire'',''cold'',''lightning'',''poison'') AND base_damage BETWEEN 1 AND 10000),
         CONSTRAINT chk_skill_timing CHECK (duration_ms BETWEEN 100 AND 10000 AND cooldown_ms BETWEEN 100 AND 600000),
-        CONSTRAINT chk_skill_status CHECK ((status_key IS NULL AND status_power = 0) OR (status_key IS NOT NULL AND status_key IN ('poison','bleed','burn','freeze','shock') AND status_power BETWEEN 1 AND 100)),
+        CONSTRAINT chk_skill_status CHECK ((status_key IS NULL AND status_power = 0) OR (status_key IS NOT NULL AND status_key IN (''poison'',''bleed'',''burn'',''freeze'',''shock'') AND status_power BETWEEN 1 AND 100)),
         CONSTRAINT chk_skill_active CHECK (is_active IN (0,1))
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    CREATE TABLE skill_prerequisites (
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+    PREPARE skill_class_stmt FROM @skill_class_ddl;
+    EXECUTE skill_class_stmt;
+    DEALLOCATE PREPARE skill_class_stmt;
+    SET @skill_class_ddl = CONCAT('CREATE TABLE skill_prerequisites (
         skill_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
         prerequisite_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-        class_id INT UNSIGNED NOT NULL,
+        class_id ',v_class_id_type,' NOT NULL,
         PRIMARY KEY (skill_key, prerequisite_key),
         CONSTRAINT fk_skill_prereq_child FOREIGN KEY (skill_key, class_id) REFERENCES skill_definitions(skill_key, class_id) ON DELETE RESTRICT,
         CONSTRAINT fk_skill_prereq_parent FOREIGN KEY (prerequisite_key, class_id) REFERENCES skill_definitions(skill_key, class_id) ON DELETE RESTRICT,
         CONSTRAINT chk_skill_prereq_self CHECK (skill_key <> prerequisite_key)
-    ) ENGINE=InnoDB;
+    ) ENGINE=InnoDB');
+    PREPARE skill_class_stmt FROM @skill_class_ddl;
+    EXECUTE skill_class_stmt;
+    DEALLOCATE PREPARE skill_class_stmt;
     CREATE TABLE character_skills (
         character_id INT UNSIGNED NOT NULL,
         skill_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,

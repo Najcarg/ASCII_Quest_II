@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/CombatStatusRules.php';
 
 require_once __DIR__ . '/CharacterStats.php';
 require_once __DIR__ . '/SkillCatalogue.php';
@@ -9,7 +10,7 @@ require_once __DIR__ . '/CombatRandomSource.php';
 /** Enemy-only equipment statuses. No wall clock, gear reads or process-local state. */
 final class CombatStatusEffects
 {
-    public const KEYS = ['poison', 'bleed', 'burn', 'freeze', 'shock'];
+    public const KEYS = CombatStatusRules::KEYS;
     private const LABELS = ['poison' => 'Poisoned', 'bleed' => 'Bleeding', 'burn' => 'Burning', 'freeze' => 'Frozen', 'shock' => 'Shocked'];
     private const TICK_LABELS = ['poison' => 'Poison', 'bleed' => 'Bleed', 'burn' => 'Burn'];
 
@@ -28,7 +29,7 @@ final class CombatStatusEffects
             if (!array_key_exists($column, $action)) { throw new DomainException('Missing combat status snapshot.'); }
             $powers[$key] = $action[$column];
         }
-        $this->applyPowers($encounter,$action,$damage,$enemy,$random,$powers,4000);
+        $this->applyPowers($encounter,$action,$damage,$enemy,$random,$powers,CombatStatusRules::DURATION_MS);
     }
 
     /** Explicit intrinsic skill statuses only; never read equipment status snapshots. */
@@ -43,10 +44,10 @@ final class CombatStatusEffects
         if ($status === null) { return; }
         $powers = array_fill_keys(self::KEYS,0);
         $powers[$status['key']] = $status['power'];
-        $this->applyPowers($encounter,$action,$damage,$enemy,$random,$powers,$status['duration_ms']);
+        $this->applyPowers($encounter,$action,$damage,$enemy,$random,$powers,$status['duration_ms'],[$status['key']=>$status['chance_percent']]);
     }
 
-    private function applyPowers(array $encounter,array $action,array $damage,array $enemy,CombatRandomSource $random,array $powers,int $durationMs): void
+    private function applyPowers(array $encounter,array $action,array $damage,array $enemy,CombatRandomSource $random,array $powers,int $durationMs,array $frozenChances=[]): void
     {
         foreach (self::KEYS as $key) {
             $value = $powers[$key];
@@ -55,7 +56,8 @@ final class CombatStatusEffects
             if (!is_int($value) || $value < 0) { throw new DomainException('Invalid combat status snapshot.'); }
             if ($value === 0) { continue; }
             $chances = array_fill_keys(self::KEYS,0); $chances[$key] = $value;
-            if ($random->integer(1,100) > CharacterStats::statusEffectChance($chances)) { continue; }
+            $chance = $frozenChances[$key] ?? CharacterStats::statusEffectChance($chances);
+            if ($random->integer(1,100) > $chance) { continue; }
             if ($this->repository->applyStatusEffect((int)$encounter['id'],(int)$action['id'],$key,$value,(int)$action['resolves_timeline_ms'],$durationMs)) {
                 $this->repository->appendEvent((int)$encounter['id'],'status_applied_'.$key,$enemy['name'].' is '.self::LABELS[$key].'.',null);
             }

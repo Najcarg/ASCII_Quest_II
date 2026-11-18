@@ -53,6 +53,16 @@ foreach (SkillCatalogue::CLASSES as $class) {
     };
 }
 $tests += [
+    'Task34B fresh movement encounter initial projection uses persisted four-slot loadout' => function (): void {
+        [$pdo,$clock,,,$skills,$keys]=task34bCombat('rogue');$pdo->encounters=[];
+        $repository=new CombatRepository($pdo);
+        $service=CombatBootstrap::serviceForRepository($repository,$clock,null,new Task6SequenceRandomSource([]),null,$skills);
+        $repository->beginTransaction();$character=$repository->lockOwnedCharacter(7,42);$repository->lockOwnedAccountActiveEncounter(7,42);
+        $state=$service->startOrResumeForLockedMovement(7,$character,CombatDefinitionRegistry::fromDefaultConfig()->encounters()[0]);
+        $repository->commit();
+        assertSameValue($keys,array_column($state['player_skills'],'key'),'Initial movement response cannot advertise a free prototype skill.');
+        assertSameValue(4,count($state['skill_state']['skills']),'Shared tree state on initial combat entry.');
+    },
     'Task34B empty persisted loadout exposes four unavailable slots and rejects free prototype' => function (): void {
         [$pdo,,$combat,,,$keys]=task34bCombat('mage',false);
         $state=$combat->state(7,42);
@@ -95,6 +105,64 @@ $tests += [
         $restarted->startPlayerAction(7,42,$keys[1],task34bToken(300),'skill_2');
         assertSameValue($events,$pdo->events,'Token replay ignores today allocation, does not resolve twice.');
         assertSameValue([null,null,null,null],array_column($state['player_skills'],'key'),'Current display can be empty without changing pending history.');
+        assertSameValue('Frost Bolt',$state['player_actions'][0]['name'],'Frozen history name, not Retuned.');
+    },
+    'Task34B intrinsic proc chance is frozen rather than recalculated at resolution' => function (): void {
+        [$pdo,$clock,$combat,,,$keys]=task34bCombat('mage');
+        $combat->startPlayerAction(7,42,$keys[1],task34bToken(300),'skill_2');
+        $id=array_key_first($pdo->actions);$frozen=SkillCatalogue::decodeSnapshot($pdo->actions[$id]['snapshot_skill_definition']);
+        assertFloatValue(75.0,(float)$frozen['intrinsic_status']['chance_percent'],'Shared Task30 chance captured at start.');
+        // Simulate a valid historical frozen zero-chance rule. Today's function
+        // would return75; pending resolution must consume the stored percent.
+        $frozen['intrinsic_status']['chance_percent']=0;
+        $pdo->actions[$id]['snapshot_skill_definition']=SkillCatalogue::encodeSnapshot($frozen);
+        $clock->set(new DateTimeImmutable('2026-09-01 12:00:02.000000',new DateTimeZone('UTC')));
+        $combat->state(7,42);
+        assertSameValue([],$pdo->statuses,'No current-rule proc replaces frozen chance.');
+        assertSameValue(980,$pdo->encounters[91]['enemy_current_hp'],'Direct damage still frozen.');
+    },
+    'Task34B production authority rejects inactive crossclass busy allowance and time-invalid canonical requests' => function (): void {
+        [$pdo,$clock,$combat,$repo,$skills,$keys]=task34bCombat();
+        $repo->definitions[0]['is_active']=0;
+        $inactive=new SkillService($repo,$repo->catalogue());
+        $strict=CombatBootstrap::serviceForRepository(new CombatRepository($pdo),$clock,null,new Task6SequenceRandomSource([]),null,$inactive);
+        task34aAssertRejected(fn()=>$strict->startPlayerAction(7,42,$keys[0],task34bToken(300),'skill_1'),DomainException::class);
+        $repo->definitions[0]['is_active']=1;$pdo->characters[42]['class_key']='mage';
+        task34aAssertRejected(fn()=>$combat->startPlayerAction(7,42,$keys[0],task34bToken(300),'skill_1'),DomainException::class);
+        $pdo->characters[42]['class_key']='warrior';
+        $pdo->encounters[91]['player_actions_remaining']=0;
+        task34aAssertRejected(fn()=>$combat->startPlayerAction(7,42,$keys[0],task34bToken(300),'skill_1'),DomainException::class);
+        $pdo->encounters[91]['player_actions_remaining']=5;$pdo->encounters[91]['timeline_elapsed_ms']=9500;
+        task34aAssertRejected(fn()=>$combat->startPlayerAction(7,42,$keys[0],task34bToken(300),'skill_1'),DomainException::class);
+        $pdo->encounters[91]['timeline_elapsed_ms']=0;
+        $combat->startPlayerAction(7,42,$keys[0],task34bToken(300),'skill_1');
+        task34aAssertRejected(fn()=>$combat->startPlayerAction(7,42,$keys[1],task34bToken(301),'skill_2'),DomainException::class);
+    },
+    'Task34B canonical killing skill preserves34A victory rewards and idempotent progression' => function (): void {
+        [$pdo,$clock,$combat,,,$keys]=task34bCombat();$pdo->encounters[91]['enemy_current_hp']=1;
+        $combat->startPlayerAction(7,42,$keys[0],task34bToken(300),'skill_1');
+        $clock->set(new DateTimeImmutable('2026-09-01 12:00:02.000000',new DateTimeZone('UTC')));
+        $state=$combat->state(7,42);
+        assertSameValue('victory_loot',$state['status'],'Victory.');
+        assertSameValue(1640,$pdo->characters[42]['experience'],'Exactly40 XP.');assertSameValue(5,$pdo->characters[42]['level'],'34A curve.');assertSameValue(25,$pdo->characters[42]['gold'],'Gold unchanged.');
+        assertSameValue(4,$state['skill_state']['points']['earned'],'Authoritative skill projection reflects34A level.');
+        $saved=[$pdo->characters,$pdo->events,$pdo->actions];
+        $replay=$combat->startPlayerAction(7,42,$keys[0],task34bToken(300),'skill_1');
+        assertSameValue($saved,[$pdo->characters,$pdo->events,$pdo->actions],'No duplicate rewards or points.');
+        assertSameValue($state['loot_phase']['rewards'],$replay['loot_phase']['rewards'],'Immutable34A receipt.');
+    },
+    'Task34B real DB-authority adapter preserves unresolved legacy Flame Strike and denies fresh prototype requests' => function (): void {
+        [$pdo,$clock,$combat,$repo]=task34bCombat('mage',false);
+        $snapshot=(new PrototypeCombatEquipmentProvider(CombatDefinitionRegistry::fromDefaultConfig()))->offensiveSnapshot($pdo->characters[42],'prototype_flame_strike');
+        $pdo->actions[60]=array_replace(task6PendingAction(),$snapshot,['id'=>60,'encounter_id'=>91,'action_kind'=>'skill','definition_key'=>'prototype_flame_strike','request_token'=>task34bToken(300),'started_timeline_ms'=>0,'resolves_timeline_ms'=>1500,'cooldown_ready_timeline_ms'=>5000,'snapshot_skill_definition'=>null]);
+        $clock->set(new DateTimeImmutable('2026-09-01 12:00:02.000000',new DateTimeZone('UTC')));
+        $state=$combat->state(7,42);
+        assertSameValue(976,$pdo->encounters[91]['enemy_current_hp'],'Legacy fire24 unchanged.');
+        assertSameValue('prototype_burning',$state['active_effects'][0]['key'],'Original cosmetic effect identity.');
+        assertSameValue([],$pdo->statuses,'Legacy cosmetic Burning is NOT new damaging Burn.');
+        $old=[$pdo->actions,$pdo->events];$combat->startPlayerAction(7,42,'prototype_flame_strike',task34bToken(300));
+        assertSameValue($old,[$pdo->actions,$pdo->events],'Legacy token replay retained.');
+        task34aAssertRejected(fn()=>$combat->startPlayerAction(7,42,'prototype_flame_strike',task34bToken(301)),DomainException::class);
     },
     'Task34B persistent equipment cannot amplify skill damage elements or intrinsic status and cast rate stays shared' => function (): void {
         [$rows,$edges]=task34bCatalogueRows();$catalogue=new SkillCatalogue($rows,$edges);
@@ -119,6 +187,20 @@ $tests += [
             assertSameValue(null,$snapshot['snapshot_weapon_item_id'],'No weapon identity.');
             assertSameValue((int)round($row['duration_ms']/2),$provider->effectiveDurationMs($character,$row['skill_key'],$row['duration_ms']),'Shared cast-rate duration.');
         }
+    },
+    'Task34B valid Block reaction and replay remain unchanged with all four persisted skill slots' => function (): void {
+        [$pdo,,$combat,$repo,,$keys]=task34bCombat();
+        $pdo->encounters[91]['timeline_elapsed_ms']=500;$pdo->encounters[91]['player_actions_remaining']=0;
+        $pdo->actions[71]=task7EnemyAction();
+        $allocations=[$repo->learned,$repo->assignments];
+        $state=$combat->attemptBlock(7,42,71,str_repeat('b',64),task34bToken(300));
+        assertSameValue($keys,array_column($state['player_skills'],'key'),'Skill slots survive reaction projection.');
+        assertSameValue(0,$state['turn']['player_actions_remaining'],'Block consumes no Action.');
+        assertSameValue(1,count(array_filter($pdo->actions,static fn($a)=>$a['action_kind']==='block')),'One Block receipt.');
+        $saved=[$pdo->characters,$pdo->actions,$pdo->events];
+        $combat->attemptBlock(7,42,71,str_repeat('b',64),task34bToken(300));
+        assertSameValue($saved,[$pdo->characters,$pdo->actions,$pdo->events],'Block replay remains once only.');
+        assertSameValue($allocations,[$repo->learned,$repo->assignments],'No skill allocation mutation by Block.');
     },
     'Task34B weapon potion block paths remain existing engine with database skill authority' => function (): void {
         [$pdo,,$combat]=task34bCombat();

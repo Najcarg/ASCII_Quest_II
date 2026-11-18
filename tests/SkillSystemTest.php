@@ -21,6 +21,21 @@ return [
             assertSameValue([$positions['branch_1']['skill_key']], $positions['ultimate']['prerequisites'], 'B to ultimate.');
         }
     },
+    'Task34B malformed definitions cyclic crossclass prerequisites and frozen metadata fail closed' => function (): void {
+        [$rows,$edges]=task34bCatalogueRows();
+        $bad=$rows;$bad[0]['status_key']='new_unsupported';$bad[0]['status_power']=1;
+        task34aAssertRejected(fn()=>new SkillCatalogue($bad,$edges),UnexpectedValueException::class);
+        $cycle=$edges;$cycle[]=['skill_key'=>$rows[0]['skill_key'],'prerequisite_key'=>$rows[1]['skill_key'],'class_id'=>1];
+        task34aAssertRejected(fn()=>new SkillCatalogue($rows,$cycle),UnexpectedValueException::class);
+        $cross=$edges;$cross[0]['prerequisite_key']=$rows[4]['skill_key'];
+        task34aAssertRejected(fn()=>new SkillCatalogue($rows,$cross),UnexpectedValueException::class);
+        $missing=$edges;array_shift($missing);
+        task34aAssertRejected(fn()=>new SkillCatalogue($rows,$missing),UnexpectedValueException::class);
+        $catalogue=new SkillCatalogue($rows,$edges);$action=$catalogue->action($rows[0]['skill_key'],'skill_1');
+        assertSameValue($action,SkillCatalogue::decodeSnapshot(SkillCatalogue::encodeSnapshot($action)),'Frozen schema roundtrip.');
+        unset($action['intrinsic_status']);
+        task34aAssertRejected(fn()=>SkillCatalogue::decodeSnapshot(SkillCatalogue::encodeSnapshot($action)),UnexpectedValueException::class);
+    },
     'Task34B authoritative progression derived points and malformed level rejection' => function (): void {
         foreach ([1 => 0, 2 => 1, 5 => 4, 50 => 49] as $level => $earned) {
             $character = ['level' => $level,'experience' => 100 * ($level-1)**2,'life_state'=>'alive'];

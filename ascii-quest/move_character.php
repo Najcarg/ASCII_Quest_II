@@ -166,7 +166,7 @@ if ($direction === "up") {
 |--------------------------------------------------------------------------
 */
 $combatRepository = CombatBootstrap::repository($pdo);
-$combatService = CombatBootstrap::serviceForRepository($combatRepository);
+$combatService = CombatBootstrap::serviceForPdoRepository($pdo, $combatRepository);
 $combatGuard = CombatBootstrap::guardForRepository($combatRepository);
 $combatRepository->beginTransaction();
 $movementTransactionOpen = true;

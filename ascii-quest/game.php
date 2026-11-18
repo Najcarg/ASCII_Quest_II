@@ -156,6 +156,9 @@ try {
         (int) $character["id"],
         1,
     );
+    $skillState = $combatState['skill_state'] ?? SkillBootstrap::service($pdo)->state(
+        (int) $_SESSION['user_id'], (int) $character['id'],
+    );
 } catch (DomainException | OutOfBoundsException $e) {
     unset($_SESSION["character_id"]);
     $_SESSION["flash_message"] = $e->getMessage();
@@ -167,6 +170,7 @@ try {
 $isCombatMode = $combatState !== [];
 $isVictoryLoot = $isCombatMode && ($combatState['status'] ?? null) === 'victory_loot';
 $isDefeated = $isCombatMode && ($combatState['status'] ?? null) === 'defeated';
+$combatSlotStates = array_column($combatState["player_skills"] ?? [], null, "slot");
 $combatSkillOne = null;
 if ($isCombatMode) {
     foreach ($combatState["player_skills"] ?? [] as $combatSkill) {
@@ -364,6 +368,7 @@ $explorationHudVersion = (int) filemtime(
 $gameControlsVersion = (int) filemtime(__DIR__ . "/js/game_controls.js");
 $combatHudVersion = (int) filemtime(__DIR__ . "/js/combat_hud.js");
 $itemHudVersion = (int) filemtime(__DIR__ . "/js/item_hud.js");
+$skillHudVersion = (int) filemtime(__DIR__ . "/js/skill_hud.js");
 
 // Derive alive progression from total XP; dead levels remain historical.
 $progressionState = CharacterProgression::project($character);
@@ -785,10 +790,10 @@ $detailStatGroups = [
                                 </div>
 
                                 <div class="combat-command-slot">
-                                    <button id="combatSkill2Button" class="combat-action-button combat-skill-button" type="button" disabled>
+                                    <button id="combatSkill2Button" class="combat-action-button combat-skill-button" type="button" <?= ($combatSlotStates["skill_2"]["available"] ?? false) ? "" : "disabled" ?>>
                                         <span class="combat-command-label">Skill 2</span>
-                                        <strong id="combatSkill2Name">Empty</strong>
-                                        <small id="combatSkill2Status">Unavailable</small>
+                                        <strong id="combatSkill2Name"><?= e($combatSlotStates["skill_2"]["name"] ?? "Empty") ?></strong>
+                                        <small id="combatSkill2Status"><?= ($combatSlotStates["skill_2"]["available"] ?? false) ? "Ready" : "Unavailable" ?></small>
                                     </button>
                                     <div id="combatSkill2CooldownBar" class="combat-progress combat-skill-cooldown-bar" role="progressbar" aria-label="Skill 2 recovery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                                         <span id="combatSkill2CooldownFill" class="combat-progress-fill"></span>
@@ -796,10 +801,10 @@ $detailStatGroups = [
                                 </div>
 
                                 <div class="combat-command-slot">
-                                    <button id="combatSkill3Button" class="combat-action-button combat-skill-button" type="button" disabled>
+                                    <button id="combatSkill3Button" class="combat-action-button combat-skill-button" type="button" <?= ($combatSlotStates["skill_3"]["available"] ?? false) ? "" : "disabled" ?>>
                                         <span class="combat-command-label">Skill 3</span>
-                                        <strong id="combatSkill3Name">Empty</strong>
-                                        <small id="combatSkill3Status">Unavailable</small>
+                                        <strong id="combatSkill3Name"><?= e($combatSlotStates["skill_3"]["name"] ?? "Empty") ?></strong>
+                                        <small id="combatSkill3Status"><?= ($combatSlotStates["skill_3"]["available"] ?? false) ? "Ready" : "Unavailable" ?></small>
                                     </button>
                                     <div id="combatSkill3CooldownBar" class="combat-progress combat-skill-cooldown-bar" role="progressbar" aria-label="Skill 3 recovery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                                         <span id="combatSkill3CooldownFill" class="combat-progress-fill"></span>
@@ -807,10 +812,10 @@ $detailStatGroups = [
                                 </div>
 
                                 <div class="combat-command-slot">
-                                    <button id="combatUltimateButton" class="combat-action-button combat-skill-button" type="button" disabled>
+                                    <button id="combatUltimateButton" class="combat-action-button combat-skill-button" type="button" <?= ($combatSlotStates["ultimate"]["available"] ?? false) ? "" : "disabled" ?>>
                                         <span class="combat-command-label">Ultimate</span>
-                                        <strong id="combatUltimateName">Empty</strong>
-                                        <small id="combatUltimateStatus">Unavailable</small>
+                                        <strong id="combatUltimateName"><?= e($combatSlotStates["ultimate"]["name"] ?? "Empty") ?></strong>
+                                        <small id="combatUltimateStatus"><?= ($combatSlotStates["ultimate"]["available"] ?? false) ? "Ready" : "Unavailable" ?></small>
                                     </button>
                                     <div id="combatUltimateCooldownBar" class="combat-progress combat-skill-cooldown-bar" role="progressbar" aria-label="Ultimate recovery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                                         <span id="combatUltimateCooldownFill" class="combat-progress-fill"></span>
@@ -997,10 +1002,10 @@ $detailStatGroups = [
                                 "ultimate" => "Ultimate",
                                 "potion" => "Potion",
                             ] as $loadoutSlotKey => $slot): ?>
-                                <?php if ($loadoutSlotKey === "skill_1" && $isCombatMode && $combatSkillOne !== null): ?>
-                                    <div class="loadout-slot" data-loadout-slot="skill_1">
-                                        <span>Skill 1</span>
-                                        <strong><?= e($combatSkillOne["name"]) ?></strong>
+                                <?php if ($loadoutSlotKey !== "potion"): ?>
+                                    <div class="loadout-slot" data-loadout-slot="<?= e($loadoutSlotKey) ?>">
+                                        <span><?= e($slot) ?></span>
+                                        <strong><?= e($skillState['loadout'][$loadoutSlotKey]['name'] ?? 'Empty') ?></strong>
                                     </div>
                                 <?php elseif ($loadoutSlotKey === "potion" && $isCombatMode): ?>
                                     <div class="loadout-slot" data-loadout-slot="potion">
@@ -1042,13 +1047,34 @@ $detailStatGroups = [
 
                 <section
                     id="right-skills"
-                    class="hud-tab-panel hud-placeholder"
+                    class="hud-tab-panel <?= empty($skillState) ? 'hud-placeholder' : 'skill-tree-panel' ?>"
                     role="tabpanel"
                     data-tab-panel
                     hidden
                 >
                     <h2>Skill Tree</h2>
-                    <p>Skill Tree will be implemented in a later milestone.</p>
+                    <?php if (!empty($skillState)): ?>
+                    <button id="skillRefreshButton" class="skill-refresh" type="button">Refresh</button>
+                    <p id="skillPoints" class="skill-points">Points <?= e($skillState['points']['available']) ?> · <?= e($skillState['points']['spent']) ?>/<?= e($skillState['points']['earned']) ?> spent</p>
+                    <p id="skillMessage" class="skill-message" role="status"></p>
+                    <div id="skillTree" class="skill-tree" aria-label="Class skill prerequisites">
+                        <pre class="skill-connection skill-connection-fork" aria-label="Root to both branches">┌──────┴──────┐</pre>
+                        <pre class="skill-connection skill-connection-ultimate" aria-label="Branch one to ultimate">│</pre>
+                        <?php foreach ($skillState['skills'] as $skill): ?>
+                        <button type="button" class="skill-node skill-node-<?= e($skill['tree_position']) ?> state-<?= e($skill['state']) ?>" data-skill-key="<?= e($skill['key']) ?>" data-tree-position="<?= e($skill['tree_position']) ?>" aria-pressed="false">
+                            <strong data-skill-name><?= e($skill['name']) ?></strong>
+                            <small data-skill-state><?= strtoupper(e($skill['state'])) ?></small>
+                            <small data-skill-assigned><?= $skill['assigned_slot'] === null ? '' : 'ASSIGNED' ?></small>
+                            <?php if ($skill['ultimate']): ?><span class="skill-ultimate-label">[ ULTIMATE ]</span><?php endif; ?>
+                        </button>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="skill-loadout" aria-label="Skill loadout">
+                        <?php foreach (['skill_1'=>'1','skill_2'=>'2','skill_3'=>'3','ultimate'=>'ULT'] as $key=>$label): ?>
+                        <span><?= e($label) ?>: <strong data-skill-loadout="<?= e($key) ?>"><?= e($skillState['loadout'][$key]['name'] ?? 'Empty') ?></strong></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else: ?><p>Skill state unavailable.</p><?php endif; ?>
                 </section>
 
                 <section
@@ -1199,9 +1225,21 @@ $detailStatGroups = [
                         <span id="inventoryDetailStats"></span>
                     </section>
                     <section id="contextDetails" class="inventory-details" hidden>
-                        <strong id="contextDetailName"></strong>
-                        <span id="contextDetailDescription"></span>
-                        <span id="contextDetailStats"></span>
+                        <div id="contextDetailText">
+                            <strong id="contextDetailName"></strong>
+                            <span id="contextDetailDescription"></span>
+                            <span id="contextDetailStats"></span>
+                        </div>
+                        <div id="skillDetailActions" class="skill-detail-actions" hidden>
+                            <span id="skillActionReason" role="status"></span>
+                            <button id="skillUnlockButton" type="button" disabled>Unlock · 1 point</button>
+                            <div id="skillAssignmentButtons" class="skill-assignment-buttons">
+                                <?php foreach (['skill_1'=>'Skill 1','skill_2'=>'Skill 2','skill_3'=>'Skill 3','ultimate'=>'Ultimate'] as $key=>$label): ?>
+                                <button type="button" data-skill-assign="<?= e($key) ?>" disabled><?= e($label) ?></button>
+                                <?php endforeach; ?>
+                                <button id="skillUnassignButton" type="button" disabled>Unassign</button>
+                            </div>
+                        </div>
                     </section>
                 </section>
             </section>
@@ -1248,9 +1286,10 @@ window.ASCII_QUEST_STATE = {
     ) ?>,
     currentWarp: <?= json_encode($currentWarp, JSON_UNESCAPED_UNICODE) ?>,
     encounterEnemy: <?= json_encode($encounterEnemy, JSON_UNESCAPED_UNICODE) ?>,
-    combat: <?= json_encode($combatState, JSON_UNESCAPED_UNICODE) ?>,
+    combat: <?= json_encode($combatState, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
     inventory: <?= json_encode($inventoryState, JSON_UNESCAPED_UNICODE) ?>,
     progression: <?= json_encode($progressionState, JSON_UNESCAPED_UNICODE) ?>,
+    skills: <?= json_encode($skillState ?? null, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
 
     initialMessages: [
         <?php if ($isCombatMode): ?>
@@ -1268,6 +1307,7 @@ window.ASCII_QUEST_STATE = {
 
 <script src="js/exploration_hud.js?v=<?= $explorationHudVersion ?>"></script>
 <script src="js/item_hud.js?v=<?= $itemHudVersion ?>"></script>
+<script src="js/skill_hud.js?v=<?= (int) ($skillHudVersion ?? 1) ?>"></script>
 <?php if ($isCombatMode): ?>
 <script src="js/combat_hud.js?v=<?= $combatHudVersion ?>"></script>
 <?php endif; ?>

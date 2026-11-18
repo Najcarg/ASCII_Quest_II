@@ -49,7 +49,12 @@ final class CombatBootstrap
 
     public static function service(PDO $pdo): CombatService
     {
-        $repository = self::repository($pdo);
+        return self::serviceForPdoRepository($pdo,self::repository($pdo));
+    }
+
+    /** Production movement shares the already-owned repository aggregate. */
+    public static function serviceForPdoRepository(PDO $pdo,CombatRepository $repository): CombatService
+    {
         $skillService = SkillBootstrap::service($pdo);
         $definitions = CombatDefinitionRegistry::withSkillCatalogue($skillService->catalogue());
         $catalogue = $repository->itemGenerationCatalogue();

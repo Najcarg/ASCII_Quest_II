@@ -14,6 +14,12 @@ $character = [
     'level' => 1, 'glyph' => 'Ω', 'gold' => 125, 'experience' => 0, 'stat_points' => 0,
     'strength' => 10, 'dexterity' => 5, 'vitality' => 10, 'energy' => 5, 'fate' => 5,
 ];
+$skillState = $task34bState ?? null;
+if ($skillState !== null) {
+    $character['id'] = $skillState['champion']['id'];
+    $character['level'] = $skillState['champion']['level'];
+    $character['class_name'] = ucfirst($skillState['champion']['class_key']);
+}
 $characterStats = CharacterStats::calculate($character);
 $_SESSION = ['csrf_token' => 'local-fixture-not-a-session'];
 $isCombatMode = in_array('--combat', $argv, true);
@@ -31,6 +37,13 @@ if ($isCombatMode) {
         'player_attack' => ['name' => 'Weapon Attack'],
         'potion' => ['key' => 'Local potion', 'charges_remaining' => 1, 'charge_allowance' => 1],
     ];
+}
+if (isset($task34bCombatState)) {
+    $combatState = $task34bCombatState;
+    $combatSlotStates = array_column($combatState['player_skills'], null, 'slot');
+    $combatSkillOne = $combatSlotStates['skill_1'];
+    $combatSkillOneAvailable = $combatSkillOne['available'];
+    $combatSkillOneStatus = $combatSkillOneAvailable ? 'Ready' : 'Unavailable';
 }
 $warpDestinations = [];
 $currentHp = $maximumLife = $characterStats['resources']['max_life'];
@@ -64,7 +77,7 @@ $inventoryState = [
 $styleVersion = $explorationHudVersion = $gameControlsVersion = $combatHudVersion = $itemHudVersion = 1;
 if (is_file($root . '/ascii-quest/lib/CharacterProgression.php')) {
     require_once $root . '/ascii-quest/lib/CharacterProgression.php';
-    $character['experience'] = 0;
+    $character['experience'] = $task34bExperience ?? 0;
     $character['life_state'] = 'alive';
     $progressionState = CharacterProgression::project($character);
     $rewardProgression = null;

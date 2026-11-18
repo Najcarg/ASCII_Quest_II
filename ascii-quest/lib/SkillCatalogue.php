@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/CombatStatusRules.php';
 require_once __DIR__ . '/CharacterProgression.php';
 require_once __DIR__ . '/CharacterStats.php';
 
@@ -8,7 +9,7 @@ final class SkillCatalogue
 {
     public const SLOTS = ['skill_1','skill_2','skill_3','ultimate'];
     public const CLASSES = ['warrior','mage','rogue','cleric'];
-    public const STATUS_KEYS = ['poison','bleed','burn','freeze','shock'];
+    public const STATUS_KEYS = CombatStatusRules::KEYS;
     private array $skills = [];
 
     public function __construct(array $definitions, array $prerequisites)
@@ -57,6 +58,13 @@ final class SkillCatalogue
             $nodes = $this->forClass($class);
             $positions = array_column($nodes, 'tree_position'); sort($positions);
             if ($positions !== ['branch_1','branch_2','root','ultimate']) { throw new UnexpectedValueException('Incomplete class skill tree.'); }
+            foreach ($nodes as $node) {
+                $parentRole=match($node['tree_position']) { 'root'=>null,'ultimate'=>'branch_1',default=>'root' };
+                $parents=$node['prerequisites'];
+                if (($parentRole===null && $parents!==[]) || ($parentRole!==null && (count($parents)!==1 || $this->skills[$parents[0]]['tree_position']!==$parentRole))) {
+                    throw new UnexpectedValueException('Unsupported four-node skill graph.');
+                }
+            }
         }
     }
 
@@ -85,9 +93,7 @@ final class SkillCatalogue
             'kind' => 'skill', 'skill_type' => $row['skill_type'], 'class_key' => $row['class_key'],
             'slot' => $slot, 'damage_type' => $row['damage_type'], 'prototype_damage' => $row['base_damage'],
             'duration_seconds' => $row['duration_ms'] / 1000, 'cooldown_seconds' => $row['cooldown_ms'] / 1000,
-            'intrinsic_status' => $row['status_key'] === null ? null : [
-                'key' => $row['status_key'], 'power' => $row['status_power'], 'duration_ms' => 4000,
-            ],
+            'intrinsic_status' => self::effectDisplay($row),
         ];
     }
 
@@ -108,12 +114,15 @@ final class SkillCatalogue
     {
         $data = json_decode($json, true, 16, JSON_THROW_ON_ERROR);
         $a = $data['action'] ?? null;
+        $required=['key','name','description','kind','skill_type','class_key','slot','damage_type','prototype_damage','duration_seconds','cooldown_seconds','intrinsic_status'];
+        if (!is_array($a) || array_diff($required,array_keys($a))!==[]) { throw new UnexpectedValueException('Incomplete frozen skill action.'); }
         if (($data['version'] ?? null) !== 1 || !is_array($a) || ($a['kind'] ?? null) !== 'skill'
             || !in_array($a['class_key'] ?? null, self::CLASSES, true)
             || !is_string($a['key'] ?? null) || !str_starts_with($a['key'], $a['class_key'] . '_')
             || preg_match('/\A[a-z][a-z0-9_]{1,63}\z/D', $a['key']) !== 1
             || !is_string($a['name'] ?? null) || trim($a['name']) === ''
-            || !is_string($a['description'] ?? null) || !self::compatible((string) ($a['skill_type'] ?? ''), (string) ($a['slot'] ?? ''))
+            || !is_string($a['description'] ?? null) || !is_string($a['skill_type'] ?? null) || !is_string($a['slot'] ?? null)
+            || !self::compatible($a['skill_type'],$a['slot'])
             || !in_array($a['damage_type'] ?? null, ['physical','fire','cold','lightning','poison'], true)
             || !is_int($a['prototype_damage'] ?? null) || $a['prototype_damage'] < 1 || $a['prototype_damage'] > 10000) {
             throw new UnexpectedValueException('Invalid frozen skill action.');
@@ -126,7 +135,9 @@ final class SkillCatalogue
         }
         $status = $a['intrinsic_status'] ?? null;
         if ($status !== null && (!is_array($status) || !in_array($status['key'] ?? null, self::STATUS_KEYS, true)
-            || !is_int($status['power'] ?? null) || $status['power'] < 1 || $status['power'] > 100 || ($status['duration_ms'] ?? null) !== 4000)) {
+            || !is_int($status['power'] ?? null) || $status['power'] < 1 || $status['power'] > 100 || ($status['duration_ms'] ?? null) !== CombatStatusRules::DURATION_MS
+            || (!is_int($status['chance_percent'] ?? null) && !is_float($status['chance_percent'] ?? null))
+            || !is_finite((float)$status['chance_percent']) || $status['chance_percent'] < 0 || $status['chance_percent'] > 100)) {
             throw new UnexpectedValueException('Invalid frozen intrinsic status.');
         }
         // Return only fields owned by this frozen schema, never an injected legacy effect.
@@ -137,7 +148,7 @@ final class SkillCatalogue
     {
         if (($skill['status_key'] ?? null) === null) { return null; }
         $values = array_fill_keys(self::STATUS_KEYS, 0); $values[$skill['status_key']] = $skill['status_power'];
-        return ['key'=>$skill['status_key'],'power'=>$skill['status_power'],'duration_ms'=>4000,'chance_percent'=>CharacterStats::statusEffectChance($values)];
+        return ['key'=>$skill['status_key'],'power'=>$skill['status_power'],'duration_ms'=>CombatStatusRules::DURATION_MS,'chance_percent'=>CharacterStats::statusEffectChance($values)];
     }
 
     private function assertAcyclic(string $key, array $path): void

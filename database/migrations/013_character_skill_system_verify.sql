@@ -86,3 +86,52 @@ SELECT l.character_id,l.slot,'invalid assignment' AS violation FROM character_sk
  WHERE cs.skill_key IS NULL OR c.class_id<>sd.class_id OR l.skill_type<>sd.skill_type OR NOT ((l.slot='ultimate' AND sd.skill_type='ultimate') OR (l.slot IN ('skill_1','skill_2','skill_3') AND sd.skill_type='normal'));
 SELECT character_id,skill_key,'duplicate assignment' AS violation FROM character_skill_loadout GROUP BY character_id,skill_key HAVING COUNT(*)>1;
 SELECT id,'invalid frozen skill JSON' AS violation FROM combat_actions WHERE snapshot_skill_definition IS NOT NULL AND (JSON_VALID(snapshot_skill_definition)<>1 OR actor<>'player' OR action_kind<>'skill');
+SELECT cs.character_id,cs.skill_key,'invalid learned prerequisites or level' AS violation
+ FROM character_skills cs JOIN characters c ON c.id=cs.character_id JOIN skill_definitions sd ON sd.skill_key=cs.skill_key
+ WHERE c.level<sd.minimum_level OR EXISTS (SELECT 1 FROM skill_prerequisites p WHERE p.skill_key=cs.skill_key AND NOT EXISTS (SELECT 1 FROM character_skills learned WHERE learned.character_id=cs.character_id AND learned.skill_key=p.prerequisite_key));
+-- Frozen metadata is validated against itself and stored numeric snapshots,
+-- never against today's mutable definitions or loadout.
+SELECT id,'invalid frozen skill semantics' AS violation FROM combat_actions
+ WHERE snapshot_skill_definition IS NOT NULL AND CASE WHEN JSON_VALID(snapshot_skill_definition)=1 THEN
+ JSON_CONTAINS_PATH(snapshot_skill_definition,'all','$.version','$.action.key','$.action.name','$.action.description','$.action.kind','$.action.skill_type','$.action.class_key','$.action.slot','$.action.damage_type','$.action.prototype_damage','$.action.duration_seconds','$.action.cooldown_seconds','$.action.intrinsic_status')<>1
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.version'))<>'INTEGER'
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action'))<>'OBJECT'
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action.name'))<>'STRING'
+ OR TRIM(JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.name')))=''
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action.description'))<>'STRING'
+ OR JSON_EXTRACT(snapshot_skill_definition,'$.version')<>1
+ OR JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.kind'))<>'skill'
+ OR JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.key'))<>definition_key
+ OR snapshot_damage_type IS NULL OR snapshot_base_damage IS NULL
+ OR snapshot_base_damage NOT BETWEEN 1 AND 10000
+ OR snapshot_damage_type NOT IN ('physical','fire','cold','lightning','poison')
+ OR JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.damage_type'))<>snapshot_damage_type
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action.prototype_damage'))<>'INTEGER'
+ OR CAST(JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.prototype_damage')) AS DECIMAL(20,0))<>snapshot_base_damage
+ OR JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.class_key')) NOT IN ('warrior','mage','rogue','cleric')
+ OR LEFT(definition_key,LENGTH(JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.class_key')))+1)<>CONCAT(JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.class_key')),'_')
+ OR definition_key NOT REGEXP '^[a-z][a-z0-9_]{1,63}$'
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action.duration_seconds')) NOT IN ('INTEGER','DOUBLE')
+ OR CAST(JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.duration_seconds')) AS DECIMAL(20,5)) NOT BETWEEN 0.1 AND 10
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action.cooldown_seconds')) NOT IN ('INTEGER','DOUBLE')
+ OR CAST(JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.cooldown_seconds')) AS DECIMAL(20,5)) NOT BETWEEN 0.1 AND 600
+ OR NOT ((JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.slot'))='ultimate' AND JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.skill_type'))='ultimate') OR (JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.slot')) IN ('skill_1','skill_2','skill_3') AND JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.skill_type'))='normal'))
+ ELSE 1 END;
+SELECT id,'invalid intrinsic frozen status' AS violation FROM combat_actions
+ WHERE snapshot_skill_definition IS NOT NULL AND CASE WHEN JSON_VALID(snapshot_skill_definition)=1 THEN
+ JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action.intrinsic_status'))<>'NULL' AND (
+ JSON_CONTAINS_PATH(snapshot_skill_definition,'all','$.action.intrinsic_status.key','$.action.intrinsic_status.power','$.action.intrinsic_status.duration_ms','$.action.intrinsic_status.chance_percent')<>1
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action.intrinsic_status'))<>'OBJECT'
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action.intrinsic_status.power'))<>'INTEGER'
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action.intrinsic_status.duration_ms'))<>'INTEGER'
+ OR JSON_TYPE(JSON_EXTRACT(snapshot_skill_definition,'$.action.intrinsic_status.chance_percent')) NOT IN ('INTEGER','DOUBLE')
+ OR JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.intrinsic_status.key')) NOT IN ('poison','bleed','burn','freeze','shock')
+ OR CAST(JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.intrinsic_status.power')) AS DECIMAL(20,0)) NOT BETWEEN 1 AND 100
+ OR JSON_EXTRACT(snapshot_skill_definition,'$.action.intrinsic_status.duration_ms')<>4000
+ OR CAST(JSON_UNQUOTE(JSON_EXTRACT(snapshot_skill_definition,'$.action.intrinsic_status.chance_percent')) AS DECIMAL(10,5)) NOT BETWEEN 0 AND 100)
+ ELSE 1 END;
+SELECT 'class FK column type mismatch' AS violation WHERE
+ (SELECT COUNT(*) FROM information_schema.COLUMNS n JOIN information_schema.COLUMNS p
+   ON p.TABLE_SCHEMA=n.TABLE_SCHEMA AND p.TABLE_NAME='character_classes' AND p.COLUMN_NAME='id'
+  WHERE n.TABLE_SCHEMA=DATABASE() AND n.TABLE_NAME IN ('skill_definitions','skill_prerequisites') AND n.COLUMN_NAME='class_id'
+    AND n.COLUMN_TYPE=p.COLUMN_TYPE AND n.IS_NULLABLE='NO')<>2;

@@ -233,6 +233,10 @@
             // Keep the existing authoritative item projection/name/stat renderer.
             renderDetails(document, mode === "item" ? selections.item : null);
             const selected = selections[mode];
+            const skillActions = byId(document, "skillDetailActions");
+            const skillSystem = mode === "skill" && !!selected && skillActions?.dataset?.skillSelection === "true";
+            if (skillActions) skillActions.hidden = !skillSystem;
+            byId(document, "contextDetails")?.classList?.toggle?.("skill-system-details", skillSystem);
             const empty = byId(document, "inventoryDetailsEmpty");
             if (empty) {
                 empty.textContent = placeholder;
@@ -280,6 +284,15 @@
         };
     }
 
+    // Shared UUIDv4 convention; getRandomValues also works on the LAN HTTP UI.
+    function createRequestToken(cryptoSource) {
+        if (typeof cryptoSource?.randomUUID === "function") return cryptoSource.randomUUID();
+        if (typeof cryptoSource?.getRandomValues !== "function") throw new Error("Secure request tokens unavailable.");
+        const bytes = new Uint8Array(16); cryptoSource.getRandomValues(bytes);
+        bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+        return Array.from(bytes, byte => byte.toString(16).padStart(2,"0")).join("").replace(/^(........)(....)(....)(....)(............)$/, "$1-$2-$3-$4-$5");
+    }
+
     function createController(options) {
         const document = options.document;
         const fetchImplementation = options.fetchImplementation || null;
@@ -287,12 +300,7 @@
         const equipEndpoint = options.equipEndpoint || "equip_item.php";
         const unequipEndpoint = options.unequipEndpoint || "unequip_item.php";
         const csrfToken = options.csrfToken || "";
-        const uuidFactory = options.uuidFactory || function () {
-            if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-            const bytes = new Uint8Array(16); globalThis.crypto.getRandomValues(bytes);
-            bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
-            return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("").replace(/^(........)(....)(....)(....)(............)$/, "$1-$2-$3-$4-$5");
-        };
+        const uuidFactory = options.uuidFactory || (() => createRequestToken(globalThis.crypto));
         let currentState = options.initialState || { items: [], pagination: {} };
         let selectedId = null;
         let selectedItem = null;
@@ -430,5 +438,5 @@
         };
     }
 
-    return { render, renderDetails, renderItemName, createDetailsController, createController };
+    return { render, renderDetails, renderItemName, createDetailsController, createController, createRequestToken };
 });

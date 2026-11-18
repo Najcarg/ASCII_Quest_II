@@ -290,7 +290,8 @@ const tests = {
         assert.equal(loadoutPanel.includes("<button"), false);
         assert.equal(loadoutPanel.includes('id="combatSkill1Button"'), false);
         assert.equal(loadoutPanel.includes('id="combatPotionButton"'), false);
-        assert.ok(loadoutPanel.includes('data-loadout-slot="skill_1"'));
+        assert.ok(loadoutPanel.includes('data-loadout-slot="<?= e($loadoutSlotKey) ?>"'));
+        assert.ok(gameMarkup.includes('"skill_1" => "Skill 1"'));
         assert.ok(loadoutPanel.includes('data-loadout-slot="potion"'));
         assert.ok(gameMarkup.includes("js/combat_hud.js"));
         assert.equal(gameMarkup.includes(">Attack</span>"), false);

@@ -16,6 +16,7 @@ final class FakeSkillRepository
     public bool $failReceipt=false;
     public bool $failAssignment=false;
     public array $locks=[];
+    public bool $resolveClassAfterMutex=false;
     private ?array $snapshot=null;
     public function __construct(string $class='warrior',int $level=5)
     {
@@ -38,7 +39,15 @@ final class FakeSkillRepository
     {
         if ($lock) { $this->locks[]='character'; }
         $row=$this->characters[$id]??null;
-        return $row!==null && $row['user_id']===$user?$row:null;
+        if ($row===null || $row['user_id']!==$user) { return null; }
+        if ($lock && $this->resolveClassAfterMutex) {
+            $row['class_id']=array_search($row['class_key'],SkillCatalogue::CLASSES,true)+1;unset($row['class_key']);
+        }
+        return $row;
+    }
+    public function classKey(int $id): string {
+        if (end($this->locks)!=='account') { throw new RuntimeException('Repeatable-read snapshot before account mutex.'); }
+        $this->locks[]='class';return SkillCatalogue::CLASSES[$id-1];
     }
     public function lockAccount(int $id): void { $this->locks[]='account'; }
     public function encounter(int $user,bool $lock=false): ?array { if ($lock) { $this->locks[]='encounter'; } return $this->battle; }

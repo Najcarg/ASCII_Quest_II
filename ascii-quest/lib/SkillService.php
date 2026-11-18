@@ -23,6 +23,7 @@ final class SkillService
         try {
             $character = $this->authority($userId,$characterId);
             $this->repository->lockAccount($userId);
+            $character=$this->resolveClass($character);
             $encounter = $this->repository->encounter($userId,true);
             $this->catalogue = $this->repository->catalogue();
             $state = $this->project($character,$encounter);
@@ -46,6 +47,7 @@ final class SkillService
         try {
             $character = $this->authority($userId,$characterId);
             $this->repository->lockAccount($userId);
+            $character=$this->resolveClass($character);
             $encounter = $this->repository->encounter($userId,true);
             $receipt = $this->repository->receipt($characterId,$token);
             if ($receipt !== null) {
@@ -199,10 +201,16 @@ final class SkillService
     private function authority(int $userId,int $id): array
     {
         $character=$this->repository->ownedCharacter($userId,$id,true) ?? throw new OutOfBoundsException('Champion unavailable.');
-        if (!in_array($character['class_key']??null,SkillCatalogue::CLASSES,true)) { throw new DomainException('Champion class unavailable.'); }
         self::points($character,0);
         return $character;
     }
+    private function resolveClass(array $character): array
+    {
+        $character['class_key'] ??= $this->repository->classKey((int)$character['class_id']);
+        if (!in_array($character['class_key'],SkillCatalogue::CLASSES,true)) { throw new DomainException('Champion class unavailable.'); }
+        return $character;
+    }
+
     private function validateIdentity(int $userId,int $id): void
     {
         if ($userId<1 || $id<1) { throw new OutOfBoundsException('Champion unavailable.'); }

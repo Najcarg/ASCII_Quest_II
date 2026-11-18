@@ -50,6 +50,11 @@ $tests = array_merge(
     require __DIR__ . '/CharacterProgressionTest.php',
     require __DIR__ . '/CharacterProgressionCombatTest.php',
     require __DIR__ . '/CharacterProgressionMigrationTest.php',
+    require __DIR__ . '/SkillSystemTest.php',
+    require __DIR__ . '/SkillMutationTest.php',
+    require __DIR__ . '/SkillCombatTest.php',
+    require __DIR__ . '/SkillMigrationTest.php',
+    require __DIR__ . '/SkillEndpointTest.php',
 );
 
 $passed = 0;

@@ -38,6 +38,7 @@
             onClosed() {
                 root.location.reload();
             },
+            onSkillState(state) { root.ASCIIQuestSkillsController?.applyState(state); },
             onInventoryChanged() {
                 root.ASCIIQuestInventoryController?.refresh?.();
             },
@@ -170,9 +171,8 @@
             return "Ready";
         }
 
-        return reason === "cooldown"
-            ? "Skill recovering"
-            : disabledReasonText(reason);
+        const reasons = { empty_slot:"Empty", not_unlocked:"Locked", wrong_class:"Wrong class", inactive:"Inactive", dead:"You cannot act", level_required:"Level required", prerequisite_required:"Prerequisite required", incompatible_slot:"Incompatible slot", definition_unavailable:"Unavailable" };
+        return reason === "cooldown" ? "Skill recovering" : (reasons[reason] || disabledReasonText(reason));
     }
 
     function buildPresentation(state, wallNowMs) {
@@ -198,6 +198,7 @@
                       key: String(skill?.key || ""),
                       name: String(skill?.name || ""),
                       available: skill?.available === true,
+                      description: skill?.damage ? skill.damage + " " + skill.damage_type + " · " + (Number(skill.duration_ms)/1000) + "s action" + (skill.effect ? " · " + skill.effect.key + " " + skill.effect.chance_percent + "% / " + (skill.effect.duration_ms/1000) + "s" : "") : "Empty slot",
                       disabledReason: skill?.disabled_reason ?? null,
                       disabledText: skillDisabledReasonText(skill?.disabled_reason),
                       cooldownProgressPercent:
@@ -426,6 +427,7 @@
                 return request("skill", "combat_action.php", {
                     csrf_token: options.csrfToken,
                     action_key: skill.key,
+                    ...(skill.requires_slot === true ? { skill_slot: slot } : {}),
                     request_token: options.requestTokenFactory(),
                 });
             },
@@ -744,6 +746,7 @@
             );
             if (button) {
                 button.disabled = isTerminal || !skill || !skill.available || pending.skill;
+                button.title = skill?.description || "Empty slot";
                 button.dataset.disabledReason = skill?.disabledReason || "";
                 setActionPresentationState(
                     button,
@@ -903,6 +906,7 @@
             requestTokenFactory: options.requestTokenFactory,
             onState(state) {
                 gameState.combat = state;
+                if (state?.skill_state) options.onSkillState?.(state.skill_state);
                 showMessage(documentRoot, "", "");
                 paint();
             },

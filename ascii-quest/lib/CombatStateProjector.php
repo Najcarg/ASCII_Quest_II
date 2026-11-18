@@ -70,6 +70,12 @@ final class CombatStateProjector
                     'started_timeline_ms', 'resolves_timeline_ms',
                     'cooldown_ready_timeline_ms', 'completed_timeline_ms',
                 ]);
+                if (($action['snapshot_skill_definition'] ?? null) !== null) {
+                    $frozen=SkillCatalogue::decodeSnapshot($action['snapshot_skill_definition']);
+                    $last=array_key_last($playerActions);
+                    $playerActions[$last]['name']=$frozen['name'];
+                    $playerActions[$last]['skill_slot']=$frozen['slot'];
+                }
             }
             if (
                 ($action['actor'] ?? null) === 'system' &&
