@@ -629,6 +629,27 @@
         });
     }
 
+    // Display server projections only; never compute XP thresholds in the browser.
+    function renderProgression(documentRoot, progression) {
+        if (!progression || typeof progression !== "object") return;
+        const level = documentRoot.getElementById("playerLevel");
+        const xp = documentRoot.getElementById("playerXp");
+        const bar = documentRoot.getElementById("playerXpBar");
+        const fill = documentRoot.getElementById("playerXpFill");
+        const maximum = progression.is_max_level === true;
+        if (level) level.textContent = String(progression.level);
+        if (xp) xp.textContent = maximum ? "MAX" : progression.xp_into_level + "/" + progression.xp_for_next_level + " XP";
+        const percentage = Math.max(0, Math.min(100, Number(progression.progress_percent) || 0));
+        if (fill) fill.style.width = percentage + "%";
+        if (bar) {
+            bar.setAttribute("aria-valuenow", String(percentage));
+            bar.setAttribute("aria-valuemax", "100");
+            bar.setAttribute("aria-valuetext", progression.total_xp + " total XP; " + (maximum ? "MAX" : progression.xp_to_next + " XP to next level"));
+            bar.dataset.currentXp = String(progression.total_xp);
+            bar.dataset.progressValue = String(percentage);
+        }
+    }
+
     function initialize(
         documentRoot,
         fetchImplementation,
@@ -656,6 +677,7 @@
         initializeTabs,
         initializeWarpTravel,
         renderWarpDestinations,
+        renderProgression,
         setWarpTravelPending,
         synchronizeResourceDisplay,
         updateResourceBar,

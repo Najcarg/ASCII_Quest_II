@@ -1,7 +1,8 @@
 (function (root, factory) {
     "use strict";
 
-    const combatHud = factory();
+    const combatHud = factory(typeof module === "object" && module.exports
+        ? require("./exploration_hud.js") : root?.ASCIIQuestHud);
 
     if (typeof module === "object" && module.exports) {
         module.exports = combatHud;
@@ -48,7 +49,7 @@
     } else {
         initialize();
     }
-})(typeof window === "undefined" ? null : window, function () {
+})(typeof window === "undefined" ? null : window, function (progressionHud) {
     "use strict";
 
     const ERROR_FALLBACK = "Unable to reach the combat server. Please try again.";
@@ -239,6 +240,7 @@
             },
             champion: {
                 currentHp: Number(state?.champion?.current_hp) || 0,
+                progression: state?.champion?.progression ?? null,
             },
             enemy: {
                 name: String(state?.enemy?.name || "Enemy"),
@@ -278,6 +280,7 @@
                           rewards: {
                               gold: Number(lootPhase?.rewards?.gold) || 0,
                               experience: Number(lootPhase?.rewards?.experience) || 0,
+                              progression: lootPhase?.rewards?.progression ?? null,
                           },
                           physicalDrops: Array.isArray(lootPhase?.physical_drops)
                               ? lootPhase.physical_drops.map(function (drop) {
@@ -789,6 +792,14 @@
             );
         }
 
+        progressionHud?.renderProgression(documentRoot, view.champion.progression);
+        const progressionReward = view.lootPhase?.rewards?.progression;
+        const leveledUp = progressionReward && progressionReward.new_level > progressionReward.old_level;
+        const levelUpNode = documentRoot.getElementById("combatVictoryLevelUp");
+        if (levelUpNode) {
+            levelUpNode.hidden = !leveledUp;
+            levelUpNode.textContent = leveledUp ? "Level Up! " + progressionReward.old_level + " → " + progressionReward.new_level : "";
+        }
         setText(documentRoot, "combatVictoryGold", view.lootPhase?.rewards?.gold ?? 0);
         setText(documentRoot, "combatVictoryExperience", view.lootPhase?.rewards?.experience ?? 0);
         renderPhysicalDrops(

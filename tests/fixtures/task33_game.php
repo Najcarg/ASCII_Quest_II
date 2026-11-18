@@ -62,6 +62,13 @@ $inventoryState = [
     'pagination' => ['page' => 1, 'total_pages' => 2, 'has_previous' => false, 'has_next' => true],
 ];
 $styleVersion = $explorationHudVersion = $gameControlsVersion = $combatHudVersion = $itemHudVersion = 1;
+if (is_file($root . '/ascii-quest/lib/CharacterProgression.php')) {
+    require_once $root . '/ascii-quest/lib/CharacterProgression.php';
+    $character['experience'] = 0;
+    $character['life_state'] = 'alive';
+    $progressionState = CharacterProgression::project($character);
+    $rewardProgression = null;
+}
 $source = file_get_contents($root . '/ascii-quest/game.php');
 // Only evaluate the display definitions/template, never the controller or bootstrap.
 $start = strpos($source, '$mainStatLabels =');

@@ -365,6 +365,13 @@ $gameControlsVersion = (int) filemtime(__DIR__ . "/js/game_controls.js");
 $combatHudVersion = (int) filemtime(__DIR__ . "/js/combat_hud.js");
 $itemHudVersion = (int) filemtime(__DIR__ . "/js/item_hud.js");
 
+// Derive alive progression from total XP; dead levels remain historical.
+$progressionState = CharacterProgression::project($character);
+if (isset($combatState['champion']['progression'])) {
+    $progressionState = $combatState['champion']['progression'];
+}
+$rewardProgression = $combatState['loot_phase']['rewards']['progression'] ?? null;
+
 $mainStatLabels = [
     "strength" => ["short" => "STR", "label" => "Strength"],
     "dexterity" => ["short" => "DEX", "label" => "Dexterity"],
@@ -488,7 +495,7 @@ $detailStatGroups = [
 
                         <p>
                             <?= e($character["class_name"]) ?>
-                            · Level <?= e($character["level"]) ?>
+                            · Level <span id="playerLevel"><?= e($progressionState["level"]) ?></span>
                         </p>
                     </div>
 
@@ -540,7 +547,7 @@ $detailStatGroups = [
                         <div class="resource-status">
                             <div class="resource-status-label">
                                 <span>XP</span>
-                                <strong id="playerXp"><?= e($character["experience"]) ?> XP</strong>
+                                <strong id="playerXp"><?= $progressionState['is_max_level'] ? 'MAX' : e($progressionState['xp_into_level']) . '/' . e($progressionState['xp_for_next_level']) . ' XP' ?></strong>
                             </div>
                             <div
                                 id="playerXpBar"
@@ -548,16 +555,16 @@ $detailStatGroups = [
                                 role="progressbar"
                                 aria-label="Champion experience progress"
                                 aria-valuemin="0"
-                                aria-valuenow="0"
+                                aria-valuenow="<?= e($progressionState['progress_percent']) ?>"
                                 aria-valuemax="100"
-                                aria-valuetext="<?= e($character["experience"]) ?> XP; next-level progress is not defined"
-                                data-current-xp="<?= e($character["experience"]) ?>"
-                                data-progress-value="0"
+                                aria-valuetext="<?= e($progressionState['total_xp']) ?> total XP; <?= $progressionState['is_max_level'] ? 'MAX' : e($progressionState['xp_to_next']) . ' XP to next level' ?>"
+                                data-current-xp="<?= e($progressionState['total_xp']) ?>"
+                                data-progress-value="<?= e($progressionState['progress_percent']) ?>"
                             >
                                 <span
                                     id="playerXpFill"
                                     class="status-bar-fill"
-                                    style="width: 0%"
+                                    style="width: <?= e($progressionState['progress_percent']) ?>%"
                                 ></span>
                             </div>
                         </div>
@@ -836,7 +843,8 @@ $detailStatGroups = [
                             <p>The Cave Brute has been defeated. Your rewards were issued.</p>
                             <div class="combat-victory-rewards">
                                 <span>Gold <strong id="combatVictoryGold"><?= e($combatState['loot_phase']['rewards']['gold'] ?? 0) ?></strong></span>
-                                <span>Raw EXP <strong id="combatVictoryExperience"><?= e($combatState['loot_phase']['rewards']['experience'] ?? 0) ?></strong></span>
+                                <span>XP gained <strong id="combatVictoryExperience"><?= e($combatState['loot_phase']['rewards']['experience'] ?? 0) ?></strong></span>
+                                <span id="combatVictoryLevelUp" <?= ($rewardProgression['new_level'] ?? 0) > ($rewardProgression['old_level'] ?? 0) ? '' : 'hidden' ?>><?= ($rewardProgression['new_level'] ?? 0) > ($rewardProgression['old_level'] ?? 0) ? 'Level Up! ' . e($rewardProgression['old_level']) . ' → ' . e($rewardProgression['new_level']) : '' ?></span>
                             </div>
                             <section id="combatLootRow" class="combat-loot-row" aria-label="Physical item drops">
                                 <strong>Physical Drops</strong>
@@ -1242,6 +1250,7 @@ window.ASCII_QUEST_STATE = {
     encounterEnemy: <?= json_encode($encounterEnemy, JSON_UNESCAPED_UNICODE) ?>,
     combat: <?= json_encode($combatState, JSON_UNESCAPED_UNICODE) ?>,
     inventory: <?= json_encode($inventoryState, JSON_UNESCAPED_UNICODE) ?>,
+    progression: <?= json_encode($progressionState, JSON_UNESCAPED_UNICODE) ?>,
 
     initialMessages: [
         <?php if ($isCombatMode): ?>

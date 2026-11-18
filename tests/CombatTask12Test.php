@@ -224,7 +224,7 @@ return [
 
         assertSameValue(125, $pdo->characters[42]['gold'] ?? null, 'Configured Gold reward.');
         assertSameValue(120, $pdo->characters[42]['experience'] ?? null, 'Configured raw EXP reward.');
-        assertSameValue(7, $pdo->characters[42]['level'] ?? null, 'No level formula is invoked.');
+        assertSameValue(2, $pdo->characters[42]['level'] ?? null, 'Task34A derives level from total XP without stat awards.');
         assertSameValue(true, is_string($issuedAt) && $issuedAt !== '', 'Durable reward guard timestamp.');
         $victoryEvents = array_values(array_filter(
             $pdo->events,
@@ -273,7 +273,7 @@ return [
         assertSameValue('victory_loot', $state['status'] ?? null, 'Retry reaches victory.');
         assertSameValue(125, $pdo->characters[42]['gold'], 'Retry issues Gold once.');
         assertSameValue(120, $pdo->characters[42]['experience'], 'Retry issues EXP once.');
-        assertSameValue(['player_attack_hit', 'victory_rewards'], array_column(array_values($pdo->events), 'event_type'), 'Retry appends one hit and one reward event.');
+        assertSameValue(['player_attack_hit', 'victory_rewards', 'level_up'], array_column(array_values($pdo->events), 'event_type'), 'Retry appends one hit and one reward event.');
     },
 
     'Task 12 loot projection separates rewards from empty physical drops' => function (): void {
@@ -281,7 +281,9 @@ return [
         $state = $service->state(7, 42);
 
         assertSameValue([
-            'rewards' => ['gold' => 25, 'experience' => 40],
+            'rewards' => ['gold' => 25, 'experience' => 40, 'progression' => [
+                'xp_gained' => 40, 'total_xp_before' => 80, 'total_xp_after' => 120, 'old_level' => 1, 'new_level' => 2,
+            ]],
             'physical_drops' => [],
         ], $state['loot_phase'] ?? null, 'Presentation-safe victory loot contract.');
         assertSameValue(false, array_key_exists('rewards_issued_at', $state), 'Reward guard remains private.');
@@ -381,7 +383,7 @@ return [
         assertSameValue($completedAt, $pdo->encounters[91]['completed_at'], 'Second tab does not rewrite completion time.');
         assertSameValue(125, $pdo->characters[42]['gold'], 'One Gold reward set.');
         assertSameValue(120, $pdo->characters[42]['experience'], 'One EXP reward set.');
-        assertSameValue(['player_attack_hit', 'victory_rewards'], array_column(array_values($pdo->events), 'event_type'), 'One hit and one victory event.');
+        assertSameValue(['player_attack_hit', 'victory_rewards', 'level_up'], array_column(array_values($pdo->events), 'event_type'), 'One hit and one victory event.');
     },
 
     'Task 12 close endpoint requires session POST JSON and valid CSRF' => function (): void {

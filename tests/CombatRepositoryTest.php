@@ -33,6 +33,7 @@ final class FakeCombatPdo extends PDO
     public bool $failCharacterHpUpdate = false;
     public bool $failPotionChargeUpdate = false;
     public bool $failEventInsert = false;
+    public bool $failRewardUpdate = false;
     public ?string $failEventType = null;
 
     private bool $transactionActive = false;
@@ -56,6 +57,7 @@ final class FakeCombatPdo extends PDO
                 'current_mana' => 80,
                 'gold' => 0,
                 'experience' => 0,
+                'level' => 1,
                 'life_state' => 'alive',
                 'strength' => 10,
                 'dexterity' => 5,
@@ -73,6 +75,7 @@ final class FakeCombatPdo extends PDO
                 'current_mana' => 70,
                 'gold' => 0,
                 'experience' => 0,
+                'level' => 1,
                 'life_state' => 'alive',
                 'strength' => 10,
                 'dexterity' => 5,
@@ -90,6 +93,7 @@ final class FakeCombatPdo extends PDO
                 'current_mana' => 60,
                 'gold' => 0,
                 'experience' => 0,
+                'level' => 1,
                 'life_state' => 'alive',
                 'strength' => 10,
                 'dexterity' => 5,
@@ -280,11 +284,15 @@ final class FakeCombatPdo extends PDO
         }
 
         if (str_starts_with($normalized, 'update characters set gold')) {
+            if ($this->failRewardUpdate) { throw new PDOException('Injected reward storage capacity failure.'); }
             $id = (int) $params['character_id'];
             $character = $this->characters[$id] ?? null;
-            if ($character === null || (int) $character['user_id'] !== (int) $params['user_id']) {
+            if ($character === null || (int) $character['user_id'] !== (int) $params['user_id']
+                || $character['life_state'] !== 'alive' || (int) $character['current_hp'] <= 0
+                || (int) $character['experience'] !== (int) $params['expected_experience']) {
                 return ['rows' => [], 'row_count' => 0];
             }
+            $this->characters[$id]['level'] = (int) $params['level'];
             $this->characters[$id]['gold'] = (int) ($character['gold'] ?? 0) + (int) $params['gold'];
             $this->characters[$id]['experience'] = (int) ($character['experience'] ?? 0) + (int) $params['experience'];
             $this->writeOrder[] = ['kind' => 'rewards'];
@@ -441,7 +449,7 @@ final class FakeCombatPdo extends PDO
             $legacySet = 'timeline_elapsed_ms = :timeline_elapsed_ms, last_synchronized_at = :last_synchronized_at, version = version + 1';
             $synchronizationSet = 'timeline_elapsed_ms = :timeline_elapsed_ms, last_synchronized_at = :last_synchronized_at, turn_number = :turn_number, turn_started_timeline_ms = :turn_started_timeline_ms, player_actions_remaining = :player_actions_remaining, enemy_actions_remaining = :enemy_actions_remaining, enemy_current_hp = :enemy_current_hp, next_enemy_decision_timeline_ms = :next_enemy_decision_timeline_ms, enemy_ai_initialized_timeline_ms = :enemy_ai_initialized_timeline_ms, version = version + 1';
             $potionChargeSet = 'potion_charges_remaining = potion_charges_remaining - 1, version = version + 1';
-            $victorySet = "status = 'victory_loot', enemy_current_hp = 0, rewards_issued_at = :rewards_issued_at";
+            $victorySet = "status = 'victory_loot', enemy_current_hp = 0, rewards_issued_at = :rewards_issued_at, reward_progression = :reward_progression";
             $defeatSet = "status = 'defeated', active_slot = null, death_processed_at = :death_processed_at, killer_enemy_key = :killer_enemy_key";
             $closeSet = "status = 'closed', active_slot = null, completed_at = :completed_at, version = version + 1";
             if ($setClause === $defeatSet) {
@@ -478,6 +486,7 @@ final class FakeCombatPdo extends PDO
                 $this->encounters[$id]['status'] = 'victory_loot';
                 $this->encounters[$id]['enemy_current_hp'] = 0;
                 $this->encounters[$id]['rewards_issued_at'] = $params['rewards_issued_at'];
+                $this->encounters[$id]['reward_progression'] = $params['reward_progression'];
                 $this->writeOrder[] = ['kind' => 'victory'];
 
                 return ['rows' => [], 'row_count' => 1];

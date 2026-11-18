@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CombatDeathResult.php';
+require_once __DIR__ . '/CharacterProgression.php';
 
 final class CombatRepository
 {
@@ -495,6 +496,7 @@ final class CombatRepository
         int $characterId,
         int $gold,
         int $experience,
+        array $progression,
     ): bool {
         $this->requireChampionLock($characterId);
         if ($gold < 0 || $experience < 0) {
@@ -503,12 +505,18 @@ final class CombatRepository
 
         $stmt = $this->pdo->prepare('UPDATE characters
             SET gold = gold + :gold,
-                experience = experience + :experience
+                experience = experience + :experience,
+                level = :level
             WHERE id = :character_id
-              AND user_id = :user_id');
+              AND user_id = :user_id
+              AND life_state = \'alive\'
+              AND current_hp > 0
+              AND experience = :expected_experience');
         $stmt->execute([
             'gold' => $gold,
             'experience' => $experience,
+            'level' => $progression['new_level'],
+            'expected_experience' => $progression['total_xp_before'],
             'character_id' => $characterId,
             'user_id' => $userId,
         ]);
@@ -661,19 +669,22 @@ final class CombatRepository
     public function transitionLockedEncounterToVictory(
         int $encounterId,
         string $rewardsIssuedAt,
+        array $progression,
     ): bool {
         $this->requireEncounterLock($encounterId);
 
         $stmt = $this->pdo->prepare("UPDATE combat_encounters
             SET status = 'victory_loot',
                 enemy_current_hp = 0,
-                rewards_issued_at = :rewards_issued_at
+                rewards_issued_at = :rewards_issued_at,
+                reward_progression = :reward_progression
             WHERE id = :encounter_id
               AND status = 'active'
               AND active_slot = 1
               AND rewards_issued_at IS NULL");
         $stmt->execute([
             'rewards_issued_at' => $rewardsIssuedAt,
+            'reward_progression' => json_encode($progression, JSON_THROW_ON_ERROR),
             'encounter_id' => $encounterId,
         ]);
 

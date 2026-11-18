@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CombatClock.php';
+require_once __DIR__ . '/CharacterProgression.php';
 require_once __DIR__ . '/CombatActionResolver.php';
 require_once __DIR__ . '/CaveBrutePolicy.php';
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
@@ -467,12 +468,13 @@ final class CombatSynchronizer
     ): array {
         $encounterId = self::positiveInteger($encounter, 'id');
         $issuedAt = $serverNow->format('Y-m-d H:i:s.u');
-        if (!$this->repository->transitionLockedEncounterToVictory($encounterId, $issuedAt)) {
+        $experience = self::integer($encounter, 'reward_experience');
+        $progression = CharacterProgression::victoryReward($lockedCharacter, $experience);
+        if (!$this->repository->transitionLockedEncounterToVictory($encounterId, $issuedAt, $progression)) {
             throw new RuntimeException('Combat victory changed concurrently. Please retry.');
         }
 
         $gold = self::integer($encounter, 'reward_gold');
-        $experience = self::integer($encounter, 'reward_experience');
         $userId = self::positiveInteger($lockedCharacter, 'user_id');
         $characterId = self::positiveInteger($lockedCharacter, 'id');
         if (!$this->repository->addLockedCharacterVictoryRewards(
@@ -480,6 +482,7 @@ final class CombatSynchronizer
             $characterId,
             $gold,
             $experience,
+            $progression,
         )) {
             throw new RuntimeException('Champion rewards changed concurrently. Please retry.');
         }
@@ -496,12 +499,23 @@ final class CombatSynchronizer
             'dead',
         );
 
+        if ($progression['new_level'] > $progression['old_level']) {
+            $this->repository->appendEvent(
+                $encounterId,
+                'level_up',
+                sprintf('Level Up! %d → %d.', $progression['old_level'], $progression['new_level']),
+                'level_up',
+            );
+        }
+
+        $encounter['reward_progression'] = json_encode($progression, JSON_THROW_ON_ERROR);
         $encounter['status'] = 'victory_loot';
         $encounter['enemy_current_hp'] = 0;
         $encounter['timeline_elapsed_ms'] = $timelineMs;
         $encounter['rewards_issued_at'] = $issuedAt;
         $lockedCharacter['gold'] = self::integer($lockedCharacter, 'gold') + $gold;
-        $lockedCharacter['experience'] = self::integer($lockedCharacter, 'experience') + $experience;
+        $lockedCharacter['experience'] = $progression['total_xp_after'];
+        $lockedCharacter['level'] = $progression['new_level'];
 
         return [$encounter, $lockedCharacter];
     }

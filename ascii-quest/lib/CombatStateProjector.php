@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/CombatDefinitionRegistry.php';
+require_once __DIR__ . '/CharacterProgression.php';
 require_once __DIR__ . '/CombatPlayerActionEvaluator.php';
 require_once __DIR__ . '/CombatEquipmentProvider.php';
 require_once __DIR__ . '/CombatTurnEngine.php';
@@ -188,6 +189,7 @@ final class CombatStateProjector
                 'id' => self::integer($character, 'id'),
                 'current_hp' => self::integer($character, 'current_hp'),
                 'current_mana' => self::integer($character, 'current_mana'),
+                'progression' => CharacterProgression::project($character),
             ],
             'enemy' => [
                 'key' => (string) $enemy['key'],
@@ -224,6 +226,8 @@ final class CombatStateProjector
                     'rewards' => [
                         'gold' => self::integer($encounter, 'reward_gold'),
                         'experience' => self::integer($encounter, 'reward_experience'),
+                        // NULL means pre-012 history: do not invent a level-up.
+                        'progression' => CharacterProgression::rewardSnapshot($encounter['reward_progression'] ?? null),
                     ],
                     'physical_drops' => ($encounter['item_drops_generated_at'] ?? null) === null
                         ? []
