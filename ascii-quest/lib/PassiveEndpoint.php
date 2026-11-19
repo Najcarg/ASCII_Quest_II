@@ -25,7 +25,9 @@ function runPassiveEndpoint(string $command): never
         } catch (JsonException) { passiveJson(['success'=>false,'message'=>'Invalid passive request.'],400); }
         $keys=is_array($request)?array_keys($request):[]; sort($keys);
         if ($keys!==['csrf_token','passive_key','request_token']) { passiveJson(['success'=>false,'message'=>'Invalid passive request.'],400); }
-        if (!is_string($_SESSION['csrf_token']??null) || !is_string($request['csrf_token']) || !hash_equals($_SESSION['csrf_token'],$request['csrf_token'])) { passiveJson(['success'=>false,'message'=>'Invalid passive request.'],403); }
+        if (!is_string($_SESSION['csrf_token']??null) || $_SESSION['csrf_token']===''
+            || !is_string($request['csrf_token']) || $request['csrf_token']===''
+            || !hash_equals($_SESSION['csrf_token'],$request['csrf_token'])) { passiveJson(['success'=>false,'message'=>'Invalid passive request.'],403); }
         if (!is_string($request['passive_key']) || strlen($request['passive_key'])>64 || preg_match('/\Apassive_r[0-9]{2}_[a-d]_[a-z_]+\z/D',$request['passive_key'])!==1
             || !is_string($request['request_token']) || preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/D',$request['request_token'])!==1) { passiveJson(['success'=>false,'message'=>'Invalid passive intent.'],422); }
     }

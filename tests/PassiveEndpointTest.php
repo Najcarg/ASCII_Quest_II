@@ -39,6 +39,18 @@ $tests['Task35 unlock endpoint JSON auth CSRF strict whitelist intent secure ses
     [$status,$state,$called,$intent]=passiveEndpointFixture('unlock_passive.php',$session,'POST',json_encode($valid));
     assertSameValue(200,$status,'Valid request.');assertSameValue(42,$intent['id'],'Selected session Champion.');assertSameValue(7,$intent['user'],'Session user.');assertSameValue(42,$state['state']['champion']['id'],'Refreshed projection.');
 };
+$tests['Task35 passive unlock rejects empty missing and nonstring session CSRF before DB']=function():void {
+    $valid=['csrf_token'=>'','request_token'=>passiveToken(1),'passive_key'=>'passive_r01_a_strength'];
+    foreach (['',null,0,false,[]] as $token) {
+        $session=['user_id'=>7,'character_id'=>42,'csrf_token'=>$token];
+        [$status,,$called]=passiveEndpointFixture('unlock_passive.php',$session,'POST',json_encode($valid));
+        assertSameValue(403,$status,'Session must contain a nonempty string CSRF token.');
+        assertSameValue(false,$called,'Invalid CSRF rejected before DB.');
+    }
+    [$status,,$called]=passiveEndpointFixture('unlock_passive.php',['user_id'=>7,'character_id'=>42],'POST',json_encode($valid));
+    assertSameValue(403,$status,'Missing session CSRF token rejected.');
+    assertSameValue(false,$called,'Missing CSRF rejected before DB.');
+};
 $tests['Task35 passive state selected Champion authenticated GET only and errors sanitized']=function():void {
     $session=['user_id'=>7,'character_id'=>42,'csrf_token'=>'csrf'];
     foreach([[[],'GET',[],401],[$session,'POST',[],405],[$session,'GET',['character_id'=>99],400]] as [$auth,$method,$get,$expected]){[$status,,$called]=passiveEndpointFixture('passive_state.php',$auth,$method,'{}',$get);assertSameValue($expected,$status,'GET authority.');assertSameValue(false,$called,'No DB on rejection.');}

@@ -356,10 +356,10 @@ Items vs Skills natural-height differences, documented above.
 
 | Command / suite | Result |
 | --- | --- |
-| `php tests/run.php` | **1062 passed,0 failed** (all862 prior PHP cases retained +200 new) |
+| `php tests/run.php` | **1063 passed,0 failed** (all862 prior PHP cases retained +201 new) |
 | all8 nonbrowser `tests/*Test.js` via Node | **138 passed,0 failed** (all125 prior cases +13 new Passive HUD) |
-| Combined original/current | Original987 retained; **1200 total unit/integration cases green** |
-| `php tests/run_task35.php` | 200 passed,0 failed (included above) |
+| Combined original/current | Original987 retained; **1201 total unit/integration cases green** |
+| `php tests/run_task35.php` | 201 passed,0 failed (included above) |
 | Task27 /28 /29 /30 /31 focused PHP | 20 /18 /43 /152 /122 passed,0 failed |
 | Task34A /34B focused PHP | 17 /42 passed,0 failed |
 | Task24/25/26,Task33 | Covered by full PHP+all JS and browser regressions |
@@ -373,8 +373,26 @@ Items vs Skills natural-height differences, documented above.
 | `git diff --check` | PASS |
 
 Focused suites overlap full-suite cases and browser scenario counts are reported
-separately, not added to1200. No actual migration execution or live API/browser
+separately, not added to1201. No actual migration execution or live API/browser
 claim is hidden inside these totals.
+
+### Follow-up security audit
+
+The follow-up audit reproduced one fail-closed CSRF gap: an empty posted token
+matched an empty string session token. Normal game rendering generates a nonempty
+session token, but a malformed session must not authorize a mutation. A new
+endpoint regression failed with expected403/actual200 before the fix; the passive
+endpoint now explicitly rejects empty session/request CSRF strings. The regression
+also checks missing, null, numeric, boolean and array session tokens and asserts
+rejection before any DB access. No unrelated endpoint was changed.
+
+Full PHP/JS, focused suites, all four database-free browser suites, all tracked PHP
+lint, app/test JS syntax and full feature `git diff --check` were rerun. Fresh
+local browser evidence is under `/tmp/task35-reaudit/{passives,skills,progression,task33}`;
+committed evidence above remains representative (no visual changes). A temporary
+`git archive` of the exact accepted base independently passed862 PHP and125 JS
+cases; comparison of passing case names found zero missing from the final suites.
+Migration014 was not applied and no real database or production state was accessed.
 
 ## Remaining limitations / required later acceptance
 
