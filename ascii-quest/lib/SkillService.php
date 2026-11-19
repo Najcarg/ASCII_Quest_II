@@ -12,7 +12,7 @@ final class SkillService
         $stored = CharacterProgression::nonNegativeInteger($character['level'] ?? null);
         if ($stored < 1 || $stored > CharacterProgression::MAX_LEVEL || $spent < 0) { throw new InvalidArgumentException('Invalid skill progression.'); }
         $level = CharacterProgression::project($character)['level'];
-        $earned = max(0, $level - 1);
+        $earned = max(0, min(50, $level) - 1); // Active progression ends at50; passives use51–90.
         return ['earned'=>$earned,'spent'=>$spent,'available'=>max(0,$earned-$spent)];
     }
 

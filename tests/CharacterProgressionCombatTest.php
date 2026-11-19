@@ -22,7 +22,7 @@ function task34aVictoryFixture(int $xp = 80, int $reward = 40): array
 
 return [
     'Task34A victory persists XP level receipt and gold once across service replay' => function (): void {
-        foreach ([[80, 40, 2], [0, 1700, 5], [240090, 40, 50], [999999, 40, 50]] as [$xp, $reward, $level]) {
+        foreach ([[80, 40, 2], [0, 1700, 5], [240090, 40, 50], [999999, 40, 100]] as [$xp, $reward, $level]) {
             [$pdo, $clock, $service] = task34aVictoryFixture($xp, $reward);
             $token = '34000000-0000-4000-8000-000000000001';
             $before = $pdo->characters[42];

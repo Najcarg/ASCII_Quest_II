@@ -4,7 +4,7 @@ declare(strict_types=1);
 /** Cumulative XP is authoritative. This service never changes stats/resources. */
 final class CharacterProgression
 {
-    public const MAX_LEVEL = 50;
+    public const MAX_LEVEL = 100;
     private static ?array $thresholds = null;
 
     public static function levelForTotalXp(mixed $totalXp): int
@@ -88,10 +88,17 @@ final class CharacterProgression
         $calculated = self::victoryReward([
             'experience' => $snapshot['total_xp_before'], 'life_state' => 'alive',
         ], $snapshot['xp_gained']);
-        foreach ($calculated as $key => $value) {
-            if ($snapshot[$key] !== $value) { throw new UnexpectedValueException('Invalid progression receipt accounting.'); }
-        }
-        return $calculated;
+        // Task34A receipts predate the cap extension. Preserve their immutable
+        // capped levels only when the entire receipt is exactly cap50-equivalent.
+        $legacy = $calculated;
+        $legacy['old_level'] = min(50, $legacy['old_level']);
+        $legacy['new_level'] = min(50, $legacy['new_level']);
+        $matches = static function (array $expected) use ($snapshot): bool {
+            foreach ($expected as $key => $value) { if ($snapshot[$key] !== $value) { return false; } }
+            return true;
+        };
+        if (!$matches($calculated) && !$matches($legacy)) { throw new UnexpectedValueException('Invalid progression receipt accounting.'); }
+        return $snapshot;
     }
 
     public static function nonNegativeInteger(mixed $value): int

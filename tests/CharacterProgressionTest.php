@@ -27,7 +27,7 @@ return [
     },
     'Task34A integer table exhaustively covers below exact above every threshold' => function (): void {
         $table = require __DIR__ . '/../ascii-quest/config/character_progression.php';
-        assertSameValue(range(1, 50), array_keys($table), 'Contiguous levels.');
+        assertSameValue(range(1, 100), array_keys($table), 'Contiguous levels.');
         foreach ($table as $level => $threshold) {
             assertSameValue(100 * ($level - 1) ** 2, $threshold, 'Curve parity.');
             assertSameValue($level, CharacterProgression::levelForTotalXp($threshold), "Exact L{$level}.");
@@ -38,7 +38,7 @@ return [
         }
     },
     'Task34A every current forty XP victory crosses at most one level' => function (): void {
-        for ($xp = 0; $xp <= 240100; $xp++) {
+        for ($xp = 0; $xp <= 980100; $xp++) {
             if (CharacterProgression::levelForTotalXp($xp + 40) - CharacterProgression::levelForTotalXp($xp) > 1) {
                 throw new RuntimeException('Prototype reward skips levels.');
             }
@@ -63,7 +63,7 @@ return [
         assertSameValue(1700, $reward['total_xp_after'], 'Cumulative reward.');
         assertSameValue($before, $character, 'Pure rules do not alter resources/stats.');
         $max = CharacterProgression::project(['level' => 50, 'experience' => 999999, 'life_state' => 'alive']);
-        assertSameValue(50, $max['level'], 'Level cap.');
+        assertSameValue(100, $max['level'], 'Task35 Level cap (1–50 thresholds unchanged).');
         assertSameValue(999999, $max['total_xp'], 'XP retained above cap.');
         assertSameValue(null, $max['next_level_total_xp'], 'No next threshold.');
         assertSameValue(100, $max['progress_percent'], 'Full MAX bar.');

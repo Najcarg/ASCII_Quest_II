@@ -27,7 +27,7 @@ const tests = {
         const f = fixture();
         hud.renderProgression(f.document, states.xp_999999.champion.progression);
         assert.equal(f.nodes.playerXp.textContent, "MAX");
-        assert.equal(f.nodes.playerLevel.textContent, "50");
+        assert.equal(f.nodes.playerLevel.textContent, "100");
         assert.equal(f.nodes.playerXpBar.dataset.currentXp, "999999");
         assert.equal(f.nodes.playerXpBar.attributes["aria-valuetext"], "999999 total XP; MAX");
         assert.equal(f.nodes.playerXpFill.style.width, "100%");

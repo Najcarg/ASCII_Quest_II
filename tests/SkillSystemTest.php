@@ -37,12 +37,12 @@ return [
         task34aAssertRejected(fn()=>SkillCatalogue::decodeSnapshot(SkillCatalogue::encodeSnapshot($action)),UnexpectedValueException::class);
     },
     'Task34B authoritative progression derived points and malformed level rejection' => function (): void {
-        foreach ([1 => 0, 2 => 1, 5 => 4, 50 => 49] as $level => $earned) {
+        foreach ([1 => 0, 2 => 1, 5 => 4, 50 => 49, 51 => 49, 90 => 49, 100 => 49] as $level => $earned) {
             $character = ['level' => $level,'experience' => 100 * ($level-1)**2,'life_state'=>'alive'];
             assertSameValue(['earned'=>$earned,'spent'=>0,'available'=>$earned], SkillService::points($character, 0), 'Point model.');
             assertSameValue(max(0,$earned-2), SkillService::points($character, 2)['available'], 'Spent clamped.');
         }
-        foreach ([null,0,-1,51,1.5,'bad',true] as $bad) {
+        foreach ([null,0,-1,101,1.5,'bad',true] as $bad) {
             task34aAssertRejected(fn () => SkillService::points(['level'=>$bad,'experience'=>0,'life_state'=>'alive'],0), InvalidArgumentException::class);
         }
         assertSameValue(0, SkillService::points(['level'=>50,'experience'=>0,'life_state'=>'alive'],0)['earned'], 'XP, not stale cache, is authority.');

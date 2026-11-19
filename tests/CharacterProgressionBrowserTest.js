@@ -75,7 +75,7 @@ async function screenshot(name) {
             ["xp_0", 1, "0/100 XP", 0, ""], ["xp_99", 1, "99/100 XP", 99, ""],
             ["xp_100", 2, "0/300 XP", 0, ""], ["single", 2, "20/300 XP", 6, "Level Up! 1 → 2"],
             ["multi", 5, "100/900 XP", 11, "Level Up! 1 → 5"],
-            ["cap", 50, "MAX", 100, "Level Up! 49 → 50"], ["xp_999999", 50, "MAX", 100, ""],
+            ["cap", 50, "30/9900 XP", 0, "Level Up! 49 → 50"], ["xp_999999", 100, "MAX", 100, ""],
         ]) {
             const result = await evaluate(`(() => {
                 const state=task34aStates[${JSON.stringify(name)}];
