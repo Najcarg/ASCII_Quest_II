@@ -151,7 +151,8 @@ final class EquipmentService
     private function clampResources(int $characterId, array $character): void
     {
         $modifiers = $this->aggregator->aggregate($this->repository->lockEquippedItems($characterId));
-        $stats = CharacterStats::calculate($character, $modifiers);
+        $passives = method_exists($this->repository,'passiveModifiers') ? $this->repository->passiveModifiers($characterId) : [];
+        $stats = CharacterStats::calculate($character, $modifiers, null, $passives);
         $currentHp = max(0, min((int) $character['current_hp'], (int) $stats['resources']['max_life']));
         $currentMana = max(0, min((int) $character['current_mana'], (int) $stats['resources']['max_mana']));
         $this->repository->clampResources($characterId, $currentHp, $currentMana);

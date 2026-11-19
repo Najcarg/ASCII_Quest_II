@@ -145,6 +145,8 @@ final class Task32Statement extends PDOStatement
             $this->rows = $item !== null && $item['character_id'] === $p['character_id'] ? [$item] : [];
         } elseif (str_starts_with($q, 'SELECT * FROM character_items WHERE character_id') && str_contains($q, 'snapshot_equipment_slot')) {
             $this->rows = array_values(array_filter($db->items, static fn ($i) => $i['character_id'] === $p['character_id'] && $i['snapshot_equipment_slot'] === 'weapon' && (!str_contains($q, 'retired_at IS NULL') || $i['retired_at'] === null)));
+        } elseif (str_starts_with($q, 'SELECT passive_key,row_number,pass_number,unlocked_at FROM character_passives')) {
+            $this->rows = []; // No passive allocations in existing equipment fixture.
         } elseif (str_starts_with($q, 'SELECT ci.*, ce.equipment_slot FROM character_equipment')) {
             foreach ($db->equipment as $slot => $id) {
                 if ($db->items[$id]['character_id'] === $p['character_id'] && (!str_contains($q, 'retired_at IS NULL') || $db->items[$id]['retired_at'] === null)) { $this->rows[] = ['equipment_slot' => $slot] + $db->items[$id]; }

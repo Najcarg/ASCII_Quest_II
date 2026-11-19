@@ -57,6 +57,10 @@ final class CombatStatusEffects
             if ($value === 0) { continue; }
             $chances = array_fill_keys(self::KEYS,0); $chances[$key] = $value;
             $chance = $frozenChances[$key] ?? CharacterStats::statusEffectChance($chances);
+            $bonus = $action['snapshot_elemental_status_chance'] ?? 0; // NULL legacy actions retain old odds.
+            if (is_string($bonus) && ctype_digit($bonus)) { $bonus = (int)$bonus; }
+            if (!is_int($bonus)) { throw new DomainException('Invalid elemental status chance snapshot.'); }
+            $chance = CharacterStats::elementalStatusChance($chance,$key,$bonus);
             if ($random->integer(1,100) > $chance) { continue; }
             if ($this->repository->applyStatusEffect((int)$encounter['id'],(int)$action['id'],$key,$value,(int)$action['resolves_timeline_ms'],$durationMs)) {
                 $this->repository->appendEvent((int)$encounter['id'],'status_applied_'.$key,$enemy['name'].' is '.self::LABELS[$key].'.',null);

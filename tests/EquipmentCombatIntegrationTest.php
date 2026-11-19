@@ -8,6 +8,8 @@ foreach (['CombatEquipmentProvider.php', 'CombatDefinitionRegistry.php', 'Charac
 
 final class FakeCombatEquipmentReader
 {
+    public array $passives = [];
+    public function passiveModifiers(int $characterId): array { return $this->passives; }
     public function __construct(public array $items) {}
     public function lockEquippedItems(int $characterId): array { return $this->items; }
 }

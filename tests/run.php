@@ -55,6 +55,12 @@ $tests = array_merge(
     require __DIR__ . '/SkillCombatTest.php',
     require __DIR__ . '/SkillMigrationTest.php',
     require __DIR__ . '/SkillEndpointTest.php',
+    require __DIR__ . '/PassiveSystemTest.php',
+    require __DIR__ . '/PassiveStatTest.php',
+    require __DIR__ . '/PassiveMigrationTest.php',
+    require __DIR__ . '/PassiveRepositoryTest.php',
+    require __DIR__ . '/PassiveCombatTest.php',
+    require __DIR__ . '/PassiveEndpointTest.php',
 );
 
 $passed = 0;

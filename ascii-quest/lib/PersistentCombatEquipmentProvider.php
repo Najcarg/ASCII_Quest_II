@@ -23,9 +23,10 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
         $items = $this->equippedItems($lockedCharacter);
         $weapon = EffectiveWeaponDamage::equippedWeapon($items);
         $modifiers = $this->aggregator->aggregate($items);
-        $stats = CharacterStats::calculate($lockedCharacter, $modifiers, $weapon);
+        $stats = CharacterStats::calculate($lockedCharacter, $modifiers, $weapon, $this->passiveModifiers($lockedCharacter));
         if (($definition['kind'] ?? null) === 'skill') {
             return [
+                'snapshot_elemental_status_chance' => (int)$stats['utility']['elemental_status_chance_percent'],
                 'snapshot_weapon_item_id' => null,
                 'snapshot_weapon_key' => null,
                 'snapshot_damage_type' => (string) $definition['damage_type'],
@@ -59,6 +60,7 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
         }
 
         return [
+            'snapshot_elemental_status_chance' => (int)$stats['utility']['elemental_status_chance_percent'],
             'snapshot_weapon_item_id' => $itemId,
             'snapshot_weapon_key' => $definitionKey,
             'snapshot_damage_type' => $range['type'],
@@ -88,7 +90,7 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
             throw new DomainException('Combat player action is unavailable.');
         }
         $modifiers = $this->aggregator->aggregate($this->equippedItems($lockedCharacter));
-        $stats = CharacterStats::calculate($lockedCharacter, $modifiers);
+        $stats = CharacterStats::calculate($lockedCharacter, $modifiers, null, $this->passiveModifiers($lockedCharacter));
         $factor = ($definition['kind'] ?? null) === 'weapon'
             ? (float) $stats['rates']['attack_rate']
             : (float) $stats['rates']['cast_rate'];
@@ -98,7 +100,7 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
     public function currentDefense(array $lockedCharacter): array
     {
         $modifiers = $this->aggregator->aggregate($this->equippedItems($lockedCharacter));
-        $stats = CharacterStats::calculate($lockedCharacter, $modifiers);
+        $stats = CharacterStats::calculate($lockedCharacter, $modifiers, null, $this->passiveModifiers($lockedCharacter));
         return [
             'toughness' => (int) $stats['combat']['toughness'],
             'dodging' => (float) $stats['combat']['dodging'],
@@ -116,7 +118,14 @@ final class PersistentCombatEquipmentProvider implements CombatEquipmentProvider
     {
         $items = $this->equippedItems($character);
         $modifiers = $this->aggregator->aggregate($items);
-        return CharacterStats::calculate($character, $modifiers, EffectiveWeaponDamage::equippedWeapon($items));
+        return CharacterStats::calculate($character, $modifiers, EffectiveWeaponDamage::equippedWeapon($items), $this->passiveModifiers($character));
+    }
+
+    private function passiveModifiers(array $character): array
+    {
+        // Production repository always implements this; legacy in-memory test
+        // providers have no persisted passive store and deliberately return none.
+        return method_exists($this->repository,'passiveModifiers') ? $this->repository->passiveModifiers(self::positiveInteger($character,'id')) : [];
     }
 
     private function equippedItems(array $lockedCharacter): array

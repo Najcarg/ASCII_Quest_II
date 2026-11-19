@@ -5,6 +5,12 @@ final class EquipmentRepository
 {
     public function __construct(private PDO $pdo) {}
 
+    public function passiveModifiers(int $characterId): array
+    {
+        require_once __DIR__.'/PassiveBootstrap.php';
+        return PassiveBootstrap::modifiers($this->pdo,$characterId);
+    }
+
     public function beginMutation(): void
     {
         if ($this->pdo->inTransaction()) {

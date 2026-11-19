@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/EffectiveWeaponDamage.php';
+require_once __DIR__ . '/PassiveStatAggregator.php';
 
 final class CharacterStats
 {
@@ -20,8 +21,9 @@ final class CharacterStats
         ];
     }
 
-    public static function calculate(array $character, array $equipmentModifiers = [], ?array $weapon = null): array
+    public static function calculate(array $character, array $equipmentModifiers = [], ?array $weapon = null, array $passiveModifiers = []): array
     {
+        $equipmentModifiers = PassiveStatAggregator::merge($equipmentModifiers, $passiveModifiers);
         $config = self::config();
         $base = $config['base'];
 
@@ -42,7 +44,7 @@ final class CharacterStats
         $maxLife = max(0, $base['life'] + ($vitality * $config['per_point']['vitality']['life']) + $modifier('maximum_life'));
         $maxMana = max(0, $base['mana'] + ($energy * $config['per_point']['energy']['mana']) + $modifier('maximum_mana'));
 
-        $meleeDamage = $base['melee_damage'] + ($strength * $config['per_point']['strength']['melee_damage']);
+        $meleeDamage = $base['melee_damage'] + ($strength * $config['per_point']['strength']['melee_damage']) + $modifier('physical_damage');
         $toughness = max(0, $base['toughness'] + ($strength * $config['per_point']['strength']['toughness']) + $modifier('toughness'));
         $dodging = self::cap('dodging', max(0.0, $base['dodging'] + ($dexterity * $config['per_point']['dexterity']['dodging']) + $modifier('dodging')));
         $accuracy = self::cap('accuracy', max(0.0, $base['accuracy'] + ($dexterity * $config['per_point']['dexterity']['accuracy']) + $modifier('accuracy')));
@@ -62,6 +64,9 @@ final class CharacterStats
             'life_regeneration' => 0,
             'mana_regeneration' => 0,
             'life_on_hit' => max(0, $modifier('life_on_hit')),
+            'healing_power_percent' => max(0, $modifier('healing_power_percent')),
+            'elemental_status_chance_percent' => min(100, max(0, $modifier('elemental_status_chance_percent'))),
+            'physical_damage' => max(0, $modifier('physical_damage')),
             'mana_on_hit' => 0,
             'life_per_kill' => 0,
             'mana_per_kill' => 0,
@@ -126,6 +131,12 @@ final class CharacterStats
             ],
             'utility' => $utility,
         ];
+    }
+
+    public static function elementalStatusChance(float $baseChance, string $statusKey, int $bonus): float
+    {
+        if ($bonus < 0 || $bonus > 100) { throw new InvalidArgumentException('Invalid elemental status chance bonus.'); }
+        return self::cap('status_effect_chance', $baseChance + (in_array($statusKey, ['burn','freeze','shock'], true) ? $bonus : 0));
     }
 
     public static function statusEffectChance(array $statusDamage): float

@@ -20,6 +20,12 @@ final class CombatRepository
     {
     }
 
+    public function passiveModifiers(int $characterId): array
+    {
+        require_once __DIR__.'/PassiveBootstrap.php';
+        return PassiveBootstrap::modifiers($this->pdo,$characterId);
+    }
+
     /** All status mutation reads require the encounter aggregate lock. */
     public function lockStatusEffectsForEncounter(int $encounterId): array
     {
@@ -1011,6 +1017,7 @@ final class CombatRepository
         ]);
         $values += [
             'snapshot_skill_definition' => $action['snapshot_skill_definition'] ?? null,
+            'snapshot_elemental_status_chance' => $action['snapshot_elemental_status_chance'] ?? null,
             'snapshot_weapon_item_id' => $action['snapshot_weapon_item_id'] ?? null,
             'snapshot_fire_damage' => $action['snapshot_fire_damage'] ?? null,
             'snapshot_lightning_damage' => $action['snapshot_lightning_damage'] ?? null,
@@ -1048,7 +1055,7 @@ final class CombatRepository
                     active_slot, state, started_timeline_ms, resolves_timeline_ms,
                     cooldown_ready_timeline_ms, completed_timeline_ms,
                     snapshot_weapon_key,
-                    snapshot_weapon_item_id, snapshot_skill_definition,
+                    snapshot_weapon_item_id, snapshot_skill_definition, snapshot_elemental_status_chance,
                     snapshot_damage_type, snapshot_base_damage, snapshot_accuracy,
                     snapshot_critical_chance, snapshot_critical_damage,
                     snapshot_fire_damage, snapshot_lightning_damage, snapshot_cold_damage, snapshot_poison_damage,
@@ -1062,7 +1069,7 @@ final class CombatRepository
                     :active_slot, :state, :started_timeline_ms, :resolves_timeline_ms,
                     :cooldown_ready_timeline_ms, :completed_timeline_ms,
                     :snapshot_weapon_key,
-                    :snapshot_weapon_item_id, :snapshot_skill_definition,
+                    :snapshot_weapon_item_id, :snapshot_skill_definition, :snapshot_elemental_status_chance,
                     :snapshot_damage_type, :snapshot_base_damage, :snapshot_accuracy,
                     :snapshot_critical_chance, :snapshot_critical_damage,
                     :snapshot_fire_damage, :snapshot_lightning_damage, :snapshot_cold_damage, :snapshot_poison_damage,

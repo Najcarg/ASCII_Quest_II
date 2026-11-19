@@ -26,6 +26,7 @@ final class EquipmentBootstrap
             $character,
             (new EquipmentStatAggregator())->aggregate($items),
             EffectiveWeaponDamage::equippedWeapon($items),
+            $repository->passiveModifiers((int)$character['id']),
         );
     }
 
