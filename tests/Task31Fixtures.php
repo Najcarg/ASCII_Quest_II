@@ -149,7 +149,7 @@ final class Task31EquipmentStatement extends PDOStatement
     public function __construct(private Task31EquipmentPdo $pdo, private string $query) {}
     public function execute(?array $params = null): bool
     {
-        if (str_starts_with($this->query, 'SELECT passive_key,row_number,pass_number,unlocked_at FROM character_passives')) {
+        if (str_starts_with($this->query, 'SELECT passive_key,`row_number`,pass_number,unlocked_at FROM character_passives')) {
             $this->rows = []; // Existing regression fixture has no passive allocations.
         } elseif (str_starts_with($this->query, 'SELECT ci.*, ce.equipment_slot FROM character_equipment ce INNER JOIN character_items')) {
             $this->rows = array_values(array_filter($this->pdo->items, static fn ($r) => $r['character_id'] === $params['character_id']));

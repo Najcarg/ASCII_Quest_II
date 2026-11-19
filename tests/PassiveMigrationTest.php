@@ -21,7 +21,7 @@ $tests['Task35 migration014 exact80 unique20x4 active classless definitions no a
 };
 $tests['Task35 migration014 structural max2 row guarantee FK row binding no duplicate node durable receipt']=function():void {
     $sql=file_get_contents(__DIR__.'/../database/migrations/014_universal_passive_tree.sql');
-    foreach(['PRIMARY KEY (character_id,passive_key)','UNIQUE KEY uq_character_passive_row_pass (character_id,row_number,pass_number)','FOREIGN KEY (passive_key,row_number) REFERENCES passive_definitions(passive_key,row_number)','CHECK (pass_number IN (1,2))','PRIMARY KEY (character_id,request_token)','request_fingerprint CHAR(64)','result_payload LONGTEXT NOT NULL','CHECK (JSON_VALID(result_payload))','ON DELETE RESTRICT','snapshot_elemental_status_chance TINYINT UNSIGNED NULL'] as $fragment)assertSameValue(true,str_contains($sql,$fragment),'Structural protection '.$fragment);
+    foreach(['PRIMARY KEY (character_id,passive_key)','UNIQUE KEY uq_character_passive_row_pass (character_id,`row_number`,pass_number)','FOREIGN KEY (passive_key,`row_number`) REFERENCES passive_definitions(passive_key,`row_number`)','CHECK (pass_number IN (1,2))','PRIMARY KEY (character_id,request_token)','request_fingerprint CHAR(64)','result_payload LONGTEXT NOT NULL','CHECK (JSON_VALID(result_payload))','ON DELETE RESTRICT','snapshot_elemental_status_chance TINYINT UNSIGNED NULL'] as $fragment)assertSameValue(true,str_contains($sql,$fragment),'Structural protection '.$fragment);
     // At most one allocation in each of two allowed pass slots = <=2 per row.
     $slots=[];foreach([1,2,3,1] as $pass){$accepted=in_array($pass,[1,2],true)&&!isset($slots[$pass]);if($accepted)$slots[$pass]=true;}
     assertSameValue(2,count($slots),'Constraint model refuses third pass and duplicate pass.');
@@ -49,5 +49,19 @@ $tests['Task35 production repositories lock Character account then lookup safe e
     assertSameValue(true,str_contains($repo,'INSERT INTO passive_mutation_requests'),'Durable receipt.');
     assertSameValue(true,strpos($service,'$this->repository->unlock(')<strpos($service,'$this->repository->complete('),'Allocation and receipt same transaction.');
     assertSameValue(true,str_contains($service,'$this->repository->rollback(); throw $e;'),'All thrown mutations rollback.');
+};
+$tests['Task35 MariaDB reserved row_number identifiers are quoted in migration verifier and repository SQL']=function():void {
+    foreach (['014_universal_passive_tree.sql','014_universal_passive_tree_verify.sql'] as $file) {
+        $sql=file_get_contents(__DIR__.'/../database/migrations/'.$file);
+        // Ignore comments and SQL string literals: verifier metadata and exact
+        // normalized CHECK expressions must retain the literal column name.
+        $executable=preg_replace("~/\\*.*?\\*/|'(?:''|[^'])*'~s",'',$sql);
+        assertSameValue(0,preg_match('/(?<!`)\\brow_number\\b(?!`)/i',$executable),'MariaDB reserved identifier quoted in '.$file);
+    }
+    $pdo=new PassiveFixturePdo();$repo=new PassiveRepository($pdo);
+    $repo->catalogue();$repo->unlocks(42);$repo->unlock(42,passiveNode(1,'a')['key'],1,1);
+    foreach($pdo->sql as $sql) {
+        assertSameValue(0,preg_match('/(?<!`)\\brow_number\\b(?!`)/i',$sql),'MariaDB reserved identifier quoted in repository query.');
+    }
 };
 return $tests;

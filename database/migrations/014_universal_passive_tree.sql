@@ -41,7 +41,7 @@ BEGIN
 
     CREATE TABLE passive_definitions (
         passive_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-        row_number TINYINT UNSIGNED NOT NULL,
+        `row_number` TINYINT UNSIGNED NOT NULL,
         lane_key CHAR(1) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
         display_name VARCHAR(64) NOT NULL,
         description VARCHAR(255) NOT NULL,
@@ -49,24 +49,24 @@ BEGIN
         is_major TINYINT UNSIGNED NOT NULL DEFAULT 0,
         is_active TINYINT UNSIGNED NOT NULL DEFAULT 1,
         PRIMARY KEY (passive_key),
-        UNIQUE KEY uq_passive_row_lane (row_number,lane_key),
-        UNIQUE KEY uq_passive_key_row (passive_key,row_number),
-        CONSTRAINT chk_passive_row CHECK (row_number BETWEEN 1 AND 20),
+        UNIQUE KEY uq_passive_row_lane (`row_number`,lane_key),
+        UNIQUE KEY uq_passive_key_row (passive_key,`row_number`),
+        CONSTRAINT chk_passive_row CHECK (`row_number` BETWEEN 1 AND 20),
         CONSTRAINT chk_passive_lane CHECK (lane_key IN ('a','b','c','d')),
-        CONSTRAINT chk_passive_major CHECK ((row_number = 20 AND is_major = 1) OR (row_number < 20 AND is_major = 0)),
+        CONSTRAINT chk_passive_major CHECK ((`row_number` = 20 AND is_major = 1) OR (`row_number` < 20 AND is_major = 0)),
         CONSTRAINT chk_passive_active CHECK (is_active IN (0,1)),
         CONSTRAINT chk_passive_effect CHECK (JSON_VALID(effect_json))
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     CREATE TABLE character_passives (
         character_id INT UNSIGNED NOT NULL,
         passive_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-        row_number TINYINT UNSIGNED NOT NULL,
+        `row_number` TINYINT UNSIGNED NOT NULL,
         pass_number TINYINT UNSIGNED NOT NULL,
         unlocked_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
         PRIMARY KEY (character_id,passive_key),
-        UNIQUE KEY uq_character_passive_row_pass (character_id,row_number,pass_number),
+        UNIQUE KEY uq_character_passive_row_pass (character_id,`row_number`,pass_number),
         CONSTRAINT fk_passive_owner FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE,
-        CONSTRAINT fk_passive_definition FOREIGN KEY (passive_key,row_number) REFERENCES passive_definitions(passive_key,row_number) ON DELETE RESTRICT,
+        CONSTRAINT fk_passive_definition FOREIGN KEY (passive_key,`row_number`) REFERENCES passive_definitions(passive_key,`row_number`) ON DELETE RESTRICT,
         CONSTRAINT chk_passive_pass CHECK (pass_number IN (1,2))
     ) ENGINE=InnoDB;
     CREATE TABLE passive_mutation_requests (
@@ -84,7 +84,7 @@ BEGIN
 
     /* Canonical effects: flat integers except _bp (100 basis points = 1%).
        Elemental Resistance deliberately excludes Poison. */
-    INSERT INTO passive_definitions (passive_key,row_number,lane_key,display_name,description,effect_json,is_major,is_active) VALUES
+    INSERT INTO passive_definitions (passive_key,`row_number`,lane_key,display_name,description,effect_json,is_major,is_active) VALUES
     ('passive_r01_a_strength',1,'a','Strength +3','Strength +3','{"strength":3}',0,1),
     ('passive_r01_b_energy',1,'b','Energy +3','Energy +3','{"energy":3}',0,1),
     ('passive_r01_c_dexterity',1,'c','Dexterity +3','Dexterity +3','{"dexterity":3}',0,1),

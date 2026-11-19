@@ -27,7 +27,7 @@ final class PassiveFixtureStatement extends PDOStatement
         elseif(str_contains($sql,'FROM characters c WHERE c.id')){if(($p['character_id']??null)===42&&($p['user_id']??null)===7)$this->rows=[$this->pdo->character];}
         elseif(str_starts_with($sql,'SELECT id FROM users')){$this->rows=[['id'=>7]];}
         elseif(str_contains($sql,'FROM combat_encounters ce INNER JOIN')){$this->rows=[];}
-        elseif(str_starts_with($sql,'SELECT passive_key,row_number')){$this->rows=$this->pdo->allocations;}
+        elseif(str_starts_with($sql,'SELECT passive_key,`row_number`')){$this->rows=$this->pdo->allocations;}
         elseif(str_starts_with($sql,'SELECT request_fingerprint,result_payload')){if(isset($this->pdo->receipts[$p['token']]))$this->rows=[$this->pdo->receipts[$p['token']]];}
         elseif(str_starts_with($sql,'INSERT INTO character_passives')){
             foreach($this->pdo->allocations as $row)if($row['passive_key']===$p['key']||($row['row_number']===$p['row']&&$row['pass_number']===$p['pass']))throw new RuntimeException('Unique violation');

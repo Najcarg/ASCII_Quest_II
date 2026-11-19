@@ -86,7 +86,7 @@ SELECT CONCAT(e.ck,' CHECK shape') AS violation FROM expected e LEFT JOIN actual
    even the minimum GROUP_CONCAT limit works. Values generated from seed literals,
    not a second gameplay catalogue. Byte differences deliberately fail closed. */
 WITH expected AS (
- SELECT 1 AS row_number, '56afef9d74f2b7b325187d38e20961becafe1bea5e02e68f4d4806ede6f269de' AS digest
+ SELECT 1 AS `row_number`, '56afef9d74f2b7b325187d38e20961becafe1bea5e02e68f4d4806ede6f269de' AS digest
  UNION ALL SELECT 2,'b20ee48bd8388bc41cc117e3aa0157889b514747ba5b5483f652d7632bc8eeee'
  UNION ALL SELECT 3,'9f4a13bbf617da8b3a225be513ae8c6f264b80f0e4c6b374d729d3f9eff96ad1'
  UNION ALL SELECT 4,'b33917bf9d92a0efe5b402d4f954c6a5573fe14f710064f08bf70fc66e436dad'
@@ -107,20 +107,20 @@ WITH expected AS (
  UNION ALL SELECT 19,'cbc755569b5f4a0b64fdaf769277d9d29b3e57d620fc873c25d95a8d09825b35'
  UNION ALL SELECT 20,'c49979e50eaeea234444b72b3ec9ccfa97b903a8fa2dc62d40af3164f98b0452'
 ), actual AS (
- SELECT row_number,COUNT(*) AS nodes,COUNT(DISTINCT lane_key) AS lanes,
- SHA2(GROUP_CONCAT(CONCAT_WS('|',passive_key,row_number,lane_key,display_name,description,effect_json,is_major,is_active) ORDER BY lane_key SEPARATOR '\n'),256) AS digest
- FROM passive_definitions GROUP BY row_number
+ SELECT `row_number`,COUNT(*) AS nodes,COUNT(DISTINCT lane_key) AS lanes,
+ SHA2(GROUP_CONCAT(CONCAT_WS('|',passive_key,`row_number`,lane_key,display_name,description,effect_json,is_major,is_active) ORDER BY lane_key SEPARATOR '\n'),256) AS digest
+ FROM passive_definitions GROUP BY `row_number`
 )
-SELECT e.row_number,'catalogue drift' AS violation FROM expected e LEFT JOIN actual a ON a.row_number=e.row_number
- WHERE a.row_number IS NULL OR a.nodes<>4 OR a.lanes<>4 OR BINARY a.digest<>BINARY e.digest;
+SELECT e.`row_number`,'catalogue drift' AS violation FROM expected e LEFT JOIN actual a ON a.`row_number`=e.`row_number`
+ WHERE a.`row_number` IS NULL OR a.nodes<>4 OR a.lanes<>4 OR BINARY a.digest<>BINARY e.digest;
 
 SELECT cp.character_id,'invalid allocation' AS violation FROM character_passives cp
- LEFT JOIN passive_definitions pd ON pd.passive_key=cp.passive_key AND pd.row_number=cp.row_number
+ LEFT JOIN passive_definitions pd ON pd.passive_key=cp.passive_key AND pd.`row_number`=cp.`row_number`
  LEFT JOIN characters c ON c.id=cp.character_id
  WHERE pd.passive_key IS NULL OR c.id IS NULL OR cp.pass_number NOT IN (1,2);
-SELECT character_id,row_number,'overallocated row' AS violation FROM character_passives GROUP BY character_id,row_number HAVING COUNT(*)>2;
+SELECT character_id,`row_number`,'overallocated row' AS violation FROM character_passives GROUP BY character_id,`row_number` HAVING COUNT(*)>2;
 SELECT character_id,'nonsequential history' AS violation FROM character_passives GROUP BY character_id
- HAVING MIN((pass_number-1)*20+row_number)<>1 OR MAX((pass_number-1)*20+row_number)<>COUNT(*) OR COUNT(DISTINCT (pass_number-1)*20+row_number)<>COUNT(*);
+ HAVING MIN((pass_number-1)*20+`row_number`)<>1 OR MAX((pass_number-1)*20+`row_number`)<>COUNT(*) OR COUNT(DISTINCT (pass_number-1)*20+`row_number`)<>COUNT(*);
 SELECT cp.character_id,'overspent points' AS violation FROM character_passives cp JOIN characters c ON c.id=cp.character_id
  GROUP BY cp.character_id,c.level,c.experience,c.life_state HAVING COUNT(*)>LEAST(40,GREATEST(0,(CASE WHEN c.life_state='dead' THEN c.level ELSE LEAST(100,FLOOR(SQRT(c.experience/100))+1) END)-50));
 SELECT r.character_id,'invalid receipt' AS violation FROM passive_mutation_requests r LEFT JOIN characters c ON c.id=r.character_id
