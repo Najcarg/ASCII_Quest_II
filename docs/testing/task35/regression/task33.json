@@ -1,0 +1,2493 @@
+[
+  {
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 638.59375,
+      "tabsBottom": 638.59375,
+      "logBottom": 909.625,
+      "messagesBottom": 908.625,
+      "height": 307.671875,
+      "overflow": false,
+      "logTop": 642.59375,
+      "verticalOverflow": false,
+      "messagesTop": 662.59375,
+      "titleBottom": 662.59375
+    }
+  },
+  {
+    "desktopLayout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 240,
+        "height": 843.625,
+        "right": 258,
+        "bottom": 915.625
+      },
+      "row": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 848,
+        "height": 307.671875,
+        "right": 1114,
+        "bottom": 915.625
+      },
+      "info": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 540,
+        "height": 307.671875,
+        "right": 806,
+        "bottom": 915.625
+      },
+      "details": {
+        "x": 814,
+        "y": 607.953125,
+        "width": 300,
+        "height": 307.671875,
+        "right": 1114,
+        "bottom": 915.625
+      },
+      "map": {
+        "x": 266,
+        "y": 72,
+        "width": 848,
+        "height": 527.953125,
+        "right": 1114,
+        "bottom": 599.953125
+      },
+      "mapGrid": {
+        "x": 275,
+        "y": 120,
+        "width": 830,
+        "height": 451.953125,
+        "right": 1105,
+        "bottom": 571.953125
+      },
+      "mapCell": {
+        "x": 387.625,
+        "y": 130,
+        "width": 28.796875,
+        "height": 28.796875,
+        "right": 416.421875,
+        "bottom": 158.796875
+      },
+      "items": {
+        "x": 1122,
+        "y": 72,
+        "width": 300,
+        "height": 843.625,
+        "right": 1422,
+        "bottom": 915.625
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 638.59375,
+      "tabsBottom": 638.59375,
+      "height": 307.671875,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 638.59375
+    }
+  },
+  {
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 638.59375,
+      "tabsBottom": 638.59375,
+      "height": 307.671875,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 638.59375
+    }
+  },
+  {
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 638.59375,
+      "tabsBottom": 638.59375,
+      "logBottom": 909.625,
+      "messagesBottom": 908.625,
+      "height": 307.671875,
+      "overflow": false,
+      "logTop": 642.59375,
+      "verticalOverflow": false,
+      "messagesTop": 662.59375,
+      "titleBottom": 662.59375
+    }
+  },
+  "3 Info/Server/Chat tabs retain centre-only placement and visible selected details.",
+  "Task33.3: one panel, all mode titles/placeholders, retained item selection, text-only skill/passive hooks, no state mutation, bounded long-log scrolling.",
+  {
+    "stressLayout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 240,
+        "height": 1400,
+        "right": 258,
+        "bottom": 1472
+      },
+      "row": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 833,
+        "height": 864.046875,
+        "right": 1099,
+        "bottom": 1472
+      },
+      "info": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 525,
+        "height": 864.046875,
+        "right": 791,
+        "bottom": 1472
+      },
+      "details": {
+        "x": 799,
+        "y": 607.953125,
+        "width": 300,
+        "height": 864.046875,
+        "right": 1099,
+        "bottom": 1472
+      },
+      "map": {
+        "x": 266,
+        "y": 72,
+        "width": 833,
+        "height": 527.953125,
+        "right": 1099,
+        "bottom": 599.953125
+      },
+      "mapGrid": {
+        "x": 275,
+        "y": 120,
+        "width": 815,
+        "height": 451.953125,
+        "right": 1090,
+        "bottom": 571.953125
+      },
+      "mapCell": {
+        "x": 380.125,
+        "y": 130,
+        "width": 28.796875,
+        "height": 28.796875,
+        "right": 408.921875,
+        "bottom": 158.796875
+      },
+      "items": {
+        "x": 1107,
+        "y": 72,
+        "width": 300,
+        "height": 1400,
+        "right": 1407,
+        "bottom": 1472
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  "Tall-sidebar stress check: 1400px Items retains immediate map gap and aligned desktop bottoms.",
+  {
+    "selector": "[data-inventory-slot] .item-type-icon",
+    "platformFonts": [
+      {
+        "familyName": "Liberation Serif",
+        "postScriptName": "LiberationSerif",
+        "isCustomFont": false,
+        "glyphCount": 1
+      },
+      {
+        "familyName": "Noto Sans EgyptHiero",
+        "postScriptName": "NotoSansEgyptianHieroglyphs-Regular",
+        "isCustomFont": false,
+        "glyphCount": 1
+      }
+    ]
+  },
+  {
+    "selector": "#inventoryDetailName .item-type-icon",
+    "platformFonts": [
+      {
+        "familyName": "Liberation Serif",
+        "postScriptName": "LiberationSerif",
+        "isCustomFont": false,
+        "glyphCount": 1
+      },
+      {
+        "familyName": "Noto Sans EgyptHiero",
+        "postScriptName": "NotoSansEgyptianHieroglyphs-Regular",
+        "isCustomFont": false,
+        "glyphCount": 1
+      }
+    ]
+  },
+  {
+    "glyphMetrics": [
+      {
+        "text": "𓉒 Fine Mace of Accuracy",
+        "font": "Georgia, \"Times New Roman\", serif",
+        "lineHeight": "normal",
+        "iconHeight": 9,
+        "parentHeight": 54.796875,
+        "iconTop": 555.640625,
+        "parentTop": 552.640625,
+        "parentBottom": 607.4375
+      },
+      {
+        "text": "𓉒 Fine Mace of Accuracy",
+        "font": "Georgia, \"Times New Roman\", serif",
+        "lineHeight": "16.8px",
+        "iconHeight": 14,
+        "parentHeight": 16.796875,
+        "iconTop": 647.953125,
+        "parentTop": 646.953125,
+        "parentBottom": 663.75
+      }
+    ]
+  },
+  "Browser selection, equip/unequip, details reset, next/previous pagination passed (mock fetch; no DB).",
+  {
+    "width": 1920,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 686.640625,
+      "tabsBottom": 686.640625,
+      "logBottom": 909.625,
+      "messagesBottom": 908.625,
+      "height": 259.625,
+      "overflow": false,
+      "logTop": 690.640625,
+      "verticalOverflow": false,
+      "messagesTop": 710.640625,
+      "titleBottom": 710.640625
+    }
+  },
+  {
+    "width": 1920,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 686.640625,
+      "tabsBottom": 686.640625,
+      "height": 259.625,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 686.640625
+    }
+  },
+  {
+    "width": 1920,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 686.640625,
+      "tabsBottom": 686.640625,
+      "height": 259.625,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 686.640625
+    }
+  },
+  {
+    "width": 1920,
+    "scrollWidth": 1920,
+    "stacked": false,
+    "inputWidth": 848,
+    "availableInputWidth": 848,
+    "layout": {
+      "left": {
+        "x": 90,
+        "y": 72,
+        "width": 240,
+        "height": 843.625,
+        "right": 330,
+        "bottom": 915.625
+      },
+      "row": {
+        "x": 338,
+        "y": 656,
+        "width": 1184,
+        "height": 259.625,
+        "right": 1522,
+        "bottom": 915.625
+      },
+      "info": {
+        "x": 338,
+        "y": 656,
+        "width": 876,
+        "height": 259.625,
+        "right": 1214,
+        "bottom": 915.625
+      },
+      "details": {
+        "x": 1222,
+        "y": 656,
+        "width": 300,
+        "height": 259.625,
+        "right": 1522,
+        "bottom": 915.625
+      },
+      "map": {
+        "x": 338,
+        "y": 72,
+        "width": 1184,
+        "height": 576,
+        "right": 1522,
+        "bottom": 648
+      },
+      "mapGrid": {
+        "x": 347,
+        "y": 120,
+        "width": 1166,
+        "height": 500,
+        "right": 1513,
+        "bottom": 620
+      },
+      "mapCell": {
+        "x": 594,
+        "y": 130,
+        "width": 32,
+        "height": 32,
+        "right": 626,
+        "bottom": 162
+      },
+      "items": {
+        "x": 1530,
+        "y": 72,
+        "width": 300,
+        "height": 843.625,
+        "right": 1830,
+        "bottom": 915.625
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 1920,
+    "tallLayout": {
+      "left": {
+        "x": 82.5,
+        "y": 72,
+        "width": 240,
+        "height": 1400,
+        "right": 322.5,
+        "bottom": 1472
+      },
+      "row": {
+        "x": 330.5,
+        "y": 656,
+        "width": 1184,
+        "height": 816,
+        "right": 1514.5,
+        "bottom": 1472
+      },
+      "info": {
+        "x": 330.5,
+        "y": 656,
+        "width": 876,
+        "height": 816,
+        "right": 1206.5,
+        "bottom": 1472
+      },
+      "details": {
+        "x": 1214.5,
+        "y": 656,
+        "width": 300,
+        "height": 816,
+        "right": 1514.5,
+        "bottom": 1472
+      },
+      "map": {
+        "x": 330.5,
+        "y": 72,
+        "width": 1184,
+        "height": 576,
+        "right": 1514.5,
+        "bottom": 648
+      },
+      "mapGrid": {
+        "x": 339.5,
+        "y": 120,
+        "width": 1166,
+        "height": 500,
+        "right": 1505.5,
+        "bottom": 620
+      },
+      "mapCell": {
+        "x": 586.5,
+        "y": 130,
+        "width": 32,
+        "height": 32,
+        "right": 618.5,
+        "bottom": 162
+      },
+      "items": {
+        "x": 1522.5,
+        "y": 72,
+        "width": 300,
+        "height": 1400,
+        "right": 1822.5,
+        "bottom": 1472
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 1440,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 638.59375,
+      "tabsBottom": 638.59375,
+      "logBottom": 909.625,
+      "messagesBottom": 908.625,
+      "height": 307.671875,
+      "overflow": false,
+      "logTop": 642.59375,
+      "verticalOverflow": false,
+      "messagesTop": 662.59375,
+      "titleBottom": 662.59375
+    }
+  },
+  {
+    "width": 1440,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 638.59375,
+      "tabsBottom": 638.59375,
+      "height": 307.671875,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 638.59375
+    }
+  },
+  {
+    "width": 1440,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 638.59375,
+      "tabsBottom": 638.59375,
+      "height": 307.671875,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 638.59375
+    }
+  },
+  {
+    "width": 1440,
+    "scrollWidth": 1440,
+    "stacked": false,
+    "inputWidth": 512,
+    "availableInputWidth": 512,
+    "layout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 240,
+        "height": 843.625,
+        "right": 258,
+        "bottom": 915.625
+      },
+      "row": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 848,
+        "height": 307.671875,
+        "right": 1114,
+        "bottom": 915.625
+      },
+      "info": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 540,
+        "height": 307.671875,
+        "right": 806,
+        "bottom": 915.625
+      },
+      "details": {
+        "x": 814,
+        "y": 607.953125,
+        "width": 300,
+        "height": 307.671875,
+        "right": 1114,
+        "bottom": 915.625
+      },
+      "map": {
+        "x": 266,
+        "y": 72,
+        "width": 848,
+        "height": 527.953125,
+        "right": 1114,
+        "bottom": 599.953125
+      },
+      "mapGrid": {
+        "x": 275,
+        "y": 120,
+        "width": 830,
+        "height": 451.953125,
+        "right": 1105,
+        "bottom": 571.953125
+      },
+      "mapCell": {
+        "x": 387.625,
+        "y": 130,
+        "width": 28.796875,
+        "height": 28.796875,
+        "right": 416.421875,
+        "bottom": 158.796875
+      },
+      "items": {
+        "x": 1122,
+        "y": 72,
+        "width": 300,
+        "height": 843.625,
+        "right": 1422,
+        "bottom": 915.625
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 1440,
+    "tallLayout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 240,
+        "height": 1400,
+        "right": 258,
+        "bottom": 1472
+      },
+      "row": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 833,
+        "height": 864.046875,
+        "right": 1099,
+        "bottom": 1472
+      },
+      "info": {
+        "x": 266,
+        "y": 607.953125,
+        "width": 525,
+        "height": 864.046875,
+        "right": 791,
+        "bottom": 1472
+      },
+      "details": {
+        "x": 799,
+        "y": 607.953125,
+        "width": 300,
+        "height": 864.046875,
+        "right": 1099,
+        "bottom": 1472
+      },
+      "map": {
+        "x": 266,
+        "y": 72,
+        "width": 833,
+        "height": 527.953125,
+        "right": 1099,
+        "bottom": 599.953125
+      },
+      "mapGrid": {
+        "x": 275,
+        "y": 120,
+        "width": 815,
+        "height": 451.953125,
+        "right": 1090,
+        "bottom": 571.953125
+      },
+      "mapCell": {
+        "x": 380.125,
+        "y": 130,
+        "width": 28.796875,
+        "height": 28.796875,
+        "right": 408.921875,
+        "bottom": 158.796875
+      },
+      "items": {
+        "x": 1107,
+        "y": 72,
+        "width": 300,
+        "height": 1400,
+        "right": 1407,
+        "bottom": 1472
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 1280,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 878.453125,
+      "activeBottom": 878.453125,
+      "top": 590.546875,
+      "tabsBottom": 590.546875,
+      "logBottom": 878.453125,
+      "messagesBottom": 877.453125,
+      "height": 324.546875,
+      "overflow": false,
+      "logTop": 594.546875,
+      "verticalOverflow": false,
+      "messagesTop": 614.546875,
+      "titleBottom": 614.546875
+    }
+  },
+  {
+    "width": 1280,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 878.453125,
+      "activeBottom": 878.453125,
+      "top": 590.546875,
+      "tabsBottom": 590.546875,
+      "height": 324.546875,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 590.546875
+    }
+  },
+  {
+    "width": 1280,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 878.453125,
+      "activeBottom": 878.453125,
+      "top": 590.546875,
+      "tabsBottom": 590.546875,
+      "height": 324.546875,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 590.546875
+    }
+  },
+  {
+    "width": 1280,
+    "scrollWidth": 1280,
+    "stacked": false,
+    "inputWidth": 436.8125,
+    "availableInputWidth": 437,
+    "layout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 217.59375,
+        "height": 812.453125,
+        "right": 235.59375,
+        "bottom": 884.453125
+      },
+      "row": {
+        "x": 243.59375,
+        "y": 559.90625,
+        "width": 741.609375,
+        "height": 324.546875,
+        "right": 985.203125,
+        "bottom": 884.453125
+      },
+      "info": {
+        "x": 243.59375,
+        "y": 559.90625,
+        "width": 464.8125,
+        "height": 324.546875,
+        "right": 708.40625,
+        "bottom": 884.453125
+      },
+      "details": {
+        "x": 716.40625,
+        "y": 559.90625,
+        "width": 268.796875,
+        "height": 324.546875,
+        "right": 985.203125,
+        "bottom": 884.453125
+      },
+      "map": {
+        "x": 243.59375,
+        "y": 72,
+        "width": 741.609375,
+        "height": 479.90625,
+        "right": 985.203125,
+        "bottom": 551.90625
+      },
+      "mapGrid": {
+        "x": 252.59375,
+        "y": 120,
+        "width": 723.609375,
+        "height": 403.90625,
+        "right": 976.203125,
+        "bottom": 523.90625
+      },
+      "mapCell": {
+        "x": 345.65625,
+        "y": 130,
+        "width": 25.59375,
+        "height": 25.59375,
+        "right": 371.25,
+        "bottom": 155.59375
+      },
+      "items": {
+        "x": 993.203125,
+        "y": 72,
+        "width": 268.796875,
+        "height": 812.453125,
+        "right": 1262,
+        "bottom": 884.453125
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 1280,
+    "tallLayout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 217.59375,
+        "height": 1400,
+        "right": 235.59375,
+        "bottom": 1472
+      },
+      "row": {
+        "x": 243.59375,
+        "y": 559.90625,
+        "width": 726.609375,
+        "height": 912.09375,
+        "right": 970.203125,
+        "bottom": 1472
+      },
+      "info": {
+        "x": 243.59375,
+        "y": 559.90625,
+        "width": 449.8125,
+        "height": 912.09375,
+        "right": 693.40625,
+        "bottom": 1472
+      },
+      "details": {
+        "x": 701.40625,
+        "y": 559.90625,
+        "width": 268.796875,
+        "height": 912.09375,
+        "right": 970.203125,
+        "bottom": 1472
+      },
+      "map": {
+        "x": 243.59375,
+        "y": 72,
+        "width": 726.609375,
+        "height": 479.90625,
+        "right": 970.203125,
+        "bottom": 551.90625
+      },
+      "mapGrid": {
+        "x": 252.59375,
+        "y": 120,
+        "width": 708.609375,
+        "height": 403.90625,
+        "right": 961.203125,
+        "bottom": 523.90625
+      },
+      "mapCell": {
+        "x": 338.15625,
+        "y": 130,
+        "width": 25.59375,
+        "height": 25.59375,
+        "right": 363.75,
+        "bottom": 155.59375
+      },
+      "items": {
+        "x": 978.203125,
+        "y": 72,
+        "width": 268.796875,
+        "height": 1400,
+        "right": 1247,
+        "bottom": 1472
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 1101,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 840.875,
+      "activeBottom": 840.875,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "logBottom": 840.875,
+      "messagesBottom": 839.875,
+      "height": 310.875,
+      "overflow": false,
+      "logTop": 570.640625,
+      "verticalOverflow": false,
+      "messagesTop": 590.640625,
+      "titleBottom": 590.640625
+    }
+  },
+  {
+    "width": 1101,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 840.875,
+      "activeBottom": 840.875,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "height": 310.875,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 566.640625
+    }
+  },
+  {
+    "width": 1101,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 840.875,
+      "activeBottom": 840.875,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "height": 310.875,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 566.640625
+    }
+  },
+  {
+    "width": 1101,
+    "scrollWidth": 1101,
+    "stacked": false,
+    "inputWidth": 363.4375,
+    "availableInputWidth": 363,
+    "layout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187.15625,
+        "height": 774.875,
+        "right": 205.15625,
+        "bottom": 846.875
+      },
+      "row": {
+        "x": 213.15625,
+        "y": 536,
+        "width": 630.640625,
+        "height": 310.875,
+        "right": 843.796875,
+        "bottom": 846.875
+      },
+      "info": {
+        "x": 213.15625,
+        "y": 536,
+        "width": 391.4375,
+        "height": 310.875,
+        "right": 604.59375,
+        "bottom": 846.875
+      },
+      "details": {
+        "x": 612.59375,
+        "y": 536,
+        "width": 231.203125,
+        "height": 310.875,
+        "right": 843.796875,
+        "bottom": 846.875
+      },
+      "map": {
+        "x": 213.15625,
+        "y": 72,
+        "width": 630.640625,
+        "height": 456,
+        "right": 843.796875,
+        "bottom": 528
+      },
+      "mapGrid": {
+        "x": 222.15625,
+        "y": 120,
+        "width": 612.640625,
+        "height": 380,
+        "right": 834.796875,
+        "bottom": 500
+      },
+      "mapCell": {
+        "x": 276.46875,
+        "y": 130,
+        "width": 24,
+        "height": 24,
+        "right": 300.46875,
+        "bottom": 154
+      },
+      "items": {
+        "x": 851.796875,
+        "y": 72,
+        "width": 231.203125,
+        "height": 774.875,
+        "right": 1083,
+        "bottom": 846.875
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 1101,
+    "tallLayout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187.15625,
+        "height": 1400,
+        "right": 205.15625,
+        "bottom": 1472
+      },
+      "row": {
+        "x": 213.15625,
+        "y": 536,
+        "width": 615.640625,
+        "height": 936,
+        "right": 828.796875,
+        "bottom": 1472
+      },
+      "info": {
+        "x": 213.15625,
+        "y": 536,
+        "width": 376.4375,
+        "height": 936,
+        "right": 589.59375,
+        "bottom": 1472
+      },
+      "details": {
+        "x": 597.59375,
+        "y": 536,
+        "width": 231.203125,
+        "height": 936,
+        "right": 828.796875,
+        "bottom": 1472
+      },
+      "map": {
+        "x": 213.15625,
+        "y": 72,
+        "width": 615.640625,
+        "height": 456,
+        "right": 828.796875,
+        "bottom": 528
+      },
+      "mapGrid": {
+        "x": 222.15625,
+        "y": 120,
+        "width": 597.640625,
+        "height": 380,
+        "right": 819.796875,
+        "bottom": 500
+      },
+      "mapCell": {
+        "x": 268.96875,
+        "y": 130,
+        "width": 24,
+        "height": 24,
+        "right": 292.96875,
+        "bottom": 154
+      },
+      "items": {
+        "x": 836.796875,
+        "y": 72,
+        "width": 231.203125,
+        "height": 1400,
+        "right": 1068,
+        "bottom": 1472
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 1100,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 726.640625,
+      "activeBottom": 726.640625,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "logBottom": 726.640625,
+      "messagesBottom": 725.640625,
+      "height": 196.640625,
+      "overflow": false,
+      "logTop": 570.640625,
+      "verticalOverflow": false,
+      "messagesTop": 590.640625,
+      "titleBottom": 590.640625
+    }
+  },
+  {
+    "width": 1100,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 720,
+      "activeBottom": 720,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 566.640625
+    }
+  },
+  {
+    "width": 1100,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 720,
+      "activeBottom": 720,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 566.640625
+    }
+  },
+  {
+    "width": 1100,
+    "scrollWidth": 1100,
+    "stacked": true,
+    "inputWidth": 602,
+    "availableInputWidth": 602,
+    "layout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 187,
+        "height": 779.03125,
+        "right": 205,
+        "bottom": 851.03125
+      },
+      "row": {
+        "x": 213,
+        "y": 536,
+        "width": 630,
+        "height": 315.03125,
+        "right": 843,
+        "bottom": 851.03125
+      },
+      "info": {
+        "x": 213,
+        "y": 536,
+        "width": 630,
+        "height": 196.640625,
+        "right": 843,
+        "bottom": 732.640625
+      },
+      "details": {
+        "x": 213,
+        "y": 740.640625,
+        "width": 630,
+        "height": 110.390625,
+        "right": 843,
+        "bottom": 851.03125
+      },
+      "map": {
+        "x": 213,
+        "y": 72,
+        "width": 630,
+        "height": 456,
+        "right": 843,
+        "bottom": 528
+      },
+      "mapGrid": {
+        "x": 222,
+        "y": 120,
+        "width": 612,
+        "height": 380,
+        "right": 834,
+        "bottom": 500
+      },
+      "mapCell": {
+        "x": 276,
+        "y": 130,
+        "width": 24,
+        "height": 24,
+        "right": 300,
+        "bottom": 154
+      },
+      "items": {
+        "x": 851,
+        "y": 72,
+        "width": 231,
+        "height": 774.640625,
+        "right": 1082,
+        "bottom": 846.640625
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 1099,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 726.640625,
+      "activeBottom": 726.640625,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "logBottom": 726.640625,
+      "messagesBottom": 725.640625,
+      "height": 196.640625,
+      "overflow": false,
+      "logTop": 570.640625,
+      "verticalOverflow": false,
+      "messagesTop": 590.640625,
+      "titleBottom": 590.640625
+    }
+  },
+  {
+    "width": 1099,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 720,
+      "activeBottom": 720,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 566.640625
+    }
+  },
+  {
+    "width": 1099,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 720,
+      "activeBottom": 720,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 566.640625
+    }
+  },
+  {
+    "width": 1099,
+    "scrollWidth": 1099,
+    "stacked": true,
+    "inputWidth": 601.390625,
+    "availableInputWidth": 601,
+    "layout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 186.828125,
+        "height": 779.03125,
+        "right": 204.828125,
+        "bottom": 851.03125
+      },
+      "row": {
+        "x": 212.828125,
+        "y": 536,
+        "width": 629.390625,
+        "height": 315.03125,
+        "right": 842.21875,
+        "bottom": 851.03125
+      },
+      "info": {
+        "x": 212.828125,
+        "y": 536,
+        "width": 629.390625,
+        "height": 196.640625,
+        "right": 842.21875,
+        "bottom": 732.640625
+      },
+      "details": {
+        "x": 212.828125,
+        "y": 740.640625,
+        "width": 629.390625,
+        "height": 110.390625,
+        "right": 842.21875,
+        "bottom": 851.03125
+      },
+      "map": {
+        "x": 212.828125,
+        "y": 72,
+        "width": 629.390625,
+        "height": 456,
+        "right": 842.21875,
+        "bottom": 528
+      },
+      "mapGrid": {
+        "x": 221.828125,
+        "y": 120,
+        "width": 611.390625,
+        "height": 380,
+        "right": 833.21875,
+        "bottom": 500
+      },
+      "mapCell": {
+        "x": 275.515625,
+        "y": 130,
+        "width": 24,
+        "height": 24,
+        "right": 299.515625,
+        "bottom": 154
+      },
+      "items": {
+        "x": 850.21875,
+        "y": 72,
+        "width": 230.78125,
+        "height": 774.40625,
+        "right": 1081,
+        "bottom": 846.40625
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 1024,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 726.640625,
+      "activeBottom": 726.640625,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "logBottom": 726.640625,
+      "messagesBottom": 725.640625,
+      "height": 196.640625,
+      "overflow": false,
+      "logTop": 570.640625,
+      "verticalOverflow": false,
+      "messagesTop": 590.640625,
+      "titleBottom": 590.640625
+    }
+  },
+  {
+    "width": 1024,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 720,
+      "activeBottom": 720,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 566.640625
+    }
+  },
+  {
+    "width": 1024,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 720,
+      "activeBottom": 720,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 566.640625
+    }
+  },
+  {
+    "width": 1024,
+    "scrollWidth": 1024,
+    "stacked": true,
+    "inputWidth": 549.921875,
+    "availableInputWidth": 550,
+    "layout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 174.078125,
+        "height": 779.03125,
+        "right": 192.078125,
+        "bottom": 851.03125
+      },
+      "row": {
+        "x": 200.078125,
+        "y": 536,
+        "width": 577.921875,
+        "height": 315.03125,
+        "right": 778,
+        "bottom": 851.03125
+      },
+      "info": {
+        "x": 200.078125,
+        "y": 536,
+        "width": 577.921875,
+        "height": 196.640625,
+        "right": 778,
+        "bottom": 732.640625
+      },
+      "details": {
+        "x": 200.078125,
+        "y": 740.640625,
+        "width": 577.921875,
+        "height": 110.390625,
+        "right": 778,
+        "bottom": 851.03125
+      },
+      "map": {
+        "x": 200.078125,
+        "y": 72,
+        "width": 577.921875,
+        "height": 456,
+        "right": 778,
+        "bottom": 528
+      },
+      "mapGrid": {
+        "x": 209.078125,
+        "y": 120,
+        "width": 559.921875,
+        "height": 380,
+        "right": 769,
+        "bottom": 500
+      },
+      "mapCell": {
+        "x": 237.03125,
+        "y": 130,
+        "width": 24,
+        "height": 24,
+        "right": 261.03125,
+        "bottom": 154
+      },
+      "items": {
+        "x": 786,
+        "y": 72,
+        "width": 220,
+        "height": 763.625,
+        "right": 1006,
+        "bottom": 835.625
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 800,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 726.640625,
+      "activeBottom": 726.640625,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "logBottom": 726.640625,
+      "messagesBottom": 725.640625,
+      "height": 196.640625,
+      "overflow": false,
+      "logTop": 570.640625,
+      "verticalOverflow": false,
+      "messagesTop": 590.640625,
+      "titleBottom": 590.640625
+    }
+  },
+  {
+    "width": 800,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 720,
+      "activeBottom": 720,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 566.640625
+    }
+  },
+  {
+    "width": 800,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 720,
+      "activeBottom": 720,
+      "top": 566.640625,
+      "tabsBottom": 566.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 566.640625
+    }
+  },
+  {
+    "width": 800,
+    "scrollWidth": 800,
+    "stacked": true,
+    "inputWidth": 332,
+    "availableInputWidth": 332,
+    "layout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 168,
+        "height": 779.03125,
+        "right": 186,
+        "bottom": 851.03125
+      },
+      "row": {
+        "x": 194,
+        "y": 536,
+        "width": 360,
+        "height": 315.03125,
+        "right": 554,
+        "bottom": 851.03125
+      },
+      "info": {
+        "x": 194,
+        "y": 536,
+        "width": 360,
+        "height": 196.640625,
+        "right": 554,
+        "bottom": 732.640625
+      },
+      "details": {
+        "x": 194,
+        "y": 740.640625,
+        "width": 360,
+        "height": 110.390625,
+        "right": 554,
+        "bottom": 851.03125
+      },
+      "map": {
+        "x": 194,
+        "y": 72,
+        "width": 360,
+        "height": 456,
+        "right": 554,
+        "bottom": 528
+      },
+      "mapGrid": {
+        "x": 203,
+        "y": 120,
+        "width": 342,
+        "height": 380,
+        "right": 545,
+        "bottom": 500
+      },
+      "mapCell": {
+        "x": 122,
+        "y": 130,
+        "width": 24,
+        "height": 24,
+        "right": 146,
+        "bottom": 154
+      },
+      "items": {
+        "x": 562,
+        "y": 72,
+        "width": 220,
+        "height": 763.625,
+        "right": 782,
+        "bottom": 835.625
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 721,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 746.640625,
+      "activeBottom": 746.640625,
+      "top": 586.640625,
+      "tabsBottom": 586.640625,
+      "logBottom": 746.640625,
+      "messagesBottom": 745.640625,
+      "height": 196.640625,
+      "overflow": false,
+      "logTop": 590.640625,
+      "verticalOverflow": false,
+      "messagesTop": 610.640625,
+      "titleBottom": 610.640625
+    }
+  },
+  {
+    "width": 721,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 740,
+      "activeBottom": 740,
+      "top": 586.640625,
+      "tabsBottom": 586.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 586.640625
+    }
+  },
+  {
+    "width": 721,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 740,
+      "activeBottom": 740,
+      "top": 586.640625,
+      "tabsBottom": 586.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 586.640625
+    }
+  },
+  {
+    "width": 721,
+    "scrollWidth": 721,
+    "stacked": true,
+    "inputWidth": 253,
+    "availableInputWidth": 253,
+    "layout": {
+      "left": {
+        "x": 18,
+        "y": 72,
+        "width": 168,
+        "height": 799.03125,
+        "right": 186,
+        "bottom": 871.03125
+      },
+      "row": {
+        "x": 194,
+        "y": 556,
+        "width": 281,
+        "height": 315.03125,
+        "right": 475,
+        "bottom": 871.03125
+      },
+      "info": {
+        "x": 194,
+        "y": 556,
+        "width": 281,
+        "height": 196.640625,
+        "right": 475,
+        "bottom": 752.640625
+      },
+      "details": {
+        "x": 194,
+        "y": 760.640625,
+        "width": 281,
+        "height": 110.390625,
+        "right": 475,
+        "bottom": 871.03125
+      },
+      "map": {
+        "x": 194,
+        "y": 72,
+        "width": 281,
+        "height": 476,
+        "right": 475,
+        "bottom": 548
+      },
+      "mapGrid": {
+        "x": 203,
+        "y": 140,
+        "width": 263,
+        "height": 380,
+        "right": 466,
+        "bottom": 520
+      },
+      "mapCell": {
+        "x": 82.5,
+        "y": 150,
+        "width": 24,
+        "height": 24,
+        "right": 106.5,
+        "bottom": 174
+      },
+      "items": {
+        "x": 483,
+        "y": 72,
+        "width": 220,
+        "height": 763.625,
+        "right": 703,
+        "bottom": 835.625
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 720,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 2497.390625,
+      "activeBottom": 2497.390625,
+      "top": 2337.390625,
+      "tabsBottom": 2337.390625,
+      "logBottom": 2497.390625,
+      "messagesBottom": 2496.390625,
+      "height": 197.796875,
+      "overflow": false,
+      "logTop": 2341.390625,
+      "verticalOverflow": false,
+      "messagesTop": 2361.390625,
+      "titleBottom": 2361.390625
+    }
+  },
+  {
+    "width": 720,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 2489.59375,
+      "activeBottom": 2489.59375,
+      "top": 2337.390625,
+      "tabsBottom": 2337.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2337.390625
+    }
+  },
+  {
+    "width": 720,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 2489.59375,
+      "activeBottom": 2489.59375,
+      "top": 2337.390625,
+      "tabsBottom": 2337.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2337.390625
+    }
+  },
+  {
+    "width": 720,
+    "scrollWidth": 720,
+    "stacked": true,
+    "inputWidth": 668,
+    "availableInputWidth": 668,
+    "layout": {
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 696,
+        "height": 446.796875,
+        "right": 708,
+        "bottom": 554.796875
+      },
+      "row": {
+        "x": 12,
+        "y": 2305.59375,
+        "width": 696,
+        "height": 316.1875,
+        "right": 708,
+        "bottom": 2621.78125
+      },
+      "info": {
+        "x": 12,
+        "y": 2305.59375,
+        "width": 696,
+        "height": 197.796875,
+        "right": 708,
+        "bottom": 2503.390625
+      },
+      "details": {
+        "x": 12,
+        "y": 2511.390625,
+        "width": 696,
+        "height": 110.390625,
+        "right": 708,
+        "bottom": 2621.78125
+      },
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 696,
+        "height": 486,
+        "right": 708,
+        "bottom": 1048.796875
+      },
+      "mapGrid": {
+        "x": 21,
+        "y": 610.796875,
+        "width": 678,
+        "height": 410,
+        "right": 699,
+        "bottom": 1020.796875
+      },
+      "mapCell": {
+        "x": 87,
+        "y": 620.796875,
+        "width": 26,
+        "height": 26,
+        "right": 113,
+        "bottom": 646.796875
+      },
+      "items": {
+        "x": 12,
+        "y": 1056.796875,
+        "width": 696,
+        "height": 1240.796875,
+        "right": 708,
+        "bottom": 2297.59375
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 719,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 2496.453125,
+      "activeBottom": 2496.453125,
+      "top": 2336.453125,
+      "tabsBottom": 2336.453125,
+      "logBottom": 2496.453125,
+      "messagesBottom": 2495.453125,
+      "height": 197.796875,
+      "overflow": false,
+      "logTop": 2340.453125,
+      "verticalOverflow": false,
+      "messagesTop": 2360.453125,
+      "titleBottom": 2360.453125
+    }
+  },
+  {
+    "width": 719,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 2488.65625,
+      "activeBottom": 2488.65625,
+      "top": 2336.453125,
+      "tabsBottom": 2336.453125,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2336.453125
+    }
+  },
+  {
+    "width": 719,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 2488.65625,
+      "activeBottom": 2488.65625,
+      "top": 2336.453125,
+      "tabsBottom": 2336.453125,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2336.453125
+    }
+  },
+  {
+    "width": 719,
+    "scrollWidth": 719,
+    "stacked": true,
+    "inputWidth": 667,
+    "availableInputWidth": 667,
+    "layout": {
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 695,
+        "height": 446.796875,
+        "right": 707,
+        "bottom": 554.796875
+      },
+      "row": {
+        "x": 12,
+        "y": 2304.65625,
+        "width": 695,
+        "height": 316.1875,
+        "right": 707,
+        "bottom": 2620.84375
+      },
+      "info": {
+        "x": 12,
+        "y": 2304.65625,
+        "width": 695,
+        "height": 197.796875,
+        "right": 707,
+        "bottom": 2502.453125
+      },
+      "details": {
+        "x": 12,
+        "y": 2510.453125,
+        "width": 695,
+        "height": 110.390625,
+        "right": 707,
+        "bottom": 2620.84375
+      },
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 695,
+        "height": 486,
+        "right": 707,
+        "bottom": 1048.796875
+      },
+      "mapGrid": {
+        "x": 21,
+        "y": 610.796875,
+        "width": 677,
+        "height": 410,
+        "right": 698,
+        "bottom": 1020.796875
+      },
+      "mapCell": {
+        "x": 86.5,
+        "y": 620.796875,
+        "width": 26,
+        "height": 26,
+        "right": 112.5,
+        "bottom": 646.796875
+      },
+      "items": {
+        "x": 12,
+        "y": 1056.796875,
+        "width": 695,
+        "height": 1239.859375,
+        "right": 707,
+        "bottom": 2296.65625
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 390,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 2167.390625,
+      "activeBottom": 2167.390625,
+      "top": 2007.390625,
+      "tabsBottom": 2007.390625,
+      "logBottom": 2167.390625,
+      "messagesBottom": 2166.390625,
+      "height": 197.796875,
+      "overflow": false,
+      "logTop": 2011.390625,
+      "verticalOverflow": false,
+      "messagesTop": 2031.390625,
+      "titleBottom": 2031.390625
+    }
+  },
+  {
+    "width": 390,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 2159.59375,
+      "activeBottom": 2159.59375,
+      "top": 2007.390625,
+      "tabsBottom": 2007.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2007.390625
+    }
+  },
+  {
+    "width": 390,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 2159.59375,
+      "activeBottom": 2159.59375,
+      "top": 2007.390625,
+      "tabsBottom": 2007.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2007.390625
+    }
+  },
+  {
+    "width": 390,
+    "scrollWidth": 390,
+    "stacked": true,
+    "inputWidth": 338,
+    "availableInputWidth": 338,
+    "layout": {
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 366,
+        "height": 446.796875,
+        "right": 378,
+        "bottom": 554.796875
+      },
+      "row": {
+        "x": 12,
+        "y": 1975.59375,
+        "width": 366,
+        "height": 316.1875,
+        "right": 378,
+        "bottom": 2291.78125
+      },
+      "info": {
+        "x": 12,
+        "y": 1975.59375,
+        "width": 366,
+        "height": 197.796875,
+        "right": 378,
+        "bottom": 2173.390625
+      },
+      "details": {
+        "x": 12,
+        "y": 2181.390625,
+        "width": 366,
+        "height": 110.390625,
+        "right": 378,
+        "bottom": 2291.78125
+      },
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 366,
+        "height": 486,
+        "right": 378,
+        "bottom": 1048.796875
+      },
+      "mapGrid": {
+        "x": 21,
+        "y": 610.796875,
+        "width": 348,
+        "height": 410,
+        "right": 369,
+        "bottom": 1020.796875
+      },
+      "mapCell": {
+        "x": -78,
+        "y": 620.796875,
+        "width": 26,
+        "height": 26,
+        "right": -52,
+        "bottom": 646.796875
+      },
+      "items": {
+        "x": 12,
+        "y": 1056.796875,
+        "width": 366,
+        "height": 910.796875,
+        "right": 378,
+        "bottom": 1967.59375
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "width": 320,
+    "innerFill": {
+      "tab": "bottom-information",
+      "bottom": 2097.390625,
+      "activeBottom": 2097.390625,
+      "top": 1937.390625,
+      "tabsBottom": 1937.390625,
+      "logBottom": 2097.390625,
+      "messagesBottom": 2096.390625,
+      "height": 197.796875,
+      "overflow": false,
+      "logTop": 1941.390625,
+      "verticalOverflow": false,
+      "messagesTop": 1961.390625,
+      "titleBottom": 1961.390625
+    }
+  },
+  {
+    "width": 320,
+    "innerFill": {
+      "tab": "bottom-server",
+      "bottom": 2089.59375,
+      "activeBottom": 2089.59375,
+      "top": 1937.390625,
+      "tabsBottom": 1937.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 1937.390625
+    }
+  },
+  {
+    "width": 320,
+    "innerFill": {
+      "tab": "bottom-chat",
+      "bottom": 2089.59375,
+      "activeBottom": 2089.59375,
+      "top": 1937.390625,
+      "tabsBottom": 1937.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 1937.390625
+    }
+  },
+  {
+    "width": 320,
+    "scrollWidth": 320,
+    "stacked": true,
+    "inputWidth": 268,
+    "availableInputWidth": 268,
+    "layout": {
+      "left": {
+        "x": 12,
+        "y": 108,
+        "width": 296,
+        "height": 446.796875,
+        "right": 308,
+        "bottom": 554.796875
+      },
+      "row": {
+        "x": 12,
+        "y": 1905.59375,
+        "width": 296,
+        "height": 316.1875,
+        "right": 308,
+        "bottom": 2221.78125
+      },
+      "info": {
+        "x": 12,
+        "y": 1905.59375,
+        "width": 296,
+        "height": 197.796875,
+        "right": 308,
+        "bottom": 2103.390625
+      },
+      "details": {
+        "x": 12,
+        "y": 2111.390625,
+        "width": 296,
+        "height": 110.390625,
+        "right": 308,
+        "bottom": 2221.78125
+      },
+      "map": {
+        "x": 12,
+        "y": 562.796875,
+        "width": 296,
+        "height": 486,
+        "right": 308,
+        "bottom": 1048.796875
+      },
+      "mapGrid": {
+        "x": 21,
+        "y": 610.796875,
+        "width": 278,
+        "height": 410,
+        "right": 299,
+        "bottom": 1020.796875
+      },
+      "mapCell": {
+        "x": -113,
+        "y": 620.796875,
+        "width": 26,
+        "height": 26,
+        "right": -87,
+        "bottom": 646.796875
+      },
+      "items": {
+        "x": 12,
+        "y": 1056.796875,
+        "width": 296,
+        "height": 840.796875,
+        "right": 308,
+        "bottom": 1897.59375
+      },
+      "contentOffsets": {
+        "info": 6,
+        "details": 9
+      },
+      "gap": 8,
+      "overflow": false
+    }
+  },
+  {
+    "combat": true,
+    "width": 1440,
+    "innerFill": {
+      "tab": "combat-server-info",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 648.640625,
+      "tabsBottom": 648.640625,
+      "height": 297.625,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 648.640625
+    }
+  },
+  {
+    "combat": true,
+    "width": 1440,
+    "innerFill": {
+      "tab": "combat-chat",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 648.640625,
+      "tabsBottom": 648.640625,
+      "height": 297.625,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 648.640625
+    }
+  },
+  {
+    "combat": true,
+    "width": 1440,
+    "innerFill": {
+      "tab": "combat-battle-info",
+      "bottom": 909.625,
+      "activeBottom": 909.625,
+      "top": 648.640625,
+      "tabsBottom": 648.640625,
+      "logBottom": 909.625,
+      "messagesBottom": 908.625,
+      "height": 297.625,
+      "overflow": false,
+      "logTop": 652.640625,
+      "verticalOverflow": false,
+      "messagesTop": 672.640625,
+      "titleBottom": 672.640625
+    }
+  },
+  {
+    "combat": true,
+    "width": 1101,
+    "innerFill": {
+      "tab": "combat-server-info",
+      "bottom": 840.875,
+      "activeBottom": 840.875,
+      "top": 648.640625,
+      "tabsBottom": 648.640625,
+      "height": 228.875,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 648.640625
+    }
+  },
+  {
+    "combat": true,
+    "width": 1101,
+    "innerFill": {
+      "tab": "combat-chat",
+      "bottom": 840.875,
+      "activeBottom": 840.875,
+      "top": 648.640625,
+      "tabsBottom": 648.640625,
+      "height": 228.875,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 648.640625
+    }
+  },
+  {
+    "combat": true,
+    "width": 1101,
+    "innerFill": {
+      "tab": "combat-battle-info",
+      "bottom": 840.875,
+      "activeBottom": 840.875,
+      "top": 648.640625,
+      "tabsBottom": 648.640625,
+      "logBottom": 840.875,
+      "messagesBottom": 839.875,
+      "height": 228.875,
+      "overflow": false,
+      "logTop": 652.640625,
+      "verticalOverflow": false,
+      "messagesTop": 672.640625,
+      "titleBottom": 672.640625
+    }
+  },
+  {
+    "combat": true,
+    "width": 1100,
+    "innerFill": {
+      "tab": "combat-server-info",
+      "bottom": 802,
+      "activeBottom": 802,
+      "top": 648.640625,
+      "tabsBottom": 648.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 648.640625
+    }
+  },
+  {
+    "combat": true,
+    "width": 1100,
+    "innerFill": {
+      "tab": "combat-chat",
+      "bottom": 802,
+      "activeBottom": 802,
+      "top": 648.640625,
+      "tabsBottom": 648.640625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 648.640625
+    }
+  },
+  {
+    "combat": true,
+    "width": 1100,
+    "innerFill": {
+      "tab": "combat-battle-info",
+      "bottom": 808.640625,
+      "activeBottom": 808.640625,
+      "top": 648.640625,
+      "tabsBottom": 648.640625,
+      "logBottom": 808.640625,
+      "messagesBottom": 807.640625,
+      "height": 196.640625,
+      "overflow": false,
+      "logTop": 652.640625,
+      "verticalOverflow": false,
+      "messagesTop": 672.640625,
+      "titleBottom": 672.640625
+    }
+  },
+  {
+    "combat": true,
+    "width": 720,
+    "innerFill": {
+      "tab": "combat-server-info",
+      "bottom": 2520.59375,
+      "activeBottom": 2520.59375,
+      "top": 2368.390625,
+      "tabsBottom": 2368.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2368.390625
+    }
+  },
+  {
+    "combat": true,
+    "width": 720,
+    "innerFill": {
+      "tab": "combat-chat",
+      "bottom": 2520.59375,
+      "activeBottom": 2520.59375,
+      "top": 2368.390625,
+      "tabsBottom": 2368.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2368.390625
+    }
+  },
+  {
+    "combat": true,
+    "width": 720,
+    "innerFill": {
+      "tab": "combat-battle-info",
+      "bottom": 2528.390625,
+      "activeBottom": 2528.390625,
+      "top": 2368.390625,
+      "tabsBottom": 2368.390625,
+      "logBottom": 2528.390625,
+      "messagesBottom": 2527.390625,
+      "height": 197.796875,
+      "overflow": false,
+      "logTop": 2372.390625,
+      "verticalOverflow": false,
+      "messagesTop": 2392.390625,
+      "titleBottom": 2392.390625
+    }
+  },
+  {
+    "combat": true,
+    "width": 390,
+    "innerFill": {
+      "tab": "combat-server-info",
+      "bottom": 2190.59375,
+      "activeBottom": 2190.59375,
+      "top": 2038.390625,
+      "tabsBottom": 2038.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2038.390625
+    }
+  },
+  {
+    "combat": true,
+    "width": 390,
+    "innerFill": {
+      "tab": "combat-chat",
+      "bottom": 2190.59375,
+      "activeBottom": 2190.59375,
+      "top": 2038.390625,
+      "tabsBottom": 2038.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2038.390625
+    }
+  },
+  {
+    "combat": true,
+    "width": 390,
+    "innerFill": {
+      "tab": "combat-battle-info",
+      "bottom": 2198.390625,
+      "activeBottom": 2198.390625,
+      "top": 2038.390625,
+      "tabsBottom": 2038.390625,
+      "logBottom": 2198.390625,
+      "messagesBottom": 2197.390625,
+      "height": 197.796875,
+      "overflow": false,
+      "logTop": 2042.390625,
+      "verticalOverflow": false,
+      "messagesTop": 2062.390625,
+      "titleBottom": 2062.390625
+    }
+  },
+  {
+    "combat": true,
+    "width": 320,
+    "innerFill": {
+      "tab": "combat-server-info",
+      "bottom": 2153.59375,
+      "activeBottom": 2153.59375,
+      "top": 2001.390625,
+      "tabsBottom": 2001.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2001.390625
+    }
+  },
+  {
+    "combat": true,
+    "width": 320,
+    "innerFill": {
+      "tab": "combat-chat",
+      "bottom": 2153.59375,
+      "activeBottom": 2153.59375,
+      "top": 2001.390625,
+      "tabsBottom": 2001.390625,
+      "height": 190,
+      "overflow": false,
+      "verticalOverflow": false,
+      "placeholderTop": 2001.390625
+    }
+  },
+  {
+    "combat": true,
+    "width": 320,
+    "innerFill": {
+      "tab": "combat-battle-info",
+      "bottom": 2161.390625,
+      "activeBottom": 2161.390625,
+      "top": 2001.390625,
+      "tabsBottom": 2001.390625,
+      "logBottom": 2161.390625,
+      "messagesBottom": 2160.390625,
+      "height": 197.796875,
+      "overflow": false,
+      "logTop": 2005.390625,
+      "verticalOverflow": false,
+      "messagesTop": 2025.390625,
+      "titleBottom": 2025.390625
+    }
+  },
+  "Combat template: 6 viewport layouts, all 3 bottom tabs and 3 details modes; structural fill, top alignment, no overflow.",
+  "No real application API requests; mode switches are presentation-only."
+]

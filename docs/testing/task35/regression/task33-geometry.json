@@ -1,0 +1,10010 @@
+{
+  "1440x900": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 848,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 540,
+      "height": 307.671875,
+      "right": 806,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 814,
+      "y": 607.953125,
+      "width": 300,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 527.953125,
+      "right": 1114,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 830,
+      "height": 451.953125,
+      "right": 1105,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 387.625,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 416.421875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1422,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x900-bottom-server": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 833,
+      "height": 307.671875,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 525,
+      "height": 307.671875,
+      "right": 791,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 799,
+      "y": 607.953125,
+      "width": 300,
+      "height": 307.671875,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 833,
+      "height": 527.953125,
+      "right": 1099,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 815,
+      "height": 451.953125,
+      "right": 1090,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 380.125,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 408.921875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1107,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1407,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x900-bottom-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 833,
+      "height": 307.671875,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 525,
+      "height": 307.671875,
+      "right": 791,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 799,
+      "y": 607.953125,
+      "width": 300,
+      "height": 307.671875,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 833,
+      "height": 527.953125,
+      "right": 1099,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 815,
+      "height": 451.953125,
+      "right": 1090,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 380.125,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 408.921875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1107,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1407,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x900-bottom-information": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 833,
+      "height": 307.671875,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 525,
+      "height": 307.671875,
+      "right": 791,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 799,
+      "y": 607.953125,
+      "width": 300,
+      "height": 307.671875,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 833,
+      "height": 527.953125,
+      "right": 1099,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 815,
+      "height": 451.953125,
+      "right": 1090,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 380.125,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 408.921875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1107,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1407,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x900-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 732.59375,
+      "right": 258,
+      "bottom": 804.59375
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 848,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 804.59375
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 540,
+      "height": 196.640625,
+      "right": 806,
+      "bottom": 804.59375
+    },
+    "details": {
+      "x": 814,
+      "y": 607.953125,
+      "width": 300,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 804.59375
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 527.953125,
+      "right": 1114,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 830,
+      "height": 451.953125,
+      "right": 1105,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 387.625,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 416.421875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 732.59375,
+      "right": 1422,
+      "bottom": 804.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x900-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 732.59375,
+      "right": 258,
+      "bottom": 804.59375
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 848,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 804.59375
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 540,
+      "height": 196.640625,
+      "right": 806,
+      "bottom": 804.59375
+    },
+    "details": {
+      "x": 814,
+      "y": 607.953125,
+      "width": 300,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 804.59375
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 527.953125,
+      "right": 1114,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 830,
+      "height": 451.953125,
+      "right": 1105,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 387.625,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 416.421875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 732.59375,
+      "right": 1422,
+      "bottom": 804.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x900-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 833,
+      "height": 307.671875,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 525,
+      "height": 307.671875,
+      "right": 791,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 799,
+      "y": 607.953125,
+      "width": 300,
+      "height": 307.671875,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 833,
+      "height": 527.953125,
+      "right": 1099,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 815,
+      "height": 451.953125,
+      "right": 1090,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 380.125,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 408.921875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1107,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1407,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x900-tall-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 1400,
+      "right": 258,
+      "bottom": 1472
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 833,
+      "height": 864.046875,
+      "right": 1099,
+      "bottom": 1472
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 525,
+      "height": 864.046875,
+      "right": 791,
+      "bottom": 1472
+    },
+    "details": {
+      "x": 799,
+      "y": 607.953125,
+      "width": 300,
+      "height": 864.046875,
+      "right": 1099,
+      "bottom": 1472
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 833,
+      "height": 527.953125,
+      "right": 1099,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 815,
+      "height": 451.953125,
+      "right": 1090,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 380.125,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 408.921875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1107,
+      "y": 72,
+      "width": 300,
+      "height": 1400,
+      "right": 1407,
+      "bottom": 1472
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1920x1100-bottom-information": {
+    "left": {
+      "x": 90,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 330,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 338,
+      "y": 656,
+      "width": 1184,
+      "height": 259.625,
+      "right": 1522,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 338,
+      "y": 656,
+      "width": 876,
+      "height": 259.625,
+      "right": 1214,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 1222,
+      "y": 656,
+      "width": 300,
+      "height": 259.625,
+      "right": 1522,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 338,
+      "y": 72,
+      "width": 1184,
+      "height": 576,
+      "right": 1522,
+      "bottom": 648
+    },
+    "mapGrid": {
+      "x": 347,
+      "y": 120,
+      "width": 1166,
+      "height": 500,
+      "right": 1513,
+      "bottom": 620
+    },
+    "mapCell": {
+      "x": 594,
+      "y": 130,
+      "width": 32,
+      "height": 32,
+      "right": 626,
+      "bottom": 162
+    },
+    "items": {
+      "x": 1530,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1830,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1920x1100-bottom-server": {
+    "left": {
+      "x": 90,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 330,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 338,
+      "y": 656,
+      "width": 1184,
+      "height": 259.625,
+      "right": 1522,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 338,
+      "y": 656,
+      "width": 876,
+      "height": 259.625,
+      "right": 1214,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 1222,
+      "y": 656,
+      "width": 300,
+      "height": 259.625,
+      "right": 1522,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 338,
+      "y": 72,
+      "width": 1184,
+      "height": 576,
+      "right": 1522,
+      "bottom": 648
+    },
+    "mapGrid": {
+      "x": 347,
+      "y": 120,
+      "width": 1166,
+      "height": 500,
+      "right": 1513,
+      "bottom": 620
+    },
+    "mapCell": {
+      "x": 594,
+      "y": 130,
+      "width": 32,
+      "height": 32,
+      "right": 626,
+      "bottom": 162
+    },
+    "items": {
+      "x": 1530,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1830,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1920x1100-bottom-chat": {
+    "left": {
+      "x": 90,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 330,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 338,
+      "y": 656,
+      "width": 1184,
+      "height": 259.625,
+      "right": 1522,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 338,
+      "y": 656,
+      "width": 876,
+      "height": 259.625,
+      "right": 1214,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 1222,
+      "y": 656,
+      "width": 300,
+      "height": 259.625,
+      "right": 1522,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 338,
+      "y": 72,
+      "width": 1184,
+      "height": 576,
+      "right": 1522,
+      "bottom": 648
+    },
+    "mapGrid": {
+      "x": 347,
+      "y": 120,
+      "width": 1166,
+      "height": 500,
+      "right": 1513,
+      "bottom": 620
+    },
+    "mapCell": {
+      "x": 594,
+      "y": 130,
+      "width": 32,
+      "height": 32,
+      "right": 626,
+      "bottom": 162
+    },
+    "items": {
+      "x": 1530,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1830,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1920x1100": {
+    "left": {
+      "x": 90,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 330,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 338,
+      "y": 656,
+      "width": 1184,
+      "height": 259.625,
+      "right": 1522,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 338,
+      "y": 656,
+      "width": 876,
+      "height": 259.625,
+      "right": 1214,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 1222,
+      "y": 656,
+      "width": 300,
+      "height": 259.625,
+      "right": 1522,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 338,
+      "y": 72,
+      "width": 1184,
+      "height": 576,
+      "right": 1522,
+      "bottom": 648
+    },
+    "mapGrid": {
+      "x": 347,
+      "y": 120,
+      "width": 1166,
+      "height": 500,
+      "right": 1513,
+      "bottom": 620
+    },
+    "mapCell": {
+      "x": 594,
+      "y": 130,
+      "width": 32,
+      "height": 32,
+      "right": 626,
+      "bottom": 162
+    },
+    "items": {
+      "x": 1530,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1830,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1920x1100-right-skills": {
+    "left": {
+      "x": 90,
+      "y": 72,
+      "width": 240,
+      "height": 780.640625,
+      "right": 330,
+      "bottom": 852.640625
+    },
+    "row": {
+      "x": 338,
+      "y": 656,
+      "width": 1184,
+      "height": 196.640625,
+      "right": 1522,
+      "bottom": 852.640625
+    },
+    "info": {
+      "x": 338,
+      "y": 656,
+      "width": 876,
+      "height": 196.640625,
+      "right": 1214,
+      "bottom": 852.640625
+    },
+    "details": {
+      "x": 1222,
+      "y": 656,
+      "width": 300,
+      "height": 196.640625,
+      "right": 1522,
+      "bottom": 852.640625
+    },
+    "map": {
+      "x": 338,
+      "y": 72,
+      "width": 1184,
+      "height": 576,
+      "right": 1522,
+      "bottom": 648
+    },
+    "mapGrid": {
+      "x": 347,
+      "y": 120,
+      "width": 1166,
+      "height": 500,
+      "right": 1513,
+      "bottom": 620
+    },
+    "mapCell": {
+      "x": 594,
+      "y": 130,
+      "width": 32,
+      "height": 32,
+      "right": 626,
+      "bottom": 162
+    },
+    "items": {
+      "x": 1530,
+      "y": 72,
+      "width": 300,
+      "height": 780.640625,
+      "right": 1830,
+      "bottom": 852.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1920x1100-right-passives": {
+    "left": {
+      "x": 90,
+      "y": 72,
+      "width": 240,
+      "height": 780.640625,
+      "right": 330,
+      "bottom": 852.640625
+    },
+    "row": {
+      "x": 338,
+      "y": 656,
+      "width": 1184,
+      "height": 196.640625,
+      "right": 1522,
+      "bottom": 852.640625
+    },
+    "info": {
+      "x": 338,
+      "y": 656,
+      "width": 876,
+      "height": 196.640625,
+      "right": 1214,
+      "bottom": 852.640625
+    },
+    "details": {
+      "x": 1222,
+      "y": 656,
+      "width": 300,
+      "height": 196.640625,
+      "right": 1522,
+      "bottom": 852.640625
+    },
+    "map": {
+      "x": 338,
+      "y": 72,
+      "width": 1184,
+      "height": 576,
+      "right": 1522,
+      "bottom": 648
+    },
+    "mapGrid": {
+      "x": 347,
+      "y": 120,
+      "width": 1166,
+      "height": 500,
+      "right": 1513,
+      "bottom": 620
+    },
+    "mapCell": {
+      "x": 594,
+      "y": 130,
+      "width": 32,
+      "height": 32,
+      "right": 626,
+      "bottom": 162
+    },
+    "items": {
+      "x": 1530,
+      "y": 72,
+      "width": 300,
+      "height": 780.640625,
+      "right": 1830,
+      "bottom": 852.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1920x1100-right-items": {
+    "left": {
+      "x": 90,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 330,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 338,
+      "y": 656,
+      "width": 1184,
+      "height": 259.625,
+      "right": 1522,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 338,
+      "y": 656,
+      "width": 876,
+      "height": 259.625,
+      "right": 1214,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 1222,
+      "y": 656,
+      "width": 300,
+      "height": 259.625,
+      "right": 1522,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 338,
+      "y": 72,
+      "width": 1184,
+      "height": 576,
+      "right": 1522,
+      "bottom": 648
+    },
+    "mapGrid": {
+      "x": 347,
+      "y": 120,
+      "width": 1166,
+      "height": 500,
+      "right": 1513,
+      "bottom": 620
+    },
+    "mapCell": {
+      "x": 594,
+      "y": 130,
+      "width": 32,
+      "height": 32,
+      "right": 626,
+      "bottom": 162
+    },
+    "items": {
+      "x": 1530,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1830,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1920x1100-tall-items": {
+    "left": {
+      "x": 82.5,
+      "y": 72,
+      "width": 240,
+      "height": 1400,
+      "right": 322.5,
+      "bottom": 1472
+    },
+    "row": {
+      "x": 330.5,
+      "y": 656,
+      "width": 1184,
+      "height": 816,
+      "right": 1514.5,
+      "bottom": 1472
+    },
+    "info": {
+      "x": 330.5,
+      "y": 656,
+      "width": 876,
+      "height": 816,
+      "right": 1206.5,
+      "bottom": 1472
+    },
+    "details": {
+      "x": 1214.5,
+      "y": 656,
+      "width": 300,
+      "height": 816,
+      "right": 1514.5,
+      "bottom": 1472
+    },
+    "map": {
+      "x": 330.5,
+      "y": 72,
+      "width": 1184,
+      "height": 576,
+      "right": 1514.5,
+      "bottom": 648
+    },
+    "mapGrid": {
+      "x": 339.5,
+      "y": 120,
+      "width": 1166,
+      "height": 500,
+      "right": 1505.5,
+      "bottom": 620
+    },
+    "mapCell": {
+      "x": 586.5,
+      "y": 130,
+      "width": 32,
+      "height": 32,
+      "right": 618.5,
+      "bottom": 162
+    },
+    "items": {
+      "x": 1522.5,
+      "y": 72,
+      "width": 300,
+      "height": 1400,
+      "right": 1822.5,
+      "bottom": 1472
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x1100-bottom-information": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 848,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 540,
+      "height": 307.671875,
+      "right": 806,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 814,
+      "y": 607.953125,
+      "width": 300,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 527.953125,
+      "right": 1114,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 830,
+      "height": 451.953125,
+      "right": 1105,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 387.625,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 416.421875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1422,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x1100-bottom-server": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 848,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 540,
+      "height": 307.671875,
+      "right": 806,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 814,
+      "y": 607.953125,
+      "width": 300,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 527.953125,
+      "right": 1114,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 830,
+      "height": 451.953125,
+      "right": 1105,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 387.625,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 416.421875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1422,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x1100-bottom-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 848,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 540,
+      "height": 307.671875,
+      "right": 806,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 814,
+      "y": 607.953125,
+      "width": 300,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 527.953125,
+      "right": 1114,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 830,
+      "height": 451.953125,
+      "right": 1105,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 387.625,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 416.421875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1422,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x1100": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 848,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 540,
+      "height": 307.671875,
+      "right": 806,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 814,
+      "y": 607.953125,
+      "width": 300,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 527.953125,
+      "right": 1114,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 830,
+      "height": 451.953125,
+      "right": 1105,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 387.625,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 416.421875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1422,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x1100-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 732.59375,
+      "right": 258,
+      "bottom": 804.59375
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 848,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 804.59375
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 540,
+      "height": 196.640625,
+      "right": 806,
+      "bottom": 804.59375
+    },
+    "details": {
+      "x": 814,
+      "y": 607.953125,
+      "width": 300,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 804.59375
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 527.953125,
+      "right": 1114,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 830,
+      "height": 451.953125,
+      "right": 1105,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 387.625,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 416.421875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 732.59375,
+      "right": 1422,
+      "bottom": 804.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x1100-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 732.59375,
+      "right": 258,
+      "bottom": 804.59375
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 848,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 804.59375
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 540,
+      "height": 196.640625,
+      "right": 806,
+      "bottom": 804.59375
+    },
+    "details": {
+      "x": 814,
+      "y": 607.953125,
+      "width": 300,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 804.59375
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 527.953125,
+      "right": 1114,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 830,
+      "height": 451.953125,
+      "right": 1105,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 387.625,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 416.421875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 732.59375,
+      "right": 1422,
+      "bottom": 804.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x1100-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 848,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 540,
+      "height": 307.671875,
+      "right": 806,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 814,
+      "y": 607.953125,
+      "width": 300,
+      "height": 307.671875,
+      "right": 1114,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 527.953125,
+      "right": 1114,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 830,
+      "height": 451.953125,
+      "right": 1105,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 387.625,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 416.421875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1422,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1440x1100-tall-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 1400,
+      "right": 258,
+      "bottom": 1472
+    },
+    "row": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 833,
+      "height": 864.046875,
+      "right": 1099,
+      "bottom": 1472
+    },
+    "info": {
+      "x": 266,
+      "y": 607.953125,
+      "width": 525,
+      "height": 864.046875,
+      "right": 791,
+      "bottom": 1472
+    },
+    "details": {
+      "x": 799,
+      "y": 607.953125,
+      "width": 300,
+      "height": 864.046875,
+      "right": 1099,
+      "bottom": 1472
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 833,
+      "height": 527.953125,
+      "right": 1099,
+      "bottom": 599.953125
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 120,
+      "width": 815,
+      "height": 451.953125,
+      "right": 1090,
+      "bottom": 571.953125
+    },
+    "mapCell": {
+      "x": 380.125,
+      "y": 130,
+      "width": 28.796875,
+      "height": 28.796875,
+      "right": 408.921875,
+      "bottom": 158.796875
+    },
+    "items": {
+      "x": 1107,
+      "y": 72,
+      "width": 300,
+      "height": 1400,
+      "right": 1407,
+      "bottom": 1472
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1280x1100-bottom-information": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 217.59375,
+      "height": 812.453125,
+      "right": 235.59375,
+      "bottom": 884.453125
+    },
+    "row": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 741.609375,
+      "height": 324.546875,
+      "right": 985.203125,
+      "bottom": 884.453125
+    },
+    "info": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 464.8125,
+      "height": 324.546875,
+      "right": 708.40625,
+      "bottom": 884.453125
+    },
+    "details": {
+      "x": 716.40625,
+      "y": 559.90625,
+      "width": 268.796875,
+      "height": 324.546875,
+      "right": 985.203125,
+      "bottom": 884.453125
+    },
+    "map": {
+      "x": 243.59375,
+      "y": 72,
+      "width": 741.609375,
+      "height": 479.90625,
+      "right": 985.203125,
+      "bottom": 551.90625
+    },
+    "mapGrid": {
+      "x": 252.59375,
+      "y": 120,
+      "width": 723.609375,
+      "height": 403.90625,
+      "right": 976.203125,
+      "bottom": 523.90625
+    },
+    "mapCell": {
+      "x": 345.65625,
+      "y": 130,
+      "width": 25.59375,
+      "height": 25.59375,
+      "right": 371.25,
+      "bottom": 155.59375
+    },
+    "items": {
+      "x": 993.203125,
+      "y": 72,
+      "width": 268.796875,
+      "height": 812.453125,
+      "right": 1262,
+      "bottom": 884.453125
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1280x1100-bottom-server": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 217.59375,
+      "height": 812.453125,
+      "right": 235.59375,
+      "bottom": 884.453125
+    },
+    "row": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 741.609375,
+      "height": 324.546875,
+      "right": 985.203125,
+      "bottom": 884.453125
+    },
+    "info": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 464.8125,
+      "height": 324.546875,
+      "right": 708.40625,
+      "bottom": 884.453125
+    },
+    "details": {
+      "x": 716.40625,
+      "y": 559.90625,
+      "width": 268.796875,
+      "height": 324.546875,
+      "right": 985.203125,
+      "bottom": 884.453125
+    },
+    "map": {
+      "x": 243.59375,
+      "y": 72,
+      "width": 741.609375,
+      "height": 479.90625,
+      "right": 985.203125,
+      "bottom": 551.90625
+    },
+    "mapGrid": {
+      "x": 252.59375,
+      "y": 120,
+      "width": 723.609375,
+      "height": 403.90625,
+      "right": 976.203125,
+      "bottom": 523.90625
+    },
+    "mapCell": {
+      "x": 345.65625,
+      "y": 130,
+      "width": 25.59375,
+      "height": 25.59375,
+      "right": 371.25,
+      "bottom": 155.59375
+    },
+    "items": {
+      "x": 993.203125,
+      "y": 72,
+      "width": 268.796875,
+      "height": 812.453125,
+      "right": 1262,
+      "bottom": 884.453125
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1280x1100-bottom-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 217.59375,
+      "height": 812.453125,
+      "right": 235.59375,
+      "bottom": 884.453125
+    },
+    "row": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 741.609375,
+      "height": 324.546875,
+      "right": 985.203125,
+      "bottom": 884.453125
+    },
+    "info": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 464.8125,
+      "height": 324.546875,
+      "right": 708.40625,
+      "bottom": 884.453125
+    },
+    "details": {
+      "x": 716.40625,
+      "y": 559.90625,
+      "width": 268.796875,
+      "height": 324.546875,
+      "right": 985.203125,
+      "bottom": 884.453125
+    },
+    "map": {
+      "x": 243.59375,
+      "y": 72,
+      "width": 741.609375,
+      "height": 479.90625,
+      "right": 985.203125,
+      "bottom": 551.90625
+    },
+    "mapGrid": {
+      "x": 252.59375,
+      "y": 120,
+      "width": 723.609375,
+      "height": 403.90625,
+      "right": 976.203125,
+      "bottom": 523.90625
+    },
+    "mapCell": {
+      "x": 345.65625,
+      "y": 130,
+      "width": 25.59375,
+      "height": 25.59375,
+      "right": 371.25,
+      "bottom": 155.59375
+    },
+    "items": {
+      "x": 993.203125,
+      "y": 72,
+      "width": 268.796875,
+      "height": 812.453125,
+      "right": 1262,
+      "bottom": 884.453125
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1280x1100": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 217.59375,
+      "height": 812.453125,
+      "right": 235.59375,
+      "bottom": 884.453125
+    },
+    "row": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 741.609375,
+      "height": 324.546875,
+      "right": 985.203125,
+      "bottom": 884.453125
+    },
+    "info": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 464.8125,
+      "height": 324.546875,
+      "right": 708.40625,
+      "bottom": 884.453125
+    },
+    "details": {
+      "x": 716.40625,
+      "y": 559.90625,
+      "width": 268.796875,
+      "height": 324.546875,
+      "right": 985.203125,
+      "bottom": 884.453125
+    },
+    "map": {
+      "x": 243.59375,
+      "y": 72,
+      "width": 741.609375,
+      "height": 479.90625,
+      "right": 985.203125,
+      "bottom": 551.90625
+    },
+    "mapGrid": {
+      "x": 252.59375,
+      "y": 120,
+      "width": 723.609375,
+      "height": 403.90625,
+      "right": 976.203125,
+      "bottom": 523.90625
+    },
+    "mapCell": {
+      "x": 345.65625,
+      "y": 130,
+      "width": 25.59375,
+      "height": 25.59375,
+      "right": 371.25,
+      "bottom": 155.59375
+    },
+    "items": {
+      "x": 993.203125,
+      "y": 72,
+      "width": 268.796875,
+      "height": 812.453125,
+      "right": 1262,
+      "bottom": 884.453125
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1280x1100-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 217.59375,
+      "height": 684.546875,
+      "right": 235.59375,
+      "bottom": 756.546875
+    },
+    "row": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 741.609375,
+      "height": 196.640625,
+      "right": 985.203125,
+      "bottom": 756.546875
+    },
+    "info": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 464.8125,
+      "height": 196.640625,
+      "right": 708.40625,
+      "bottom": 756.546875
+    },
+    "details": {
+      "x": 716.40625,
+      "y": 559.90625,
+      "width": 268.796875,
+      "height": 196.640625,
+      "right": 985.203125,
+      "bottom": 756.546875
+    },
+    "map": {
+      "x": 243.59375,
+      "y": 72,
+      "width": 741.609375,
+      "height": 479.90625,
+      "right": 985.203125,
+      "bottom": 551.90625
+    },
+    "mapGrid": {
+      "x": 252.59375,
+      "y": 120,
+      "width": 723.609375,
+      "height": 403.90625,
+      "right": 976.203125,
+      "bottom": 523.90625
+    },
+    "mapCell": {
+      "x": 345.65625,
+      "y": 130,
+      "width": 25.59375,
+      "height": 25.59375,
+      "right": 371.25,
+      "bottom": 155.59375
+    },
+    "items": {
+      "x": 993.203125,
+      "y": 72,
+      "width": 268.796875,
+      "height": 684.546875,
+      "right": 1262,
+      "bottom": 756.546875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1280x1100-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 217.59375,
+      "height": 684.546875,
+      "right": 235.59375,
+      "bottom": 756.546875
+    },
+    "row": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 741.609375,
+      "height": 196.640625,
+      "right": 985.203125,
+      "bottom": 756.546875
+    },
+    "info": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 464.8125,
+      "height": 196.640625,
+      "right": 708.40625,
+      "bottom": 756.546875
+    },
+    "details": {
+      "x": 716.40625,
+      "y": 559.90625,
+      "width": 268.796875,
+      "height": 196.640625,
+      "right": 985.203125,
+      "bottom": 756.546875
+    },
+    "map": {
+      "x": 243.59375,
+      "y": 72,
+      "width": 741.609375,
+      "height": 479.90625,
+      "right": 985.203125,
+      "bottom": 551.90625
+    },
+    "mapGrid": {
+      "x": 252.59375,
+      "y": 120,
+      "width": 723.609375,
+      "height": 403.90625,
+      "right": 976.203125,
+      "bottom": 523.90625
+    },
+    "mapCell": {
+      "x": 345.65625,
+      "y": 130,
+      "width": 25.59375,
+      "height": 25.59375,
+      "right": 371.25,
+      "bottom": 155.59375
+    },
+    "items": {
+      "x": 993.203125,
+      "y": 72,
+      "width": 268.796875,
+      "height": 684.546875,
+      "right": 1262,
+      "bottom": 756.546875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1280x1100-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 217.59375,
+      "height": 812.453125,
+      "right": 235.59375,
+      "bottom": 884.453125
+    },
+    "row": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 741.609375,
+      "height": 324.546875,
+      "right": 985.203125,
+      "bottom": 884.453125
+    },
+    "info": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 464.8125,
+      "height": 324.546875,
+      "right": 708.40625,
+      "bottom": 884.453125
+    },
+    "details": {
+      "x": 716.40625,
+      "y": 559.90625,
+      "width": 268.796875,
+      "height": 324.546875,
+      "right": 985.203125,
+      "bottom": 884.453125
+    },
+    "map": {
+      "x": 243.59375,
+      "y": 72,
+      "width": 741.609375,
+      "height": 479.90625,
+      "right": 985.203125,
+      "bottom": 551.90625
+    },
+    "mapGrid": {
+      "x": 252.59375,
+      "y": 120,
+      "width": 723.609375,
+      "height": 403.90625,
+      "right": 976.203125,
+      "bottom": 523.90625
+    },
+    "mapCell": {
+      "x": 345.65625,
+      "y": 130,
+      "width": 25.59375,
+      "height": 25.59375,
+      "right": 371.25,
+      "bottom": 155.59375
+    },
+    "items": {
+      "x": 993.203125,
+      "y": 72,
+      "width": 268.796875,
+      "height": 812.453125,
+      "right": 1262,
+      "bottom": 884.453125
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1280x1100-tall-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 217.59375,
+      "height": 1400,
+      "right": 235.59375,
+      "bottom": 1472
+    },
+    "row": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 726.609375,
+      "height": 912.09375,
+      "right": 970.203125,
+      "bottom": 1472
+    },
+    "info": {
+      "x": 243.59375,
+      "y": 559.90625,
+      "width": 449.8125,
+      "height": 912.09375,
+      "right": 693.40625,
+      "bottom": 1472
+    },
+    "details": {
+      "x": 701.40625,
+      "y": 559.90625,
+      "width": 268.796875,
+      "height": 912.09375,
+      "right": 970.203125,
+      "bottom": 1472
+    },
+    "map": {
+      "x": 243.59375,
+      "y": 72,
+      "width": 726.609375,
+      "height": 479.90625,
+      "right": 970.203125,
+      "bottom": 551.90625
+    },
+    "mapGrid": {
+      "x": 252.59375,
+      "y": 120,
+      "width": 708.609375,
+      "height": 403.90625,
+      "right": 961.203125,
+      "bottom": 523.90625
+    },
+    "mapCell": {
+      "x": 338.15625,
+      "y": 130,
+      "width": 25.59375,
+      "height": 25.59375,
+      "right": 363.75,
+      "bottom": 155.59375
+    },
+    "items": {
+      "x": 978.203125,
+      "y": 72,
+      "width": 268.796875,
+      "height": 1400,
+      "right": 1247,
+      "bottom": 1472
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1101x1100-bottom-information": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 774.875,
+      "right": 205.15625,
+      "bottom": 846.875
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 630.640625,
+      "height": 310.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 391.4375,
+      "height": 310.875,
+      "right": 604.59375,
+      "bottom": 846.875
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 536,
+      "width": 231.203125,
+      "height": 310.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 456,
+      "right": 843.796875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 120,
+      "width": 612.640625,
+      "height": 380,
+      "right": 834.796875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276.46875,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300.46875,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 774.875,
+      "right": 1083,
+      "bottom": 846.875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1101x1100-bottom-server": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 774.875,
+      "right": 205.15625,
+      "bottom": 846.875
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 630.640625,
+      "height": 310.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 391.4375,
+      "height": 310.875,
+      "right": 604.59375,
+      "bottom": 846.875
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 536,
+      "width": 231.203125,
+      "height": 310.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 456,
+      "right": 843.796875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 120,
+      "width": 612.640625,
+      "height": 380,
+      "right": 834.796875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276.46875,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300.46875,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 774.875,
+      "right": 1083,
+      "bottom": 846.875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1101x1100-bottom-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 774.875,
+      "right": 205.15625,
+      "bottom": 846.875
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 630.640625,
+      "height": 310.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 391.4375,
+      "height": 310.875,
+      "right": 604.59375,
+      "bottom": 846.875
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 536,
+      "width": 231.203125,
+      "height": 310.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 456,
+      "right": 843.796875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 120,
+      "width": 612.640625,
+      "height": 380,
+      "right": 834.796875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276.46875,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300.46875,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 774.875,
+      "right": 1083,
+      "bottom": 846.875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1101x1100": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 774.875,
+      "right": 205.15625,
+      "bottom": 846.875
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 630.640625,
+      "height": 310.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 391.4375,
+      "height": 310.875,
+      "right": 604.59375,
+      "bottom": 846.875
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 536,
+      "width": 231.203125,
+      "height": 310.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 456,
+      "right": 843.796875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 120,
+      "width": 612.640625,
+      "height": 380,
+      "right": 834.796875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276.46875,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300.46875,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 774.875,
+      "right": 1083,
+      "bottom": 846.875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1101x1100-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 660.640625,
+      "right": 205.15625,
+      "bottom": 732.640625
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 630.640625,
+      "height": 196.640625,
+      "right": 843.796875,
+      "bottom": 732.640625
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 391.4375,
+      "height": 196.640625,
+      "right": 604.59375,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 536,
+      "width": 231.203125,
+      "height": 196.640625,
+      "right": 843.796875,
+      "bottom": 732.640625
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 456,
+      "right": 843.796875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 120,
+      "width": 612.640625,
+      "height": 380,
+      "right": 834.796875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276.46875,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300.46875,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 660.640625,
+      "right": 1083,
+      "bottom": 732.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1101x1100-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 660.640625,
+      "right": 205.15625,
+      "bottom": 732.640625
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 630.640625,
+      "height": 196.640625,
+      "right": 843.796875,
+      "bottom": 732.640625
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 391.4375,
+      "height": 196.640625,
+      "right": 604.59375,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 536,
+      "width": 231.203125,
+      "height": 196.640625,
+      "right": 843.796875,
+      "bottom": 732.640625
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 456,
+      "right": 843.796875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 120,
+      "width": 612.640625,
+      "height": 380,
+      "right": 834.796875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276.46875,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300.46875,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 660.640625,
+      "right": 1083,
+      "bottom": 732.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1101x1100-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 774.875,
+      "right": 205.15625,
+      "bottom": 846.875
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 630.640625,
+      "height": 310.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 391.4375,
+      "height": 310.875,
+      "right": 604.59375,
+      "bottom": 846.875
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 536,
+      "width": 231.203125,
+      "height": 310.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 456,
+      "right": 843.796875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 120,
+      "width": 612.640625,
+      "height": 380,
+      "right": 834.796875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276.46875,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300.46875,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 774.875,
+      "right": 1083,
+      "bottom": 846.875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1101x1100-tall-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 1400,
+      "right": 205.15625,
+      "bottom": 1472
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 615.640625,
+      "height": 936,
+      "right": 828.796875,
+      "bottom": 1472
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 536,
+      "width": 376.4375,
+      "height": 936,
+      "right": 589.59375,
+      "bottom": 1472
+    },
+    "details": {
+      "x": 597.59375,
+      "y": 536,
+      "width": 231.203125,
+      "height": 936,
+      "right": 828.796875,
+      "bottom": 1472
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 615.640625,
+      "height": 456,
+      "right": 828.796875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 120,
+      "width": 597.640625,
+      "height": 380,
+      "right": 819.796875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 268.96875,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 292.96875,
+      "bottom": 154
+    },
+    "items": {
+      "x": 836.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 1400,
+      "right": 1068,
+      "bottom": 1472
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1100x1100-bottom-information": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 779.03125,
+      "right": 205,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 315.03125,
+      "right": 843,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 196.640625,
+      "right": 843,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 213,
+      "y": 740.640625,
+      "width": 630,
+      "height": 110.390625,
+      "right": 843,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 456,
+      "right": 843,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 120,
+      "width": 612,
+      "height": 380,
+      "right": 834,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 774.640625,
+      "right": 1082,
+      "bottom": 846.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1100x1100-bottom-server": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 774.640625,
+      "right": 205,
+      "bottom": 846.640625
+    },
+    "row": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 308.390625,
+      "right": 843,
+      "bottom": 844.390625
+    },
+    "info": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 190,
+      "right": 843,
+      "bottom": 726
+    },
+    "details": {
+      "x": 213,
+      "y": 734,
+      "width": 630,
+      "height": 110.390625,
+      "right": 843,
+      "bottom": 844.390625
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 456,
+      "right": 843,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 120,
+      "width": 612,
+      "height": 380,
+      "right": 834,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 774.640625,
+      "right": 1082,
+      "bottom": 846.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1100x1100-bottom-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 774.640625,
+      "right": 205,
+      "bottom": 846.640625
+    },
+    "row": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 308.390625,
+      "right": 843,
+      "bottom": 844.390625
+    },
+    "info": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 190,
+      "right": 843,
+      "bottom": 726
+    },
+    "details": {
+      "x": 213,
+      "y": 734,
+      "width": 630,
+      "height": 110.390625,
+      "right": 843,
+      "bottom": 844.390625
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 456,
+      "right": 843,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 120,
+      "width": 612,
+      "height": 380,
+      "right": 834,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 774.640625,
+      "right": 1082,
+      "bottom": 846.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1100x1100": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 779.03125,
+      "right": 205,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 315.03125,
+      "right": 843,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 196.640625,
+      "right": 843,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 213,
+      "y": 740.640625,
+      "width": 630,
+      "height": 110.390625,
+      "right": 843,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 456,
+      "right": 843,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 120,
+      "width": 612,
+      "height": 380,
+      "right": 834,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 774.640625,
+      "right": 1082,
+      "bottom": 846.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1100x1100-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 731.640625,
+      "right": 205,
+      "bottom": 803.640625
+    },
+    "row": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 267.640625,
+      "right": 843,
+      "bottom": 803.640625
+    },
+    "info": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 196.640625,
+      "right": 843,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 213,
+      "y": 740.640625,
+      "width": 630,
+      "height": 63,
+      "right": 843,
+      "bottom": 803.640625
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 456,
+      "right": 843,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 120,
+      "width": 612,
+      "height": 380,
+      "right": 834,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 168.640625,
+      "right": 1082,
+      "bottom": 240.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1100x1100-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 731.640625,
+      "right": 205,
+      "bottom": 803.640625
+    },
+    "row": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 267.640625,
+      "right": 843,
+      "bottom": 803.640625
+    },
+    "info": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 196.640625,
+      "right": 843,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 213,
+      "y": 740.640625,
+      "width": 630,
+      "height": 63,
+      "right": 843,
+      "bottom": 803.640625
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 456,
+      "right": 843,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 120,
+      "width": 612,
+      "height": 380,
+      "right": 834,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 139.640625,
+      "right": 1082,
+      "bottom": 211.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1100x1100-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 779.03125,
+      "right": 205,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 315.03125,
+      "right": 843,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 213,
+      "y": 536,
+      "width": 630,
+      "height": 196.640625,
+      "right": 843,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 213,
+      "y": 740.640625,
+      "width": 630,
+      "height": 110.390625,
+      "right": 843,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 456,
+      "right": 843,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 120,
+      "width": 612,
+      "height": 380,
+      "right": 834,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 276,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 300,
+      "bottom": 154
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 774.640625,
+      "right": 1082,
+      "bottom": 846.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1099x1100-bottom-information": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 186.828125,
+      "height": 779.03125,
+      "right": 204.828125,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 315.03125,
+      "right": 842.21875,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 196.640625,
+      "right": 842.21875,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 212.828125,
+      "y": 740.640625,
+      "width": 629.390625,
+      "height": 110.390625,
+      "right": 842.21875,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 212.828125,
+      "y": 72,
+      "width": 629.390625,
+      "height": 456,
+      "right": 842.21875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 221.828125,
+      "y": 120,
+      "width": 611.390625,
+      "height": 380,
+      "right": 833.21875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 275.515625,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 299.515625,
+      "bottom": 154
+    },
+    "items": {
+      "x": 850.21875,
+      "y": 72,
+      "width": 230.78125,
+      "height": 774.40625,
+      "right": 1081,
+      "bottom": 846.40625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1099x1100-bottom-server": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 186.828125,
+      "height": 774.40625,
+      "right": 204.828125,
+      "bottom": 846.40625
+    },
+    "row": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 308.390625,
+      "right": 842.21875,
+      "bottom": 844.390625
+    },
+    "info": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 190,
+      "right": 842.21875,
+      "bottom": 726
+    },
+    "details": {
+      "x": 212.828125,
+      "y": 734,
+      "width": 629.390625,
+      "height": 110.390625,
+      "right": 842.21875,
+      "bottom": 844.390625
+    },
+    "map": {
+      "x": 212.828125,
+      "y": 72,
+      "width": 629.390625,
+      "height": 456,
+      "right": 842.21875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 221.828125,
+      "y": 120,
+      "width": 611.390625,
+      "height": 380,
+      "right": 833.21875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 275.515625,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 299.515625,
+      "bottom": 154
+    },
+    "items": {
+      "x": 850.21875,
+      "y": 72,
+      "width": 230.78125,
+      "height": 774.40625,
+      "right": 1081,
+      "bottom": 846.40625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1099x1100-bottom-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 186.828125,
+      "height": 774.40625,
+      "right": 204.828125,
+      "bottom": 846.40625
+    },
+    "row": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 308.390625,
+      "right": 842.21875,
+      "bottom": 844.390625
+    },
+    "info": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 190,
+      "right": 842.21875,
+      "bottom": 726
+    },
+    "details": {
+      "x": 212.828125,
+      "y": 734,
+      "width": 629.390625,
+      "height": 110.390625,
+      "right": 842.21875,
+      "bottom": 844.390625
+    },
+    "map": {
+      "x": 212.828125,
+      "y": 72,
+      "width": 629.390625,
+      "height": 456,
+      "right": 842.21875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 221.828125,
+      "y": 120,
+      "width": 611.390625,
+      "height": 380,
+      "right": 833.21875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 275.515625,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 299.515625,
+      "bottom": 154
+    },
+    "items": {
+      "x": 850.21875,
+      "y": 72,
+      "width": 230.78125,
+      "height": 774.40625,
+      "right": 1081,
+      "bottom": 846.40625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1099x1100": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 186.828125,
+      "height": 779.03125,
+      "right": 204.828125,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 315.03125,
+      "right": 842.21875,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 196.640625,
+      "right": 842.21875,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 212.828125,
+      "y": 740.640625,
+      "width": 629.390625,
+      "height": 110.390625,
+      "right": 842.21875,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 212.828125,
+      "y": 72,
+      "width": 629.390625,
+      "height": 456,
+      "right": 842.21875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 221.828125,
+      "y": 120,
+      "width": 611.390625,
+      "height": 380,
+      "right": 833.21875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 275.515625,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 299.515625,
+      "bottom": 154
+    },
+    "items": {
+      "x": 850.21875,
+      "y": 72,
+      "width": 230.78125,
+      "height": 774.40625,
+      "right": 1081,
+      "bottom": 846.40625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1099x1100-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 186.828125,
+      "height": 731.640625,
+      "right": 204.828125,
+      "bottom": 803.640625
+    },
+    "row": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 267.640625,
+      "right": 842.21875,
+      "bottom": 803.640625
+    },
+    "info": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 196.640625,
+      "right": 842.21875,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 212.828125,
+      "y": 740.640625,
+      "width": 629.390625,
+      "height": 63,
+      "right": 842.21875,
+      "bottom": 803.640625
+    },
+    "map": {
+      "x": 212.828125,
+      "y": 72,
+      "width": 629.390625,
+      "height": 456,
+      "right": 842.21875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 221.828125,
+      "y": 120,
+      "width": 611.390625,
+      "height": 380,
+      "right": 833.21875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 275.515625,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 299.515625,
+      "bottom": 154
+    },
+    "items": {
+      "x": 850.21875,
+      "y": 72,
+      "width": 230.78125,
+      "height": 168.640625,
+      "right": 1081,
+      "bottom": 240.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1099x1100-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 186.828125,
+      "height": 731.640625,
+      "right": 204.828125,
+      "bottom": 803.640625
+    },
+    "row": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 267.640625,
+      "right": 842.21875,
+      "bottom": 803.640625
+    },
+    "info": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 196.640625,
+      "right": 842.21875,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 212.828125,
+      "y": 740.640625,
+      "width": 629.390625,
+      "height": 63,
+      "right": 842.21875,
+      "bottom": 803.640625
+    },
+    "map": {
+      "x": 212.828125,
+      "y": 72,
+      "width": 629.390625,
+      "height": 456,
+      "right": 842.21875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 221.828125,
+      "y": 120,
+      "width": 611.390625,
+      "height": 380,
+      "right": 833.21875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 275.515625,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 299.515625,
+      "bottom": 154
+    },
+    "items": {
+      "x": 850.21875,
+      "y": 72,
+      "width": 230.78125,
+      "height": 139.640625,
+      "right": 1081,
+      "bottom": 211.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1099x1100-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 186.828125,
+      "height": 779.03125,
+      "right": 204.828125,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 315.03125,
+      "right": 842.21875,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 212.828125,
+      "y": 536,
+      "width": 629.390625,
+      "height": 196.640625,
+      "right": 842.21875,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 212.828125,
+      "y": 740.640625,
+      "width": 629.390625,
+      "height": 110.390625,
+      "right": 842.21875,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 212.828125,
+      "y": 72,
+      "width": 629.390625,
+      "height": 456,
+      "right": 842.21875,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 221.828125,
+      "y": 120,
+      "width": 611.390625,
+      "height": 380,
+      "right": 833.21875,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 275.515625,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 299.515625,
+      "bottom": 154
+    },
+    "items": {
+      "x": 850.21875,
+      "y": 72,
+      "width": 230.78125,
+      "height": 774.40625,
+      "right": 1081,
+      "bottom": 846.40625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1024x1100-bottom-information": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 174.078125,
+      "height": 779.03125,
+      "right": 192.078125,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 315.03125,
+      "right": 778,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 196.640625,
+      "right": 778,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 200.078125,
+      "y": 740.640625,
+      "width": 577.921875,
+      "height": 110.390625,
+      "right": 778,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 200.078125,
+      "y": 72,
+      "width": 577.921875,
+      "height": 456,
+      "right": 778,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 209.078125,
+      "y": 120,
+      "width": 559.921875,
+      "height": 380,
+      "right": 769,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 237.03125,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 261.03125,
+      "bottom": 154
+    },
+    "items": {
+      "x": 786,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 1006,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1024x1100-bottom-server": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 174.078125,
+      "height": 772.390625,
+      "right": 192.078125,
+      "bottom": 844.390625
+    },
+    "row": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 308.390625,
+      "right": 778,
+      "bottom": 844.390625
+    },
+    "info": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 190,
+      "right": 778,
+      "bottom": 726
+    },
+    "details": {
+      "x": 200.078125,
+      "y": 734,
+      "width": 577.921875,
+      "height": 110.390625,
+      "right": 778,
+      "bottom": 844.390625
+    },
+    "map": {
+      "x": 200.078125,
+      "y": 72,
+      "width": 577.921875,
+      "height": 456,
+      "right": 778,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 209.078125,
+      "y": 120,
+      "width": 559.921875,
+      "height": 380,
+      "right": 769,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 237.03125,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 261.03125,
+      "bottom": 154
+    },
+    "items": {
+      "x": 786,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 1006,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1024x1100-bottom-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 174.078125,
+      "height": 772.390625,
+      "right": 192.078125,
+      "bottom": 844.390625
+    },
+    "row": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 308.390625,
+      "right": 778,
+      "bottom": 844.390625
+    },
+    "info": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 190,
+      "right": 778,
+      "bottom": 726
+    },
+    "details": {
+      "x": 200.078125,
+      "y": 734,
+      "width": 577.921875,
+      "height": 110.390625,
+      "right": 778,
+      "bottom": 844.390625
+    },
+    "map": {
+      "x": 200.078125,
+      "y": 72,
+      "width": 577.921875,
+      "height": 456,
+      "right": 778,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 209.078125,
+      "y": 120,
+      "width": 559.921875,
+      "height": 380,
+      "right": 769,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 237.03125,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 261.03125,
+      "bottom": 154
+    },
+    "items": {
+      "x": 786,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 1006,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1024x1100": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 174.078125,
+      "height": 779.03125,
+      "right": 192.078125,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 315.03125,
+      "right": 778,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 196.640625,
+      "right": 778,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 200.078125,
+      "y": 740.640625,
+      "width": 577.921875,
+      "height": 110.390625,
+      "right": 778,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 200.078125,
+      "y": 72,
+      "width": 577.921875,
+      "height": 456,
+      "right": 778,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 209.078125,
+      "y": 120,
+      "width": 559.921875,
+      "height": 380,
+      "right": 769,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 237.03125,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 261.03125,
+      "bottom": 154
+    },
+    "items": {
+      "x": 786,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 1006,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1024x1100-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 174.078125,
+      "height": 731.640625,
+      "right": 192.078125,
+      "bottom": 803.640625
+    },
+    "row": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 267.640625,
+      "right": 778,
+      "bottom": 803.640625
+    },
+    "info": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 196.640625,
+      "right": 778,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 200.078125,
+      "y": 740.640625,
+      "width": 577.921875,
+      "height": 63,
+      "right": 778,
+      "bottom": 803.640625
+    },
+    "map": {
+      "x": 200.078125,
+      "y": 72,
+      "width": 577.921875,
+      "height": 456,
+      "right": 778,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 209.078125,
+      "y": 120,
+      "width": 559.921875,
+      "height": 380,
+      "right": 769,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 237.03125,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 261.03125,
+      "bottom": 154
+    },
+    "items": {
+      "x": 786,
+      "y": 72,
+      "width": 220,
+      "height": 168.640625,
+      "right": 1006,
+      "bottom": 240.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1024x1100-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 174.078125,
+      "height": 731.640625,
+      "right": 192.078125,
+      "bottom": 803.640625
+    },
+    "row": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 267.640625,
+      "right": 778,
+      "bottom": 803.640625
+    },
+    "info": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 196.640625,
+      "right": 778,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 200.078125,
+      "y": 740.640625,
+      "width": 577.921875,
+      "height": 63,
+      "right": 778,
+      "bottom": 803.640625
+    },
+    "map": {
+      "x": 200.078125,
+      "y": 72,
+      "width": 577.921875,
+      "height": 456,
+      "right": 778,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 209.078125,
+      "y": 120,
+      "width": 559.921875,
+      "height": 380,
+      "right": 769,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 237.03125,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 261.03125,
+      "bottom": 154
+    },
+    "items": {
+      "x": 786,
+      "y": 72,
+      "width": 220,
+      "height": 139.640625,
+      "right": 1006,
+      "bottom": 211.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "1024x1100-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 174.078125,
+      "height": 779.03125,
+      "right": 192.078125,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 315.03125,
+      "right": 778,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 200.078125,
+      "y": 536,
+      "width": 577.921875,
+      "height": 196.640625,
+      "right": 778,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 200.078125,
+      "y": 740.640625,
+      "width": 577.921875,
+      "height": 110.390625,
+      "right": 778,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 200.078125,
+      "y": 72,
+      "width": 577.921875,
+      "height": 456,
+      "right": 778,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 209.078125,
+      "y": 120,
+      "width": 559.921875,
+      "height": 380,
+      "right": 769,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 237.03125,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 261.03125,
+      "bottom": 154
+    },
+    "items": {
+      "x": 786,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 1006,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "800x1100-bottom-information": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 779.03125,
+      "right": 186,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 315.03125,
+      "right": 554,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 196.640625,
+      "right": 554,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 194,
+      "y": 740.640625,
+      "width": 360,
+      "height": 110.390625,
+      "right": 554,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 360,
+      "height": 456,
+      "right": 554,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 120,
+      "width": 342,
+      "height": 380,
+      "right": 545,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 122,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 146,
+      "bottom": 154
+    },
+    "items": {
+      "x": 562,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 782,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "800x1100-bottom-server": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 772.390625,
+      "right": 186,
+      "bottom": 844.390625
+    },
+    "row": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 308.390625,
+      "right": 554,
+      "bottom": 844.390625
+    },
+    "info": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 190,
+      "right": 554,
+      "bottom": 726
+    },
+    "details": {
+      "x": 194,
+      "y": 734,
+      "width": 360,
+      "height": 110.390625,
+      "right": 554,
+      "bottom": 844.390625
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 360,
+      "height": 456,
+      "right": 554,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 120,
+      "width": 342,
+      "height": 380,
+      "right": 545,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 122,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 146,
+      "bottom": 154
+    },
+    "items": {
+      "x": 562,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 782,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "800x1100-bottom-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 772.390625,
+      "right": 186,
+      "bottom": 844.390625
+    },
+    "row": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 308.390625,
+      "right": 554,
+      "bottom": 844.390625
+    },
+    "info": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 190,
+      "right": 554,
+      "bottom": 726
+    },
+    "details": {
+      "x": 194,
+      "y": 734,
+      "width": 360,
+      "height": 110.390625,
+      "right": 554,
+      "bottom": 844.390625
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 360,
+      "height": 456,
+      "right": 554,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 120,
+      "width": 342,
+      "height": 380,
+      "right": 545,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 122,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 146,
+      "bottom": 154
+    },
+    "items": {
+      "x": 562,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 782,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "800x1100": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 779.03125,
+      "right": 186,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 315.03125,
+      "right": 554,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 196.640625,
+      "right": 554,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 194,
+      "y": 740.640625,
+      "width": 360,
+      "height": 110.390625,
+      "right": 554,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 360,
+      "height": 456,
+      "right": 554,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 120,
+      "width": 342,
+      "height": 380,
+      "right": 545,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 122,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 146,
+      "bottom": 154
+    },
+    "items": {
+      "x": 562,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 782,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "800x1100-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 731.640625,
+      "right": 186,
+      "bottom": 803.640625
+    },
+    "row": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 267.640625,
+      "right": 554,
+      "bottom": 803.640625
+    },
+    "info": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 196.640625,
+      "right": 554,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 194,
+      "y": 740.640625,
+      "width": 360,
+      "height": 63,
+      "right": 554,
+      "bottom": 803.640625
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 360,
+      "height": 456,
+      "right": 554,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 120,
+      "width": 342,
+      "height": 380,
+      "right": 545,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 122,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 146,
+      "bottom": 154
+    },
+    "items": {
+      "x": 562,
+      "y": 72,
+      "width": 220,
+      "height": 168.640625,
+      "right": 782,
+      "bottom": 240.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "800x1100-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 731.640625,
+      "right": 186,
+      "bottom": 803.640625
+    },
+    "row": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 267.640625,
+      "right": 554,
+      "bottom": 803.640625
+    },
+    "info": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 196.640625,
+      "right": 554,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 194,
+      "y": 740.640625,
+      "width": 360,
+      "height": 63,
+      "right": 554,
+      "bottom": 803.640625
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 360,
+      "height": 456,
+      "right": 554,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 120,
+      "width": 342,
+      "height": 380,
+      "right": 545,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 122,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 146,
+      "bottom": 154
+    },
+    "items": {
+      "x": 562,
+      "y": 72,
+      "width": 220,
+      "height": 139.640625,
+      "right": 782,
+      "bottom": 211.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "800x1100-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 779.03125,
+      "right": 186,
+      "bottom": 851.03125
+    },
+    "row": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 315.03125,
+      "right": 554,
+      "bottom": 851.03125
+    },
+    "info": {
+      "x": 194,
+      "y": 536,
+      "width": 360,
+      "height": 196.640625,
+      "right": 554,
+      "bottom": 732.640625
+    },
+    "details": {
+      "x": 194,
+      "y": 740.640625,
+      "width": 360,
+      "height": 110.390625,
+      "right": 554,
+      "bottom": 851.03125
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 360,
+      "height": 456,
+      "right": 554,
+      "bottom": 528
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 120,
+      "width": 342,
+      "height": 380,
+      "right": 545,
+      "bottom": 500
+    },
+    "mapCell": {
+      "x": 122,
+      "y": 130,
+      "width": 24,
+      "height": 24,
+      "right": 146,
+      "bottom": 154
+    },
+    "items": {
+      "x": 562,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 782,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "721x1100-bottom-information": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 799.03125,
+      "right": 186,
+      "bottom": 871.03125
+    },
+    "row": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 315.03125,
+      "right": 475,
+      "bottom": 871.03125
+    },
+    "info": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 196.640625,
+      "right": 475,
+      "bottom": 752.640625
+    },
+    "details": {
+      "x": 194,
+      "y": 760.640625,
+      "width": 281,
+      "height": 110.390625,
+      "right": 475,
+      "bottom": 871.03125
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 281,
+      "height": 476,
+      "right": 475,
+      "bottom": 548
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 140,
+      "width": 263,
+      "height": 380,
+      "right": 466,
+      "bottom": 520
+    },
+    "mapCell": {
+      "x": 82.5,
+      "y": 150,
+      "width": 24,
+      "height": 24,
+      "right": 106.5,
+      "bottom": 174
+    },
+    "items": {
+      "x": 483,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 703,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "721x1100-bottom-server": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 792.390625,
+      "right": 186,
+      "bottom": 864.390625
+    },
+    "row": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 308.390625,
+      "right": 475,
+      "bottom": 864.390625
+    },
+    "info": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 190,
+      "right": 475,
+      "bottom": 746
+    },
+    "details": {
+      "x": 194,
+      "y": 754,
+      "width": 281,
+      "height": 110.390625,
+      "right": 475,
+      "bottom": 864.390625
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 281,
+      "height": 476,
+      "right": 475,
+      "bottom": 548
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 140,
+      "width": 263,
+      "height": 380,
+      "right": 466,
+      "bottom": 520
+    },
+    "mapCell": {
+      "x": 82.5,
+      "y": 150,
+      "width": 24,
+      "height": 24,
+      "right": 106.5,
+      "bottom": 174
+    },
+    "items": {
+      "x": 483,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 703,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "721x1100-bottom-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 792.390625,
+      "right": 186,
+      "bottom": 864.390625
+    },
+    "row": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 308.390625,
+      "right": 475,
+      "bottom": 864.390625
+    },
+    "info": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 190,
+      "right": 475,
+      "bottom": 746
+    },
+    "details": {
+      "x": 194,
+      "y": 754,
+      "width": 281,
+      "height": 110.390625,
+      "right": 475,
+      "bottom": 864.390625
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 281,
+      "height": 476,
+      "right": 475,
+      "bottom": 548
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 140,
+      "width": 263,
+      "height": 380,
+      "right": 466,
+      "bottom": 520
+    },
+    "mapCell": {
+      "x": 82.5,
+      "y": 150,
+      "width": 24,
+      "height": 24,
+      "right": 106.5,
+      "bottom": 174
+    },
+    "items": {
+      "x": 483,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 703,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "721x1100": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 799.03125,
+      "right": 186,
+      "bottom": 871.03125
+    },
+    "row": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 315.03125,
+      "right": 475,
+      "bottom": 871.03125
+    },
+    "info": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 196.640625,
+      "right": 475,
+      "bottom": 752.640625
+    },
+    "details": {
+      "x": 194,
+      "y": 760.640625,
+      "width": 281,
+      "height": 110.390625,
+      "right": 475,
+      "bottom": 871.03125
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 281,
+      "height": 476,
+      "right": 475,
+      "bottom": 548
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 140,
+      "width": 263,
+      "height": 380,
+      "right": 466,
+      "bottom": 520
+    },
+    "mapCell": {
+      "x": 82.5,
+      "y": 150,
+      "width": 24,
+      "height": 24,
+      "right": 106.5,
+      "bottom": 174
+    },
+    "items": {
+      "x": 483,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 703,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "721x1100-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 751.640625,
+      "right": 186,
+      "bottom": 823.640625
+    },
+    "row": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 267.640625,
+      "right": 475,
+      "bottom": 823.640625
+    },
+    "info": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 196.640625,
+      "right": 475,
+      "bottom": 752.640625
+    },
+    "details": {
+      "x": 194,
+      "y": 760.640625,
+      "width": 281,
+      "height": 63,
+      "right": 475,
+      "bottom": 823.640625
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 281,
+      "height": 476,
+      "right": 475,
+      "bottom": 548
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 140,
+      "width": 263,
+      "height": 380,
+      "right": 466,
+      "bottom": 520
+    },
+    "mapCell": {
+      "x": 82.5,
+      "y": 150,
+      "width": 24,
+      "height": 24,
+      "right": 106.5,
+      "bottom": 174
+    },
+    "items": {
+      "x": 483,
+      "y": 72,
+      "width": 220,
+      "height": 168.640625,
+      "right": 703,
+      "bottom": 240.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "721x1100-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 751.640625,
+      "right": 186,
+      "bottom": 823.640625
+    },
+    "row": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 267.640625,
+      "right": 475,
+      "bottom": 823.640625
+    },
+    "info": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 196.640625,
+      "right": 475,
+      "bottom": 752.640625
+    },
+    "details": {
+      "x": 194,
+      "y": 760.640625,
+      "width": 281,
+      "height": 63,
+      "right": 475,
+      "bottom": 823.640625
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 281,
+      "height": 476,
+      "right": 475,
+      "bottom": 548
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 140,
+      "width": 263,
+      "height": 380,
+      "right": 466,
+      "bottom": 520
+    },
+    "mapCell": {
+      "x": 82.5,
+      "y": 150,
+      "width": 24,
+      "height": 24,
+      "right": 106.5,
+      "bottom": 174
+    },
+    "items": {
+      "x": 483,
+      "y": 72,
+      "width": 220,
+      "height": 139.640625,
+      "right": 703,
+      "bottom": 211.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "721x1100-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 168,
+      "height": 799.03125,
+      "right": 186,
+      "bottom": 871.03125
+    },
+    "row": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 315.03125,
+      "right": 475,
+      "bottom": 871.03125
+    },
+    "info": {
+      "x": 194,
+      "y": 556,
+      "width": 281,
+      "height": 196.640625,
+      "right": 475,
+      "bottom": 752.640625
+    },
+    "details": {
+      "x": 194,
+      "y": 760.640625,
+      "width": 281,
+      "height": 110.390625,
+      "right": 475,
+      "bottom": 871.03125
+    },
+    "map": {
+      "x": 194,
+      "y": 72,
+      "width": 281,
+      "height": 476,
+      "right": 475,
+      "bottom": 548
+    },
+    "mapGrid": {
+      "x": 203,
+      "y": 140,
+      "width": 263,
+      "height": 380,
+      "right": 466,
+      "bottom": 520
+    },
+    "mapCell": {
+      "x": 82.5,
+      "y": 150,
+      "width": 24,
+      "height": 24,
+      "right": 106.5,
+      "bottom": 174
+    },
+    "items": {
+      "x": 483,
+      "y": 72,
+      "width": 220,
+      "height": 763.625,
+      "right": 703,
+      "bottom": 835.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "720x1100-bottom-information": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2305.59375,
+      "width": 696,
+      "height": 316.1875,
+      "right": 708,
+      "bottom": 2621.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 2305.59375,
+      "width": 696,
+      "height": 197.796875,
+      "right": 708,
+      "bottom": 2503.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2511.390625,
+      "width": 696,
+      "height": 110.390625,
+      "right": 708,
+      "bottom": 2621.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 486,
+      "right": 708,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 678,
+      "height": 410,
+      "right": 699,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 87,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 113,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 696,
+      "height": 1240.796875,
+      "right": 708,
+      "bottom": 2297.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "720x1100-bottom-server": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2305.59375,
+      "width": 696,
+      "height": 308.390625,
+      "right": 708,
+      "bottom": 2613.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 2305.59375,
+      "width": 696,
+      "height": 190,
+      "right": 708,
+      "bottom": 2495.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2503.59375,
+      "width": 696,
+      "height": 110.390625,
+      "right": 708,
+      "bottom": 2613.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 486,
+      "right": 708,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 678,
+      "height": 410,
+      "right": 699,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 87,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 113,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 696,
+      "height": 1240.796875,
+      "right": 708,
+      "bottom": 2297.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "720x1100-bottom-chat": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2305.59375,
+      "width": 696,
+      "height": 308.390625,
+      "right": 708,
+      "bottom": 2613.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 2305.59375,
+      "width": 696,
+      "height": 190,
+      "right": 708,
+      "bottom": 2495.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2503.59375,
+      "width": 696,
+      "height": 110.390625,
+      "right": 708,
+      "bottom": 2613.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 486,
+      "right": 708,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 678,
+      "height": 410,
+      "right": 699,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 87,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 113,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 696,
+      "height": 1240.796875,
+      "right": 708,
+      "bottom": 2297.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "720x1100": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2305.59375,
+      "width": 696,
+      "height": 316.1875,
+      "right": 708,
+      "bottom": 2621.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 2305.59375,
+      "width": 696,
+      "height": 197.796875,
+      "right": 708,
+      "bottom": 2503.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2511.390625,
+      "width": 696,
+      "height": 110.390625,
+      "right": 708,
+      "bottom": 2621.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 486,
+      "right": 708,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 678,
+      "height": 410,
+      "right": 699,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 87,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 113,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 696,
+      "height": 1240.796875,
+      "right": 708,
+      "bottom": 2297.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "720x1100-right-skills": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1234.59375,
+      "width": 696,
+      "height": 268.796875,
+      "right": 708,
+      "bottom": 1503.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1234.59375,
+      "width": 696,
+      "height": 197.796875,
+      "right": 708,
+      "bottom": 1432.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1440.390625,
+      "width": 696,
+      "height": 63,
+      "right": 708,
+      "bottom": 1503.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 486,
+      "right": 708,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 678,
+      "height": 410,
+      "right": 699,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 87,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 113,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 696,
+      "height": 169.796875,
+      "right": 708,
+      "bottom": 1226.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "720x1100-right-passives": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1205.59375,
+      "width": 696,
+      "height": 268.796875,
+      "right": 708,
+      "bottom": 1474.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1205.59375,
+      "width": 696,
+      "height": 197.796875,
+      "right": 708,
+      "bottom": 1403.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1411.390625,
+      "width": 696,
+      "height": 63,
+      "right": 708,
+      "bottom": 1474.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 486,
+      "right": 708,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 678,
+      "height": 410,
+      "right": 699,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 87,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 113,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 696,
+      "height": 140.796875,
+      "right": 708,
+      "bottom": 1197.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "720x1100-right-items": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2305.59375,
+      "width": 696,
+      "height": 316.1875,
+      "right": 708,
+      "bottom": 2621.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 2305.59375,
+      "width": 696,
+      "height": 197.796875,
+      "right": 708,
+      "bottom": 2503.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2511.390625,
+      "width": 696,
+      "height": 110.390625,
+      "right": 708,
+      "bottom": 2621.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 486,
+      "right": 708,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 678,
+      "height": 410,
+      "right": 699,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 87,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 113,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 696,
+      "height": 1240.796875,
+      "right": 708,
+      "bottom": 2297.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "719x1100-bottom-information": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 695,
+      "height": 446.796875,
+      "right": 707,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2304.65625,
+      "width": 695,
+      "height": 316.1875,
+      "right": 707,
+      "bottom": 2620.84375
+    },
+    "info": {
+      "x": 12,
+      "y": 2304.65625,
+      "width": 695,
+      "height": 197.796875,
+      "right": 707,
+      "bottom": 2502.453125
+    },
+    "details": {
+      "x": 12,
+      "y": 2510.453125,
+      "width": 695,
+      "height": 110.390625,
+      "right": 707,
+      "bottom": 2620.84375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 695,
+      "height": 486,
+      "right": 707,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 677,
+      "height": 410,
+      "right": 698,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 86.5,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 112.5,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 695,
+      "height": 1239.859375,
+      "right": 707,
+      "bottom": 2296.65625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "719x1100-bottom-server": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 695,
+      "height": 446.796875,
+      "right": 707,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2304.65625,
+      "width": 695,
+      "height": 308.390625,
+      "right": 707,
+      "bottom": 2613.046875
+    },
+    "info": {
+      "x": 12,
+      "y": 2304.65625,
+      "width": 695,
+      "height": 190,
+      "right": 707,
+      "bottom": 2494.65625
+    },
+    "details": {
+      "x": 12,
+      "y": 2502.65625,
+      "width": 695,
+      "height": 110.390625,
+      "right": 707,
+      "bottom": 2613.046875
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 695,
+      "height": 486,
+      "right": 707,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 677,
+      "height": 410,
+      "right": 698,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 86.5,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 112.5,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 695,
+      "height": 1239.859375,
+      "right": 707,
+      "bottom": 2296.65625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "719x1100-bottom-chat": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 695,
+      "height": 446.796875,
+      "right": 707,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2304.65625,
+      "width": 695,
+      "height": 308.390625,
+      "right": 707,
+      "bottom": 2613.046875
+    },
+    "info": {
+      "x": 12,
+      "y": 2304.65625,
+      "width": 695,
+      "height": 190,
+      "right": 707,
+      "bottom": 2494.65625
+    },
+    "details": {
+      "x": 12,
+      "y": 2502.65625,
+      "width": 695,
+      "height": 110.390625,
+      "right": 707,
+      "bottom": 2613.046875
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 695,
+      "height": 486,
+      "right": 707,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 677,
+      "height": 410,
+      "right": 698,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 86.5,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 112.5,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 695,
+      "height": 1239.859375,
+      "right": 707,
+      "bottom": 2296.65625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "719x1100": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 695,
+      "height": 446.796875,
+      "right": 707,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2304.65625,
+      "width": 695,
+      "height": 316.1875,
+      "right": 707,
+      "bottom": 2620.84375
+    },
+    "info": {
+      "x": 12,
+      "y": 2304.65625,
+      "width": 695,
+      "height": 197.796875,
+      "right": 707,
+      "bottom": 2502.453125
+    },
+    "details": {
+      "x": 12,
+      "y": 2510.453125,
+      "width": 695,
+      "height": 110.390625,
+      "right": 707,
+      "bottom": 2620.84375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 695,
+      "height": 486,
+      "right": 707,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 677,
+      "height": 410,
+      "right": 698,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 86.5,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 112.5,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 695,
+      "height": 1239.859375,
+      "right": 707,
+      "bottom": 2296.65625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "719x1100-right-skills": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 695,
+      "height": 446.796875,
+      "right": 707,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1234.59375,
+      "width": 695,
+      "height": 268.796875,
+      "right": 707,
+      "bottom": 1503.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1234.59375,
+      "width": 695,
+      "height": 197.796875,
+      "right": 707,
+      "bottom": 1432.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1440.390625,
+      "width": 695,
+      "height": 63,
+      "right": 707,
+      "bottom": 1503.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 695,
+      "height": 486,
+      "right": 707,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 677,
+      "height": 410,
+      "right": 698,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 86.5,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 112.5,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 695,
+      "height": 169.796875,
+      "right": 707,
+      "bottom": 1226.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "719x1100-right-passives": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 695,
+      "height": 446.796875,
+      "right": 707,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1205.59375,
+      "width": 695,
+      "height": 268.796875,
+      "right": 707,
+      "bottom": 1474.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1205.59375,
+      "width": 695,
+      "height": 197.796875,
+      "right": 707,
+      "bottom": 1403.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1411.390625,
+      "width": 695,
+      "height": 63,
+      "right": 707,
+      "bottom": 1474.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 695,
+      "height": 486,
+      "right": 707,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 677,
+      "height": 410,
+      "right": 698,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 86.5,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 112.5,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 695,
+      "height": 140.796875,
+      "right": 707,
+      "bottom": 1197.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "719x1100-right-items": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 695,
+      "height": 446.796875,
+      "right": 707,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2304.65625,
+      "width": 695,
+      "height": 316.1875,
+      "right": 707,
+      "bottom": 2620.84375
+    },
+    "info": {
+      "x": 12,
+      "y": 2304.65625,
+      "width": 695,
+      "height": 197.796875,
+      "right": 707,
+      "bottom": 2502.453125
+    },
+    "details": {
+      "x": 12,
+      "y": 2510.453125,
+      "width": 695,
+      "height": 110.390625,
+      "right": 707,
+      "bottom": 2620.84375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 695,
+      "height": 486,
+      "right": 707,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 677,
+      "height": 410,
+      "right": 698,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": 86.5,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": 112.5,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 695,
+      "height": 1239.859375,
+      "right": 707,
+      "bottom": 2296.65625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "390x1100-bottom-information": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1975.59375,
+      "width": 366,
+      "height": 316.1875,
+      "right": 378,
+      "bottom": 2291.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 1975.59375,
+      "width": 366,
+      "height": 197.796875,
+      "right": 378,
+      "bottom": 2173.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2181.390625,
+      "width": 366,
+      "height": 110.390625,
+      "right": 378,
+      "bottom": 2291.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 486,
+      "right": 378,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 348,
+      "height": 410,
+      "right": 369,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -78,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -52,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 366,
+      "height": 910.796875,
+      "right": 378,
+      "bottom": 1967.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "390x1100-bottom-server": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1975.59375,
+      "width": 366,
+      "height": 308.390625,
+      "right": 378,
+      "bottom": 2283.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 1975.59375,
+      "width": 366,
+      "height": 190,
+      "right": 378,
+      "bottom": 2165.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2173.59375,
+      "width": 366,
+      "height": 110.390625,
+      "right": 378,
+      "bottom": 2283.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 486,
+      "right": 378,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 348,
+      "height": 410,
+      "right": 369,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -78,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -52,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 366,
+      "height": 910.796875,
+      "right": 378,
+      "bottom": 1967.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "390x1100-bottom-chat": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1975.59375,
+      "width": 366,
+      "height": 308.390625,
+      "right": 378,
+      "bottom": 2283.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 1975.59375,
+      "width": 366,
+      "height": 190,
+      "right": 378,
+      "bottom": 2165.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2173.59375,
+      "width": 366,
+      "height": 110.390625,
+      "right": 378,
+      "bottom": 2283.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 486,
+      "right": 378,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 348,
+      "height": 410,
+      "right": 369,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -78,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -52,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 366,
+      "height": 910.796875,
+      "right": 378,
+      "bottom": 1967.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "390x1100": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1975.59375,
+      "width": 366,
+      "height": 316.1875,
+      "right": 378,
+      "bottom": 2291.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 1975.59375,
+      "width": 366,
+      "height": 197.796875,
+      "right": 378,
+      "bottom": 2173.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2181.390625,
+      "width": 366,
+      "height": 110.390625,
+      "right": 378,
+      "bottom": 2291.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 486,
+      "right": 378,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 348,
+      "height": 410,
+      "right": 369,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -78,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -52,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 366,
+      "height": 910.796875,
+      "right": 378,
+      "bottom": 1967.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "390x1100-right-skills": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1234.59375,
+      "width": 366,
+      "height": 268.796875,
+      "right": 378,
+      "bottom": 1503.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1234.59375,
+      "width": 366,
+      "height": 197.796875,
+      "right": 378,
+      "bottom": 1432.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1440.390625,
+      "width": 366,
+      "height": 63,
+      "right": 378,
+      "bottom": 1503.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 486,
+      "right": 378,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 348,
+      "height": 410,
+      "right": 369,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -78,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -52,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 366,
+      "height": 169.796875,
+      "right": 378,
+      "bottom": 1226.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "390x1100-right-passives": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1205.59375,
+      "width": 366,
+      "height": 268.796875,
+      "right": 378,
+      "bottom": 1474.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1205.59375,
+      "width": 366,
+      "height": 197.796875,
+      "right": 378,
+      "bottom": 1403.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1411.390625,
+      "width": 366,
+      "height": 63,
+      "right": 378,
+      "bottom": 1474.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 486,
+      "right": 378,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 348,
+      "height": 410,
+      "right": 369,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -78,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -52,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 366,
+      "height": 140.796875,
+      "right": 378,
+      "bottom": 1197.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "390x1100-right-items": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1975.59375,
+      "width": 366,
+      "height": 316.1875,
+      "right": 378,
+      "bottom": 2291.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 1975.59375,
+      "width": 366,
+      "height": 197.796875,
+      "right": 378,
+      "bottom": 2173.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2181.390625,
+      "width": 366,
+      "height": 110.390625,
+      "right": 378,
+      "bottom": 2291.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 486,
+      "right": 378,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 348,
+      "height": 410,
+      "right": 369,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -78,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -52,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 366,
+      "height": 910.796875,
+      "right": 378,
+      "bottom": 1967.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "320x1100-bottom-information": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1905.59375,
+      "width": 296,
+      "height": 316.1875,
+      "right": 308,
+      "bottom": 2221.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 1905.59375,
+      "width": 296,
+      "height": 197.796875,
+      "right": 308,
+      "bottom": 2103.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2111.390625,
+      "width": 296,
+      "height": 110.390625,
+      "right": 308,
+      "bottom": 2221.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 486,
+      "right": 308,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 278,
+      "height": 410,
+      "right": 299,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -113,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -87,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 296,
+      "height": 840.796875,
+      "right": 308,
+      "bottom": 1897.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "320x1100-bottom-server": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1905.59375,
+      "width": 296,
+      "height": 308.390625,
+      "right": 308,
+      "bottom": 2213.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 1905.59375,
+      "width": 296,
+      "height": 190,
+      "right": 308,
+      "bottom": 2095.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2103.59375,
+      "width": 296,
+      "height": 110.390625,
+      "right": 308,
+      "bottom": 2213.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 486,
+      "right": 308,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 278,
+      "height": 410,
+      "right": 299,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -113,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -87,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 296,
+      "height": 840.796875,
+      "right": 308,
+      "bottom": 1897.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "320x1100-bottom-chat": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1905.59375,
+      "width": 296,
+      "height": 308.390625,
+      "right": 308,
+      "bottom": 2213.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 1905.59375,
+      "width": 296,
+      "height": 190,
+      "right": 308,
+      "bottom": 2095.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2103.59375,
+      "width": 296,
+      "height": 110.390625,
+      "right": 308,
+      "bottom": 2213.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 486,
+      "right": 308,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 278,
+      "height": 410,
+      "right": 299,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -113,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -87,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 296,
+      "height": 840.796875,
+      "right": 308,
+      "bottom": 1897.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "320x1100": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1905.59375,
+      "width": 296,
+      "height": 316.1875,
+      "right": 308,
+      "bottom": 2221.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 1905.59375,
+      "width": 296,
+      "height": 197.796875,
+      "right": 308,
+      "bottom": 2103.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2111.390625,
+      "width": 296,
+      "height": 110.390625,
+      "right": 308,
+      "bottom": 2221.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 486,
+      "right": 308,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 278,
+      "height": 410,
+      "right": 299,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -113,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -87,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 296,
+      "height": 840.796875,
+      "right": 308,
+      "bottom": 1897.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "320x1100-right-skills": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1234.59375,
+      "width": 296,
+      "height": 268.796875,
+      "right": 308,
+      "bottom": 1503.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1234.59375,
+      "width": 296,
+      "height": 197.796875,
+      "right": 308,
+      "bottom": 1432.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1440.390625,
+      "width": 296,
+      "height": 63,
+      "right": 308,
+      "bottom": 1503.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 486,
+      "right": 308,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 278,
+      "height": 410,
+      "right": 299,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -113,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -87,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 296,
+      "height": 169.796875,
+      "right": 308,
+      "bottom": 1226.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "320x1100-right-passives": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1205.59375,
+      "width": 296,
+      "height": 268.796875,
+      "right": 308,
+      "bottom": 1474.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1205.59375,
+      "width": 296,
+      "height": 197.796875,
+      "right": 308,
+      "bottom": 1403.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1411.390625,
+      "width": 296,
+      "height": 63,
+      "right": 308,
+      "bottom": 1474.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 486,
+      "right": 308,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 278,
+      "height": 410,
+      "right": 299,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -113,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -87,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 296,
+      "height": 140.796875,
+      "right": 308,
+      "bottom": 1197.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "320x1100-right-items": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1905.59375,
+      "width": 296,
+      "height": 316.1875,
+      "right": 308,
+      "bottom": 2221.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 1905.59375,
+      "width": 296,
+      "height": 197.796875,
+      "right": 308,
+      "bottom": 2103.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2111.390625,
+      "width": 296,
+      "height": 110.390625,
+      "right": 308,
+      "bottom": 2221.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 486,
+      "right": 308,
+      "bottom": 1048.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 610.796875,
+      "width": 278,
+      "height": 410,
+      "right": 299,
+      "bottom": 1020.796875
+    },
+    "mapCell": {
+      "x": -113,
+      "y": 620.796875,
+      "width": 26,
+      "height": 26,
+      "right": -87,
+      "bottom": 646.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1056.796875,
+      "width": 296,
+      "height": 840.796875,
+      "right": 308,
+      "bottom": 1897.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1440x900-combat-server-info": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 618,
+      "width": 833,
+      "height": 297.625,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 618,
+      "width": 525,
+      "height": 297.625,
+      "right": 791,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 799,
+      "y": 618,
+      "width": 300,
+      "height": 297.625,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 833,
+      "height": 538,
+      "right": 1099,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 155,
+      "width": 815,
+      "height": 205,
+      "right": 1090,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 288,
+      "y": 182.5,
+      "width": 346.6875,
+      "height": 150,
+      "right": 634.6875,
+      "bottom": 332.5
+    },
+    "items": {
+      "x": 1107,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1407,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1440x900-combat-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 618,
+      "width": 833,
+      "height": 297.625,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 618,
+      "width": 525,
+      "height": 297.625,
+      "right": 791,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 799,
+      "y": 618,
+      "width": 300,
+      "height": 297.625,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 833,
+      "height": 538,
+      "right": 1099,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 155,
+      "width": 815,
+      "height": 205,
+      "right": 1090,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 288,
+      "y": 182.5,
+      "width": 346.6875,
+      "height": 150,
+      "right": 634.6875,
+      "bottom": 332.5
+    },
+    "items": {
+      "x": 1107,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1407,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1440x900-combat-battle-info": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 618,
+      "width": 833,
+      "height": 297.625,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 618,
+      "width": 525,
+      "height": 297.625,
+      "right": 791,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 799,
+      "y": 618,
+      "width": 300,
+      "height": 297.625,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 833,
+      "height": 538,
+      "right": 1099,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 155,
+      "width": 815,
+      "height": 205,
+      "right": 1090,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 288,
+      "y": 182.5,
+      "width": 346.6875,
+      "height": 150,
+      "right": 634.6875,
+      "bottom": 332.5
+    },
+    "items": {
+      "x": 1107,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1407,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1440x900-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 742.640625,
+      "right": 258,
+      "bottom": 814.640625
+    },
+    "row": {
+      "x": 266,
+      "y": 618,
+      "width": 848,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 814.640625
+    },
+    "info": {
+      "x": 266,
+      "y": 618,
+      "width": 540,
+      "height": 196.640625,
+      "right": 806,
+      "bottom": 814.640625
+    },
+    "details": {
+      "x": 814,
+      "y": 618,
+      "width": 300,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 814.640625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 538,
+      "right": 1114,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 155,
+      "width": 830,
+      "height": 205,
+      "right": 1105,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 288,
+      "y": 182.5,
+      "width": 354.1875,
+      "height": 150,
+      "right": 642.1875,
+      "bottom": 332.5
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 742.640625,
+      "right": 1422,
+      "bottom": 814.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1440x900-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 742.640625,
+      "right": 258,
+      "bottom": 814.640625
+    },
+    "row": {
+      "x": 266,
+      "y": 618,
+      "width": 848,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 814.640625
+    },
+    "info": {
+      "x": 266,
+      "y": 618,
+      "width": 540,
+      "height": 196.640625,
+      "right": 806,
+      "bottom": 814.640625
+    },
+    "details": {
+      "x": 814,
+      "y": 618,
+      "width": 300,
+      "height": 196.640625,
+      "right": 1114,
+      "bottom": 814.640625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 848,
+      "height": 538,
+      "right": 1114,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 155,
+      "width": 830,
+      "height": 205,
+      "right": 1105,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 288,
+      "y": 182.5,
+      "width": 354.1875,
+      "height": 150,
+      "right": 642.1875,
+      "bottom": 332.5
+    },
+    "items": {
+      "x": 1122,
+      "y": 72,
+      "width": 300,
+      "height": 742.640625,
+      "right": 1422,
+      "bottom": 814.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1440x900-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 240,
+      "height": 843.625,
+      "right": 258,
+      "bottom": 915.625
+    },
+    "row": {
+      "x": 266,
+      "y": 618,
+      "width": 833,
+      "height": 297.625,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "info": {
+      "x": 266,
+      "y": 618,
+      "width": 525,
+      "height": 297.625,
+      "right": 791,
+      "bottom": 915.625
+    },
+    "details": {
+      "x": 799,
+      "y": 618,
+      "width": 300,
+      "height": 297.625,
+      "right": 1099,
+      "bottom": 915.625
+    },
+    "map": {
+      "x": 266,
+      "y": 72,
+      "width": 833,
+      "height": 538,
+      "right": 1099,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 275,
+      "y": 155,
+      "width": 815,
+      "height": 205,
+      "right": 1090,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 288,
+      "y": 182.5,
+      "width": 346.6875,
+      "height": 150,
+      "right": 634.6875,
+      "bottom": 332.5
+    },
+    "items": {
+      "x": 1107,
+      "y": 72,
+      "width": 300,
+      "height": 843.625,
+      "right": 1407,
+      "bottom": 915.625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1101x1100-combat-server-info": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 774.875,
+      "right": 205.15625,
+      "bottom": 846.875
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 630.640625,
+      "height": 228.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 391.4375,
+      "height": 228.875,
+      "right": 604.59375,
+      "bottom": 846.875
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 618,
+      "width": 231.203125,
+      "height": 228.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 538,
+      "right": 843.796875,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 155,
+      "width": 612.640625,
+      "height": 205,
+      "right": 834.796875,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235.15625,
+      "y": 184.5,
+      "width": 248.65625,
+      "height": 146,
+      "right": 483.8125,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 774.875,
+      "right": 1083,
+      "bottom": 846.875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1101x1100-combat-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 774.875,
+      "right": 205.15625,
+      "bottom": 846.875
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 630.640625,
+      "height": 228.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 391.4375,
+      "height": 228.875,
+      "right": 604.59375,
+      "bottom": 846.875
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 618,
+      "width": 231.203125,
+      "height": 228.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 538,
+      "right": 843.796875,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 155,
+      "width": 612.640625,
+      "height": 205,
+      "right": 834.796875,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235.15625,
+      "y": 184.5,
+      "width": 248.65625,
+      "height": 146,
+      "right": 483.8125,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 774.875,
+      "right": 1083,
+      "bottom": 846.875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1101x1100-combat-battle-info": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 774.875,
+      "right": 205.15625,
+      "bottom": 846.875
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 630.640625,
+      "height": 228.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 391.4375,
+      "height": 228.875,
+      "right": 604.59375,
+      "bottom": 846.875
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 618,
+      "width": 231.203125,
+      "height": 228.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 538,
+      "right": 843.796875,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 155,
+      "width": 612.640625,
+      "height": 205,
+      "right": 834.796875,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235.15625,
+      "y": 184.5,
+      "width": 248.65625,
+      "height": 146,
+      "right": 483.8125,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 774.875,
+      "right": 1083,
+      "bottom": 846.875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1101x1100-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 742.640625,
+      "right": 205.15625,
+      "bottom": 814.640625
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 630.640625,
+      "height": 196.640625,
+      "right": 843.796875,
+      "bottom": 814.640625
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 391.4375,
+      "height": 196.640625,
+      "right": 604.59375,
+      "bottom": 814.640625
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 618,
+      "width": 231.203125,
+      "height": 196.640625,
+      "right": 843.796875,
+      "bottom": 814.640625
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 538,
+      "right": 843.796875,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 155,
+      "width": 612.640625,
+      "height": 205,
+      "right": 834.796875,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235.15625,
+      "y": 184.5,
+      "width": 248.65625,
+      "height": 146,
+      "right": 483.8125,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 742.640625,
+      "right": 1083,
+      "bottom": 814.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1101x1100-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 742.640625,
+      "right": 205.15625,
+      "bottom": 814.640625
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 630.640625,
+      "height": 196.640625,
+      "right": 843.796875,
+      "bottom": 814.640625
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 391.4375,
+      "height": 196.640625,
+      "right": 604.59375,
+      "bottom": 814.640625
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 618,
+      "width": 231.203125,
+      "height": 196.640625,
+      "right": 843.796875,
+      "bottom": 814.640625
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 538,
+      "right": 843.796875,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 155,
+      "width": 612.640625,
+      "height": 205,
+      "right": 834.796875,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235.15625,
+      "y": 184.5,
+      "width": 248.65625,
+      "height": 146,
+      "right": 483.8125,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 742.640625,
+      "right": 1083,
+      "bottom": 814.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1101x1100-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187.15625,
+      "height": 774.875,
+      "right": 205.15625,
+      "bottom": 846.875
+    },
+    "row": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 630.640625,
+      "height": 228.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "info": {
+      "x": 213.15625,
+      "y": 618,
+      "width": 391.4375,
+      "height": 228.875,
+      "right": 604.59375,
+      "bottom": 846.875
+    },
+    "details": {
+      "x": 612.59375,
+      "y": 618,
+      "width": 231.203125,
+      "height": 228.875,
+      "right": 843.796875,
+      "bottom": 846.875
+    },
+    "map": {
+      "x": 213.15625,
+      "y": 72,
+      "width": 630.640625,
+      "height": 538,
+      "right": 843.796875,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222.15625,
+      "y": 155,
+      "width": 612.640625,
+      "height": 205,
+      "right": 834.796875,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235.15625,
+      "y": 184.5,
+      "width": 248.65625,
+      "height": 146,
+      "right": 483.8125,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851.796875,
+      "y": 72,
+      "width": 231.203125,
+      "height": 774.875,
+      "right": 1083,
+      "bottom": 846.875
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1100x1100-combat-server-info": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 854.390625,
+      "right": 205,
+      "bottom": 926.390625
+    },
+    "row": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 308.390625,
+      "right": 843,
+      "bottom": 926.390625
+    },
+    "info": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 190,
+      "right": 843,
+      "bottom": 808
+    },
+    "details": {
+      "x": 213,
+      "y": 816,
+      "width": 630,
+      "height": 110.390625,
+      "right": 843,
+      "bottom": 926.390625
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 538,
+      "right": 843,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 155,
+      "width": 612,
+      "height": 205,
+      "right": 834,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235,
+      "y": 184.5,
+      "width": 248.34375,
+      "height": 146,
+      "right": 483.34375,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 774.640625,
+      "right": 1082,
+      "bottom": 846.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1100x1100-combat-chat": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 854.390625,
+      "right": 205,
+      "bottom": 926.390625
+    },
+    "row": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 308.390625,
+      "right": 843,
+      "bottom": 926.390625
+    },
+    "info": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 190,
+      "right": 843,
+      "bottom": 808
+    },
+    "details": {
+      "x": 213,
+      "y": 816,
+      "width": 630,
+      "height": 110.390625,
+      "right": 843,
+      "bottom": 926.390625
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 538,
+      "right": 843,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 155,
+      "width": 612,
+      "height": 205,
+      "right": 834,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235,
+      "y": 184.5,
+      "width": 248.34375,
+      "height": 146,
+      "right": 483.34375,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 774.640625,
+      "right": 1082,
+      "bottom": 846.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1100x1100-combat-battle-info": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 861.03125,
+      "right": 205,
+      "bottom": 933.03125
+    },
+    "row": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 315.03125,
+      "right": 843,
+      "bottom": 933.03125
+    },
+    "info": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 196.640625,
+      "right": 843,
+      "bottom": 814.640625
+    },
+    "details": {
+      "x": 213,
+      "y": 822.640625,
+      "width": 630,
+      "height": 110.390625,
+      "right": 843,
+      "bottom": 933.03125
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 538,
+      "right": 843,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 155,
+      "width": 612,
+      "height": 205,
+      "right": 834,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235,
+      "y": 184.5,
+      "width": 248.34375,
+      "height": 146,
+      "right": 483.34375,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 774.640625,
+      "right": 1082,
+      "bottom": 846.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1100x1100-right-skills": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 813.640625,
+      "right": 205,
+      "bottom": 885.640625
+    },
+    "row": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 267.640625,
+      "right": 843,
+      "bottom": 885.640625
+    },
+    "info": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 196.640625,
+      "right": 843,
+      "bottom": 814.640625
+    },
+    "details": {
+      "x": 213,
+      "y": 822.640625,
+      "width": 630,
+      "height": 63,
+      "right": 843,
+      "bottom": 885.640625
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 538,
+      "right": 843,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 155,
+      "width": 612,
+      "height": 205,
+      "right": 834,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235,
+      "y": 184.5,
+      "width": 248.34375,
+      "height": 146,
+      "right": 483.34375,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 168.640625,
+      "right": 1082,
+      "bottom": 240.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1100x1100-right-passives": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 813.640625,
+      "right": 205,
+      "bottom": 885.640625
+    },
+    "row": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 267.640625,
+      "right": 843,
+      "bottom": 885.640625
+    },
+    "info": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 196.640625,
+      "right": 843,
+      "bottom": 814.640625
+    },
+    "details": {
+      "x": 213,
+      "y": 822.640625,
+      "width": 630,
+      "height": 63,
+      "right": 843,
+      "bottom": 885.640625
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 538,
+      "right": 843,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 155,
+      "width": 612,
+      "height": 205,
+      "right": 834,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235,
+      "y": 184.5,
+      "width": 248.34375,
+      "height": 146,
+      "right": 483.34375,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 139.640625,
+      "right": 1082,
+      "bottom": 211.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-1100x1100-right-items": {
+    "left": {
+      "x": 18,
+      "y": 72,
+      "width": 187,
+      "height": 861.03125,
+      "right": 205,
+      "bottom": 933.03125
+    },
+    "row": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 315.03125,
+      "right": 843,
+      "bottom": 933.03125
+    },
+    "info": {
+      "x": 213,
+      "y": 618,
+      "width": 630,
+      "height": 196.640625,
+      "right": 843,
+      "bottom": 814.640625
+    },
+    "details": {
+      "x": 213,
+      "y": 822.640625,
+      "width": 630,
+      "height": 110.390625,
+      "right": 843,
+      "bottom": 933.03125
+    },
+    "map": {
+      "x": 213,
+      "y": 72,
+      "width": 630,
+      "height": 538,
+      "right": 843,
+      "bottom": 610
+    },
+    "mapGrid": {
+      "x": 222,
+      "y": 155,
+      "width": 612,
+      "height": 205,
+      "right": 834,
+      "bottom": 360
+    },
+    "mapCell": {
+      "x": 235,
+      "y": 184.5,
+      "width": 248.34375,
+      "height": 146,
+      "right": 483.34375,
+      "bottom": 330.5
+    },
+    "items": {
+      "x": 851,
+      "y": 72,
+      "width": 231,
+      "height": 774.640625,
+      "right": 1082,
+      "bottom": 846.640625
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-720x1100-combat-server-info": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2336.59375,
+      "width": 696,
+      "height": 308.390625,
+      "right": 708,
+      "bottom": 2644.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 2336.59375,
+      "width": 696,
+      "height": 190,
+      "right": 708,
+      "bottom": 2526.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2534.59375,
+      "width": 696,
+      "height": 110.390625,
+      "right": 708,
+      "bottom": 2644.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 517,
+      "right": 708,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 678,
+      "height": 193,
+      "right": 699,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 292.890625,
+      "height": 141,
+      "right": 326.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 696,
+      "height": 1240.796875,
+      "right": 708,
+      "bottom": 2328.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-720x1100-combat-chat": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2336.59375,
+      "width": 696,
+      "height": 308.390625,
+      "right": 708,
+      "bottom": 2644.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 2336.59375,
+      "width": 696,
+      "height": 190,
+      "right": 708,
+      "bottom": 2526.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2534.59375,
+      "width": 696,
+      "height": 110.390625,
+      "right": 708,
+      "bottom": 2644.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 517,
+      "right": 708,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 678,
+      "height": 193,
+      "right": 699,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 292.890625,
+      "height": 141,
+      "right": 326.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 696,
+      "height": 1240.796875,
+      "right": 708,
+      "bottom": 2328.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-720x1100-combat-battle-info": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2336.59375,
+      "width": 696,
+      "height": 316.1875,
+      "right": 708,
+      "bottom": 2652.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 2336.59375,
+      "width": 696,
+      "height": 197.796875,
+      "right": 708,
+      "bottom": 2534.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2542.390625,
+      "width": 696,
+      "height": 110.390625,
+      "right": 708,
+      "bottom": 2652.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 517,
+      "right": 708,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 678,
+      "height": 193,
+      "right": 699,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 292.890625,
+      "height": 141,
+      "right": 326.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 696,
+      "height": 1240.796875,
+      "right": 708,
+      "bottom": 2328.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-720x1100-right-skills": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1265.59375,
+      "width": 696,
+      "height": 268.796875,
+      "right": 708,
+      "bottom": 1534.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1265.59375,
+      "width": 696,
+      "height": 197.796875,
+      "right": 708,
+      "bottom": 1463.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1471.390625,
+      "width": 696,
+      "height": 63,
+      "right": 708,
+      "bottom": 1534.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 517,
+      "right": 708,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 678,
+      "height": 193,
+      "right": 699,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 292.890625,
+      "height": 141,
+      "right": 326.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 696,
+      "height": 169.796875,
+      "right": 708,
+      "bottom": 1257.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-720x1100-right-passives": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1236.59375,
+      "width": 696,
+      "height": 268.796875,
+      "right": 708,
+      "bottom": 1505.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1236.59375,
+      "width": 696,
+      "height": 197.796875,
+      "right": 708,
+      "bottom": 1434.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1442.390625,
+      "width": 696,
+      "height": 63,
+      "right": 708,
+      "bottom": 1505.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 517,
+      "right": 708,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 678,
+      "height": 193,
+      "right": 699,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 292.890625,
+      "height": 141,
+      "right": 326.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 696,
+      "height": 140.796875,
+      "right": 708,
+      "bottom": 1228.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-720x1100-right-items": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 696,
+      "height": 446.796875,
+      "right": 708,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2336.59375,
+      "width": 696,
+      "height": 316.1875,
+      "right": 708,
+      "bottom": 2652.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 2336.59375,
+      "width": 696,
+      "height": 197.796875,
+      "right": 708,
+      "bottom": 2534.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2542.390625,
+      "width": 696,
+      "height": 110.390625,
+      "right": 708,
+      "bottom": 2652.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 696,
+      "height": 517,
+      "right": 708,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 678,
+      "height": 193,
+      "right": 699,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 292.890625,
+      "height": 141,
+      "right": 326.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 696,
+      "height": 1240.796875,
+      "right": 708,
+      "bottom": 2328.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-390x1100-combat-server-info": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2006.59375,
+      "width": 366,
+      "height": 308.390625,
+      "right": 378,
+      "bottom": 2314.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 2006.59375,
+      "width": 366,
+      "height": 190,
+      "right": 378,
+      "bottom": 2196.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2204.59375,
+      "width": 366,
+      "height": 110.390625,
+      "right": 378,
+      "bottom": 2314.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 517,
+      "right": 378,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 348,
+      "height": 193,
+      "right": 369,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 127.890625,
+      "height": 141,
+      "right": 161.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 366,
+      "height": 910.796875,
+      "right": 378,
+      "bottom": 1998.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-390x1100-combat-chat": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2006.59375,
+      "width": 366,
+      "height": 308.390625,
+      "right": 378,
+      "bottom": 2314.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 2006.59375,
+      "width": 366,
+      "height": 190,
+      "right": 378,
+      "bottom": 2196.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2204.59375,
+      "width": 366,
+      "height": 110.390625,
+      "right": 378,
+      "bottom": 2314.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 517,
+      "right": 378,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 348,
+      "height": 193,
+      "right": 369,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 127.890625,
+      "height": 141,
+      "right": 161.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 366,
+      "height": 910.796875,
+      "right": 378,
+      "bottom": 1998.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-390x1100-combat-battle-info": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2006.59375,
+      "width": 366,
+      "height": 316.1875,
+      "right": 378,
+      "bottom": 2322.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 2006.59375,
+      "width": 366,
+      "height": 197.796875,
+      "right": 378,
+      "bottom": 2204.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2212.390625,
+      "width": 366,
+      "height": 110.390625,
+      "right": 378,
+      "bottom": 2322.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 517,
+      "right": 378,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 348,
+      "height": 193,
+      "right": 369,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 127.890625,
+      "height": 141,
+      "right": 161.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 366,
+      "height": 910.796875,
+      "right": 378,
+      "bottom": 1998.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-390x1100-right-skills": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1265.59375,
+      "width": 366,
+      "height": 268.796875,
+      "right": 378,
+      "bottom": 1534.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1265.59375,
+      "width": 366,
+      "height": 197.796875,
+      "right": 378,
+      "bottom": 1463.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1471.390625,
+      "width": 366,
+      "height": 63,
+      "right": 378,
+      "bottom": 1534.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 517,
+      "right": 378,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 348,
+      "height": 193,
+      "right": 369,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 127.890625,
+      "height": 141,
+      "right": 161.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 366,
+      "height": 169.796875,
+      "right": 378,
+      "bottom": 1257.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-390x1100-right-passives": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1236.59375,
+      "width": 366,
+      "height": 268.796875,
+      "right": 378,
+      "bottom": 1505.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1236.59375,
+      "width": 366,
+      "height": 197.796875,
+      "right": 378,
+      "bottom": 1434.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1442.390625,
+      "width": 366,
+      "height": 63,
+      "right": 378,
+      "bottom": 1505.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 517,
+      "right": 378,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 348,
+      "height": 193,
+      "right": 369,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 127.890625,
+      "height": 141,
+      "right": 161.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 366,
+      "height": 140.796875,
+      "right": 378,
+      "bottom": 1228.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-390x1100-right-items": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 366,
+      "height": 446.796875,
+      "right": 378,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 2006.59375,
+      "width": 366,
+      "height": 316.1875,
+      "right": 378,
+      "bottom": 2322.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 2006.59375,
+      "width": 366,
+      "height": 197.796875,
+      "right": 378,
+      "bottom": 2204.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2212.390625,
+      "width": 366,
+      "height": 110.390625,
+      "right": 378,
+      "bottom": 2322.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 366,
+      "height": 517,
+      "right": 378,
+      "bottom": 1079.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 348,
+      "height": 193,
+      "right": 369,
+      "bottom": 838.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 127.890625,
+      "height": 141,
+      "right": 161.890625,
+      "bottom": 812.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1087.796875,
+      "width": 366,
+      "height": 910.796875,
+      "right": 378,
+      "bottom": 1998.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-320x1100-combat-server-info": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1969.59375,
+      "width": 296,
+      "height": 308.390625,
+      "right": 308,
+      "bottom": 2277.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 1969.59375,
+      "width": 296,
+      "height": 190,
+      "right": 308,
+      "bottom": 2159.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2167.59375,
+      "width": 296,
+      "height": 110.390625,
+      "right": 308,
+      "bottom": 2277.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 550,
+      "right": 308,
+      "bottom": 1112.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 278,
+      "height": 210,
+      "right": 299,
+      "bottom": 855.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 92.890625,
+      "height": 158,
+      "right": 126.890625,
+      "bottom": 829.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1120.796875,
+      "width": 296,
+      "height": 840.796875,
+      "right": 308,
+      "bottom": 1961.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-320x1100-combat-chat": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1969.59375,
+      "width": 296,
+      "height": 308.390625,
+      "right": 308,
+      "bottom": 2277.984375
+    },
+    "info": {
+      "x": 12,
+      "y": 1969.59375,
+      "width": 296,
+      "height": 190,
+      "right": 308,
+      "bottom": 2159.59375
+    },
+    "details": {
+      "x": 12,
+      "y": 2167.59375,
+      "width": 296,
+      "height": 110.390625,
+      "right": 308,
+      "bottom": 2277.984375
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 550,
+      "right": 308,
+      "bottom": 1112.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 278,
+      "height": 210,
+      "right": 299,
+      "bottom": 855.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 92.890625,
+      "height": 158,
+      "right": 126.890625,
+      "bottom": 829.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1120.796875,
+      "width": 296,
+      "height": 840.796875,
+      "right": 308,
+      "bottom": 1961.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-320x1100-combat-battle-info": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1969.59375,
+      "width": 296,
+      "height": 316.1875,
+      "right": 308,
+      "bottom": 2285.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 1969.59375,
+      "width": 296,
+      "height": 197.796875,
+      "right": 308,
+      "bottom": 2167.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2175.390625,
+      "width": 296,
+      "height": 110.390625,
+      "right": 308,
+      "bottom": 2285.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 550,
+      "right": 308,
+      "bottom": 1112.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 278,
+      "height": 210,
+      "right": 299,
+      "bottom": 855.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 92.890625,
+      "height": 158,
+      "right": 126.890625,
+      "bottom": 829.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1120.796875,
+      "width": 296,
+      "height": 840.796875,
+      "right": 308,
+      "bottom": 1961.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-320x1100-right-skills": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1298.59375,
+      "width": 296,
+      "height": 268.796875,
+      "right": 308,
+      "bottom": 1567.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1298.59375,
+      "width": 296,
+      "height": 197.796875,
+      "right": 308,
+      "bottom": 1496.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1504.390625,
+      "width": 296,
+      "height": 63,
+      "right": 308,
+      "bottom": 1567.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 550,
+      "right": 308,
+      "bottom": 1112.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 278,
+      "height": 210,
+      "right": 299,
+      "bottom": 855.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 92.890625,
+      "height": 158,
+      "right": 126.890625,
+      "bottom": 829.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1120.796875,
+      "width": 296,
+      "height": 169.796875,
+      "right": 308,
+      "bottom": 1290.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-320x1100-right-passives": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1269.59375,
+      "width": 296,
+      "height": 268.796875,
+      "right": 308,
+      "bottom": 1538.390625
+    },
+    "info": {
+      "x": 12,
+      "y": 1269.59375,
+      "width": 296,
+      "height": 197.796875,
+      "right": 308,
+      "bottom": 1467.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 1475.390625,
+      "width": 296,
+      "height": 63,
+      "right": 308,
+      "bottom": 1538.390625
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 550,
+      "right": 308,
+      "bottom": 1112.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 278,
+      "height": 210,
+      "right": 299,
+      "bottom": 855.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 92.890625,
+      "height": 158,
+      "right": 126.890625,
+      "bottom": 829.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1120.796875,
+      "width": 296,
+      "height": 140.796875,
+      "right": 308,
+      "bottom": 1261.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  },
+  "combat-320x1100-right-items": {
+    "left": {
+      "x": 12,
+      "y": 108,
+      "width": 296,
+      "height": 446.796875,
+      "right": 308,
+      "bottom": 554.796875
+    },
+    "row": {
+      "x": 12,
+      "y": 1969.59375,
+      "width": 296,
+      "height": 316.1875,
+      "right": 308,
+      "bottom": 2285.78125
+    },
+    "info": {
+      "x": 12,
+      "y": 1969.59375,
+      "width": 296,
+      "height": 197.796875,
+      "right": 308,
+      "bottom": 2167.390625
+    },
+    "details": {
+      "x": 12,
+      "y": 2175.390625,
+      "width": 296,
+      "height": 110.390625,
+      "right": 308,
+      "bottom": 2285.78125
+    },
+    "map": {
+      "x": 12,
+      "y": 562.796875,
+      "width": 296,
+      "height": 550,
+      "right": 308,
+      "bottom": 1112.796875
+    },
+    "mapGrid": {
+      "x": 21,
+      "y": 645.796875,
+      "width": 278,
+      "height": 210,
+      "right": 299,
+      "bottom": 855.796875
+    },
+    "mapCell": {
+      "x": 34,
+      "y": 671.796875,
+      "width": 92.890625,
+      "height": 158,
+      "right": 126.890625,
+      "bottom": 829.796875
+    },
+    "items": {
+      "x": 12,
+      "y": 1120.796875,
+      "width": 296,
+      "height": 840.796875,
+      "right": 308,
+      "bottom": 1961.59375
+    },
+    "contentOffsets": {
+      "info": 6,
+      "details": 9
+    },
+    "gap": 8,
+    "overflow": false
+  }
+}
