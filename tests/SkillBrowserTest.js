@@ -96,7 +96,7 @@ async function measure(){return evaluate(`(()=>{const rect=s=>{const r=document.
         await evaluate("document.querySelector('[data-tab-target=right-items]').click()");
         assert.equal(await evaluate("document.getElementById('itemDetailsTitle').textContent"),"Item Details");assert.equal(await evaluate("document.getElementById('inventoryDetailName').textContent"),itemName);
         await evaluate("document.querySelector('[data-tab-target=right-passives]').click()");
-        assert.ok((await evaluate("document.getElementById('right-passives').textContent")).includes("later milestone"));
+        assert.ok((await evaluate("document.getElementById('right-passives').textContent")).includes("Passive state unavailable"));
         results.push({class:cls,ajaxOperations:calls,retainedItem:true,noTabRequests:true});
     }
     // Independent SSR fixtures: left34A level and skill points are coherent,

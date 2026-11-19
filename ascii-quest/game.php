@@ -156,6 +156,8 @@ try {
         (int) $character["id"],
         1,
     );
+    require_once __DIR__.'/lib/PassiveBootstrap.php';
+    $passiveState = PassiveBootstrap::service($pdo)->state((int)$_SESSION['user_id'],(int)$character['id']);
     $skillState = $combatState['skill_state'] ?? SkillBootstrap::service($pdo)->state(
         (int) $_SESSION['user_id'], (int) $character['id'],
     );
@@ -369,6 +371,7 @@ $gameControlsVersion = (int) filemtime(__DIR__ . "/js/game_controls.js");
 $combatHudVersion = (int) filemtime(__DIR__ . "/js/combat_hud.js");
 $itemHudVersion = (int) filemtime(__DIR__ . "/js/item_hud.js");
 $skillHudVersion = (int) filemtime(__DIR__ . "/js/skill_hud.js");
+$passiveHudVersion = (int) filemtime(__DIR__ . "/js/passive_hud.js");
 
 // Derive alive progression from total XP; dead levels remain historical.
 $progressionState = CharacterProgression::project($character);
@@ -415,6 +418,8 @@ $detailStatGroups = [
         ["Life Regeneration", "utility.life_regeneration", $characterStats["utility"]["life_regeneration"], "number"],
         ["Mana Regeneration", "utility.mana_regeneration", $characterStats["utility"]["mana_regeneration"], "number"],
         ["Life on Hit", "utility.life_on_hit", $characterStats["utility"]["life_on_hit"], "number"],
+        ["Healing Power", "utility.healing_power_percent", $characterStats["utility"]["healing_power_percent"], "percentage"],
+        ["Elemental Status Chance Bonus", "utility.elemental_status_chance_percent", $characterStats["utility"]["elemental_status_chance_percent"], "percentage"],
         ["Mana on Hit", "utility.mana_on_hit", $characterStats["utility"]["mana_on_hit"], "number"],
         ["Life per Kill", "utility.life_per_kill", $characterStats["utility"]["life_per_kill"], "number"],
         ["Mana per Kill", "utility.mana_per_kill", $characterStats["utility"]["mana_per_kill"], "number"],
@@ -1079,13 +1084,34 @@ $detailStatGroups = [
 
                 <section
                     id="right-passives"
-                    class="hud-tab-panel hud-placeholder"
+                    class="hud-tab-panel passive-tree-panel"
                     role="tabpanel"
                     data-tab-panel
                     hidden
                 >
-                    <h2>Passive Tree</h2>
-                    <p>Passive Tree will be implemented in a later milestone.</p>
+                    <h2>Universal Passive Tree <button id="passiveRefreshButton" class="skill-refresh" type="button">Refresh</button></h2>
+                    <?php if (isset($passiveState)): ?>
+                    <p id="passivePoints" class="skill-points">Points <?= (int)$passiveState['points']['available'] ?> · <?= (int)$passiveState['points']['spent'] ?>/<?= (int)$passiveState['points']['earned'] ?> spent</p>
+                    <p id="passiveProgress" class="passive-progress" role="status"></p>
+                    <p id="passiveMessage" class="skill-message" role="status"></p>
+                    <div id="passiveBoard" class="passive-board" tabindex="0" aria-label="Universal passive board, twenty sequential rows, four choices each">
+                        <?php foreach ($passiveState['rows'] as $row): ?>
+                        <div class="passive-row" data-passive-row="<?= (int)$row['row'] ?>">
+                            <span class="passive-row-number">Row <?= (int)$row['row'] ?><?= $row['row']===20?' · MAJOR':'' ?></span>
+                            <div class="passive-choices">
+                                <?php foreach ($row['nodes'] as $node): ?>
+                                <button type="button" class="passive-node state-<?= e($node['state']) ?><?= $node['major']?' is-major':'' ?>" data-passive-key="<?= e($node['key']) ?>" aria-pressed="false">
+                                    <span class="passive-lane"><?= e(strtoupper($node['lane'])) ?></span>
+                                    <strong data-passive-name><?= e($node['name']) ?></strong>
+                                    <small data-passive-state><?= e(strtoupper($node['state'])) ?></small>
+                                </button>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php if ($row['row']<20): ?><div class="passive-row-arrow" aria-hidden="true">↓</div><?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else: ?><p>Passive state unavailable.</p><?php endif; ?>
                 </section>
             </aside>
             <section class="hud-lower-row" aria-label="Game information and selection details">
@@ -1240,6 +1266,10 @@ $detailStatGroups = [
                                 <button id="skillUnassignButton" type="button" disabled>Unassign</button>
                             </div>
                         </div>
+                        <div id="passiveDetailActions" class="passive-detail-actions" hidden>
+                            <span id="passiveActionReason" role="status"></span>
+                            <button id="passiveUnlockButton" type="button" disabled>Unlock · 1 point</button>
+                        </div>
                     </section>
                 </section>
             </section>
@@ -1290,6 +1320,7 @@ window.ASCII_QUEST_STATE = {
     inventory: <?= json_encode($inventoryState, JSON_UNESCAPED_UNICODE) ?>,
     progression: <?= json_encode($progressionState, JSON_UNESCAPED_UNICODE) ?>,
     skills: <?= json_encode($skillState ?? null, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+    passives: <?= json_encode($passiveState ?? null, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
 
     initialMessages: [
         <?php if ($isCombatMode): ?>
@@ -1308,6 +1339,7 @@ window.ASCII_QUEST_STATE = {
 <script src="js/exploration_hud.js?v=<?= $explorationHudVersion ?>"></script>
 <script src="js/item_hud.js?v=<?= $itemHudVersion ?>"></script>
 <script src="js/skill_hud.js?v=<?= (int) ($skillHudVersion ?? 1) ?>"></script>
+<script src="js/passive_hud.js?v=<?= (int) ($passiveHudVersion ?? 1) ?>"></script>
 <?php if ($isCombatMode): ?>
 <script src="js/combat_hud.js?v=<?= $combatHudVersion ?>"></script>
 <?php endif; ?>

@@ -15,6 +15,7 @@ $character = [
     'strength' => 10, 'dexterity' => 5, 'vitality' => 10, 'energy' => 5, 'fate' => 5,
 ];
 $skillState = $task34bState ?? null;
+$passiveState = $task35State ?? null;
 if ($skillState !== null) {
     $character['id'] = $skillState['champion']['id'];
     $character['level'] = $skillState['champion']['level'];

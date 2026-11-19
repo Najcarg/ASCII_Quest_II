@@ -236,7 +236,10 @@
             const skillActions = byId(document, "skillDetailActions");
             const skillSystem = mode === "skill" && !!selected && skillActions?.dataset?.skillSelection === "true";
             if (skillActions) skillActions.hidden = !skillSystem;
-            byId(document, "contextDetails")?.classList?.toggle?.("skill-system-details", skillSystem);
+            const passiveActions = byId(document, "passiveDetailActions");
+            const passiveSystem = mode === "passive" && !!selected && passiveActions?.dataset?.passiveSelection === "true";
+            if (passiveActions) passiveActions.hidden = !passiveSystem;
+            byId(document, "contextDetails")?.classList?.toggle?.("skill-system-details", skillSystem || passiveSystem);
             const empty = byId(document, "inventoryDetailsEmpty");
             if (empty) {
                 empty.textContent = placeholder;
@@ -438,5 +441,5 @@
         };
     }
 
-    return { render, renderDetails, renderItemName, createDetailsController, createController, createRequestToken };
+    return { render, renderDetails, renderItemName, updateChampion, createDetailsController, createController, createRequestToken };
 });
