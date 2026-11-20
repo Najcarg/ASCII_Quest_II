@@ -229,6 +229,15 @@ final class FakeCombatPdo extends PDO
             ];
         }
 
+        if ($normalized === 'select id from characters where id = :character_id and user_id = :user_id and current_hp = :expected_current_hp limit 1 for update') {
+            $id = (int) $params['character_id'];
+            $character = $this->characters[$id] ?? null;
+            $matches = $character !== null
+                && (int) $character['user_id'] === (int) $params['user_id']
+                && (int) $character['current_hp'] === (int) $params['expected_current_hp'];
+            return ['rows' => $matches ? [['id' => $id]] : [], 'row_count' => 0];
+        }
+
         if (str_starts_with($normalized, 'select') && str_contains($normalized, 'from characters')) {
             if (str_contains($normalized, 'for update')) {
                 $this->lockOrder[] = 'champion';
@@ -258,6 +267,10 @@ final class FakeCombatPdo extends PDO
                 return ['rows' => [], 'row_count' => 0];
             }
 
+            // MariaDB/PDO reports changed rows by default, not matched rows.
+            if ((int) $character['current_hp'] === (int) $params['new_current_hp']) {
+                return ['rows' => [], 'row_count' => 0];
+            }
             $this->characters[$id]['current_hp'] = (int) $params['new_current_hp'];
             $this->writeOrder[] = ['kind' => 'character'];
 
@@ -1299,6 +1312,59 @@ return [
         assertSameValue(0, $pdo->characters[42]['current_hp'], 'Successful compare-and-swap persists zero.');
     },
 
+    'Champion unchanged HP succeeds with MariaDB changed-row semantics and exact locked verification' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        $repository->beginTransaction();
+        $repository->lockOwnedCharacter(7, 42);
+        assertSameValue(true, $repository->updateLockedCharacterCurrentHp(7, 42, 145, 145), 'Dodge no-op is a valid guarded HP result.');
+        assertSameValue(145, $pdo->characters[42]['current_hp'], 'HP remains unchanged.');
+        $last = strtolower((string) preg_replace('/\s+/', ' ', trim(end($pdo->preparedSql))));
+        assertSameValue('select id from characters where id = :character_id and user_id = :user_id and current_hp = :expected_current_hp limit 1 for update', $last, 'No-op verified under exact ownership/HP lock.');
+        $repository->commit();
+    },
+    'Champion unchanged HP rejects stale expected HP' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        $repository->beginTransaction(); $repository->lockOwnedCharacter(7, 42);
+        assertSameValue(false, $repository->updateLockedCharacterCurrentHp(7, 42, 144, 144), 'Stale unchanged HP cannot succeed.');
+        assertSameValue(145, $pdo->characters[42]['current_hp'], 'Stale no-op cannot change HP.');
+        $repository->rollBack();
+    },
+    'Champion unchanged HP rejects wrong owner' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        $repository->beginTransaction(); $repository->lockOwnedCharacter(7, 42);
+        assertSameValue(false, $repository->updateLockedCharacterCurrentHp(8, 42, 145, 145), 'No-op cannot ignore ownership.');
+        $repository->rollBack();
+    },
+    'Champion unchanged HP rejects missing locked row' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        $repository->beginTransaction(); $repository->lockOwnedCharacter(7, 42);
+        unset($pdo->characters[42]);
+        assertSameValue(false, $repository->updateLockedCharacterCurrentHp(7, 42, 145, 145), 'A disappeared row is not a valid no-op.');
+        $repository->rollBack();
+    },
+    'Champion changed HP failed update never uses no-op success fallback' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        $repository->beginTransaction(); $repository->lockOwnedCharacter(7, 42);
+        $pdo->failCharacterHpUpdate = true;
+        assertSameValue(false, $repository->updateLockedCharacterCurrentHp(7, 42, 145, 140), 'Failed actual mutation remains false.');
+        assertSameValue(false, $repository->updateLockedCharacterCurrentHp(7, 42, 144, 140), 'Stale actual mutation remains false.');
+        foreach ($pdo->preparedSql as $sql) {
+            assertSameValue(false, str_contains($sql, 'SELECT id FROM characters'), 'Actual HP changes never use no-op verification.');
+        }
+        $repository->rollBack();
+    },
+    'Champion unchanged HP still requires active transaction and selected Champion lock' => function (): void {
+        [$repository, $pdo] = combatRepositoryFixture();
+        foreach ([false, true] as $transaction) {
+            if ($transaction) { $repository->beginTransaction(); }
+            $rejected = false;
+            try { $repository->updateLockedCharacterCurrentHp(7, 42, 145, 145); }
+            catch (LogicException) { $rejected = true; }
+            assertSameValue(true, $rejected, 'No-op does not bypass aggregate lock contract.');
+            assertSameValue([], $pdo->preparedSql, 'Rejected before SQL.');
+            if ($transaction) { $repository->rollBack(); }
+        }
+    },
     'Combat repository rollback restores Task 6 aggregate action and schedule state' => function (): void {
         [$repository, $pdo] = combatRepositoryFixture();
         seedActiveCombat($pdo);

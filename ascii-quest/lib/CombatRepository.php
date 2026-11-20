@@ -471,7 +471,29 @@ final class CombatRepository
             'expected_current_hp' => $expectedCurrentHp,
         ]);
 
-        return $stmt->rowCount() === 1;
+        if ($stmt->rowCount() === 1) {
+            return true;
+        }
+        if ($expectedCurrentHp !== $newCurrentHp) {
+            return false;
+        }
+
+        // PDO/MariaDB defaults to changed rows: a successful Dodge leaves HP
+        // unchanged and reports zero. Do not confuse that with a stale write.
+        // Preserve the aggregate lock, ownership and expected-value predicates
+        // and verify the no-op with a locking read, never a blanket success.
+        $verify = $this->pdo->prepare('SELECT id FROM characters
+            WHERE id = :character_id
+              AND user_id = :user_id
+              AND current_hp = :expected_current_hp
+            LIMIT 1 FOR UPDATE');
+        $verify->execute([
+            'character_id' => $characterId,
+            'user_id' => $userId,
+            'expected_current_hp' => $expectedCurrentHp,
+        ]);
+
+        return $verify->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
     public function markLockedCharacterDead(
